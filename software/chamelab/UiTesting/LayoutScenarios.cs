@@ -23,7 +23,7 @@ namespace ChameLab.UiTesting;
 // Compiled only into UI test projects/builds. All libraries are synthetic and in memory.
 public static class LayoutScenarios
 {
-    public static readonly string[] Pages = ["connect", "connect-found", "notice", "error", "settings", "device", "slots", "cards", "cards-library", "card-classic", "card-ultralight", "card-lf", "dictionaries", "dictionary-download", "dictionary-editor", "tools", "hf", "lf", "auth", "ValueBlocks", "T55Password", "T55Block", "Gen4", "RawHf", "RawDevice", "console", "plugins", "key-search", "writer", "writer-classic", "writer-ultralight", "writer-lf", "cards-add", "journal"];
+    public static readonly string[] Pages = ["connect", "connect-found", "notice", "error", "settings", "device", "slots", "cards", "cards-library", "card-classic", "card-access", "card-compare", "card-ultralight", "card-lf", "dictionaries", "dictionary-download", "dictionary-editor", "tools", "hf", "lf", "auth", "ValueBlocks", "T55Password", "T55Block", "Gen4", "RawHf", "RawDevice", "console", "plugins", "key-search", "writer", "writer-classic", "writer-ultralight", "writer-lf", "cards-add", "journal"];
 
     public static Border Create(string page, string language)
     {
@@ -48,7 +48,7 @@ public static class LayoutScenarios
             "writer" or "writer-classic" or "writer-ultralight" or "writer-lf" => WriterScenario(page, device, cards, dictionaries),
             "cards-add" => AddScenario(device, cards, dictionaries),
             "cards" => new CardsView { DataContext = new CardsViewModel(device, cards, dictionaries) },
-            "cards-library" or "card-classic" or "card-ultralight" or "card-lf" => SavedCardScenario(page, device, cards, dictionaries),
+            "cards-library" or "card-classic" or "card-access" or "card-compare" or "card-ultralight" or "card-lf" => SavedCardScenario(page, device, cards, dictionaries),
             "dictionaries" => new DictionariesView { DataContext = new DictionariesViewModel(dictionaries, cards) },
             "tools" => new ToolsView { DataContext = new ToolsViewModel(device, dictionaries, cards) },
             "dictionary-download" or "dictionary-editor" => DictionaryScenario(page, dictionaries, cards),
@@ -117,17 +117,36 @@ public static class LayoutScenarios
     }
     private static Control SavedCardScenario(string page, DeviceService device, CardLibrary cards, DictionaryLibrary dictionaries)
     {
-        var type = page == "card-ultralight" ? Protocol.TagSpecificType.Ntag213
+        var type = page == "card-access" ? Protocol.TagSpecificType.Mifare4096
+            : page == "card-ultralight" ? Protocol.TagSpecificType.Ntag213
             : page == "card-lf" ? Protocol.TagSpecificType.Em410x : Protocol.TagSpecificType.Mifare1024;
         var card = new CardSave { Name = "Synthetic card for interface checks", Tag = type,
             Uid = page == "card-lf" ? [1, 2, 3, 4, 5] : page == "card-ultralight" ? [4, 1, 2, 3, 4, 5, 6] : [1, 2, 3, 4],
             Atqa = [4, 0], Sak = (byte)(page is "card-lf" or "card-ultralight" ? 0 : 8),
             Data = page == "card-lf" ? [] : Enumerable.Range(0, page == "card-ultralight" ? 45 : 64)
                 .Select(_ => new byte[page == "card-ultralight" ? 4 : 16]).ToList() };
+        if (page == "card-access")
+            card.Data = Enumerable.Range(0, 256).Select(MifareClassic.BlankBlock).ToList();
+        if (page == "card-compare")
+            card.Data = Enumerable.Range(0, 64).Select(MifareClassic.BlankBlock).ToList();
         cards.Add(card);
         var model = new CardsViewModel(device, cards, dictionaries);
         if (page != "cards-library") model.OpenCard(card.Id);
-        return new CardsView { DataContext = model };
+        var view = new CardsView { DataContext = model };
+        if (page == "card-access")
+        {
+            model.Form!.SelectedSector = 32;
+            view.FindControl<Expander>("MifareAccessExpander")!.IsExpanded = true;
+        }
+        if (page == "card-compare")
+        {
+            var reference = card.Clone();
+            reference.Data[1][0] = 1;
+            reference.Data[2] = [];
+            reference.Extra.UnknownKeyA.Add(0);
+            model.CompareWithCard(reference);
+        }
+        return view;
     }
     private static Control WriterScenario(string page, DeviceService device, CardLibrary cards, DictionaryLibrary dictionaries)
     {
@@ -177,6 +196,10 @@ public static class LayoutScenarios
     public static List<string> FindOverflow(Control root)
     {
         var errors = new List<string>();
+        foreach (var header in root.GetVisualDescendants().OfType<Panel>()
+                     .Where(p => p.Name == "LibraryHeader" && p.IsEffectivelyVisible && p.Children.Count == 2))
+            if (header.Children[0].Bounds.Intersects(header.Children[1].Bounds))
+                errors.Add("Card library title/count overlaps folder/card actions.");
         foreach (var button in root.GetVisualDescendants().OfType<Button>())
             if (button.IsEffectivelyVisible && button.Command is null &&
                 BindingOperations.GetBindingExpressionBase(button, Button.CommandProperty) is not null)

@@ -198,6 +198,8 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
 
         DuplicateCommand = ReactiveCommand.Create(Duplicate, cardOpen);
         ExportCommand = ReactiveCommand.CreateFromTask(ExportAsync, actionable);
+        CompareCommand = ReactiveCommand.CreateFromTask(CompareAsync,
+            hasForm.CombineLatest(this.WhenAnyValue(x => x.IsBusy), (form, busy) => form && !busy));
         ExportBinCommand = ReactiveCommand.CreateFromTask(() => ExportDumpAsync(bin: true), actionable);
         ExportEmlCommand = ReactiveCommand.CreateFromTask(() => ExportDumpAsync(bin: false), actionable);
         AssignCommand = ReactiveCommand.Create(() => Toggle(CardAction.Slots), actionableOnline);
@@ -525,6 +527,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         private set
         {
             if (_form is not null) _form.PropertyChanged -= OnFormPropertyChanged;
+            ClearComparison();
             // Another card (or the saved state of this one): an earlier save error is moot.
             if (!ReferenceEquals(_form, value)) ClearSaveError();
             this.RaiseAndSetIfChanged(ref _form, value);
@@ -543,6 +546,9 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
 
     private void OnFormPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
+        if (e.PropertyName is nameof(CardEditorViewModel.HasData) or nameof(CardEditorViewModel.Tag)
+            or nameof(CardEditorViewModel.Uid) or nameof(CardEditorViewModel.Sak)
+            or nameof(CardEditorViewModel.Atqa) or nameof(CardEditorViewModel.Ats)) ClearComparison();
         if (e.PropertyName == nameof(CardEditorViewModel.SelectedSector))
             this.RaisePropertyChanged(nameof(RecoverySelectedSector));
         if (e.PropertyName == nameof(CardEditorViewModel.Memory))

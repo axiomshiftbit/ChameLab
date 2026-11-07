@@ -3617,4 +3617,73 @@
   </data>
   <data name="Writer_InspectionCancelled" xml:space="preserve"><value>Проверка отменена. Данные на карту не записывались.</value></data>
   <data name="Cards_SearchPlaceholder" xml:space="preserve"><value>Поиск карт</value></data>
+  <data name="Cards_AclTitle" xml:space="preserve">
+    <value>Права доступа MIFARE Classic</value>
+  </data>
+  <data name="Cards_AclHint" xml:space="preserve">
+    <value>Права по текущим данным редактора для обычной аутентификации Classic. Соответствующие ключи должны быть известны. Блок 0 оригинальной карты доступен только для чтения; режимы magic-карт могут отличаться.</value>
+  </data>
+  <data name="Cards_AclUnread" xml:space="preserve">
+    <value>Прочитайте трейлер этого сектора, чтобы определить права доступа.</value>
+  </data>
+  <data name="Cards_AclInvalid" xml:space="preserve">
+    <value>Биты доступа повреждены: определить права невозможно. Не записывайте этот трейлер в карту.</value>
+  </data>
+  <data name="Cards_AclReadableB" xml:space="preserve">
+    <value>Ключ B в этом секторе хранится как читаемые данные и не подходит для аутентификации.</value>
+  </data>
+  <data name="Cards_AclBlocks" xml:space="preserve">
+    <value>Блоки {0} · C1C2C3={1}</value>
+  </data>
+  <data name="Cards_AclTrailer" xml:space="preserve">
+    <value>Трейлер {0} · C1C2C3={1}</value>
+  </data>
+  <data name="Cards_AclDataRights" xml:space="preserve">
+    <value>Чтение: {0}
+Запись: {1}
+Увеличение: {2}
+Уменьшение / перенос / восстановление: {3}</value>
+  </data>
+  <data name="Cards_AclTrailerRights" xml:space="preserve">
+    <value>Чтение ключа A: запрещено
+Запись ключа A: {0}
+Чтение битов доступа: {1}
+Запись битов доступа: {2}
+Чтение ключа B: {3}
+Запись ключа B: {4}</value>
+  </data>
+  <data name="Cards_AclEitherKey" xml:space="preserve">
+    <value>Ключ A или B</value>
+  </data>
+  <data name="Cards_AclNever" xml:space="preserve">
+    <value>запрещено</value>
+  </data>
+  <data name="Cards_CompareFile" xml:space="preserve">
+    <value>Сравнить с файлом</value>
+  </data>
+  <data name="Cards_CompareHint" xml:space="preserve">
+    <value>Сравнение с дампом MIFARE Classic той же ёмкости. Показаны только адреса блоков и счётчики. Непрочитанные байты и неизвестные ключи не подтверждают совпадение. Изменение карты сбрасывает результат.</value>
+  </data>
+  <data name="Cards_CompareSingle" xml:space="preserve">
+    <value>Выберите файл ровно с одной картой.</value>
+  </data>
+  <data name="Cards_CompareType" xml:space="preserve">
+    <value>Оба дампа должны быть MIFARE Classic одинаковой ёмкости.</value>
+  </data>
+  <data name="Cards_CompareSummary" xml:space="preserve">
+    <value>UID / SAK / ATQA / ATS: {0}
+Совпало байт: {1}; различается: {2}; неизвестно: {3}.</value>
+  </data>
+  <data name="Cards_CompareBlock" xml:space="preserve">
+    <value>Блок {0} · сектор {1}</value>
+  </data>
+  <data name="Cards_CompareBytes" xml:space="preserve">
+    <value>Различается байт: {0}; неизвестно: {1}.</value>
+  </data>
+  <data name="Cards_CompareIdentitySame" xml:space="preserve">
+    <value>совпадают</value>
+  </data>
+  <data name="Cards_CompareIdentityDifferent" xml:space="preserve">
+    <value>различаются</value>
+  </data>
 </root>

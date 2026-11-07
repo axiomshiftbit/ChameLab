@@ -55,6 +55,11 @@ Actions artifact archive first.
 2. **Cards → Add card.** First test HF/LF card detection. If nothing is found, move the
    card closer, turn it over and scan again. Read a supported card or import a saved file,
    then save it to the library.
+   In the MIFARE Classic editor, expand “Access rights” to see the selected sector's allowed
+   operations and required A/B key, including 4K block groups. A read sector trailer is required.
+   This analyzes the editor's data; it does not test possession of keys or write to the card.
+   “Compare with file” lists differences from a single Classic dump of the same capacity:
+   block addresses and counts of different/unknown bytes. It compares files, not a physical card.
 3. **Slots.** Load a saved card into a slot and activate it for emulation. Supported LF
    formats allow up to eight cards per slot; the next reader tap advances the list.
 4. **Writer.** Select a library card or import a source file. Place the target blank on

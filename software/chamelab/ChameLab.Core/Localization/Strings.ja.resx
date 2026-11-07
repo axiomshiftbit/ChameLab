@@ -3617,4 +3617,73 @@
   </data>
   <data name="Writer_InspectionCancelled" xml:space="preserve"><value>確認をキャンセルしました。データは書き込まれていません。</value></data>
   <data name="Cards_SearchPlaceholder" xml:space="preserve"><value>カードを検索</value></data>
+  <data name="Cards_AclTitle" xml:space="preserve">
+    <value>MIFARE Classic のアクセス権</value>
+  </data>
+  <data name="Cards_AclHint" xml:space="preserve">
+    <value>エディターの現在のデータに基づく通常の Classic 認証の権限です。対応する鍵が必要です。純正カードのブロック 0 は読み取り専用です。Magic カードのモードでは異なる場合があります。</value>
+  </data>
+  <data name="Cards_AclUnread" xml:space="preserve">
+    <value>このセクターのトレーラーを読み取るとアクセス権を確認できます。</value>
+  </data>
+  <data name="Cards_AclInvalid" xml:space="preserve">
+    <value>アクセスビットが不正なため権限を判定できません。このトレーラーをカードに書き込まないでください。</value>
+  </data>
+  <data name="Cards_AclReadableB" xml:space="preserve">
+    <value>このセクターの鍵 B は読み取り可能なデータであり、認証には使えません。</value>
+  </data>
+  <data name="Cards_AclBlocks" xml:space="preserve">
+    <value>ブロック {0} · C1C2C3={1}</value>
+  </data>
+  <data name="Cards_AclTrailer" xml:space="preserve">
+    <value>トレーラー {0} · C1C2C3={1}</value>
+  </data>
+  <data name="Cards_AclDataRights" xml:space="preserve">
+    <value>読み取り: {0}
+書き込み: {1}
+加算: {2}
+減算 / 転送 / 復元: {3}</value>
+  </data>
+  <data name="Cards_AclTrailerRights" xml:space="preserve">
+    <value>鍵 A の読み取り: 不可
+鍵 A の書き込み: {0}
+アクセスビットの読み取り: {1}
+アクセスビットの書き込み: {2}
+鍵 B の読み取り: {3}
+鍵 B の書き込み: {4}</value>
+  </data>
+  <data name="Cards_AclEitherKey" xml:space="preserve">
+    <value>鍵 A または B</value>
+  </data>
+  <data name="Cards_AclNever" xml:space="preserve">
+    <value>不可</value>
+  </data>
+  <data name="Cards_CompareFile" xml:space="preserve">
+    <value>ファイルと比較</value>
+  </data>
+  <data name="Cards_CompareHint" xml:space="preserve">
+    <value>同じ容量の MIFARE Classic ダンプと比較します。ブロックのアドレスと件数のみ表示します。未読バイトや不明な鍵は一致を確認できません。カードを編集すると結果は消去されます。</value>
+  </data>
+  <data name="Cards_CompareSingle" xml:space="preserve">
+    <value>カードが 1 枚だけ含まれるファイルを選んでください。</value>
+  </data>
+  <data name="Cards_CompareType" xml:space="preserve">
+    <value>両方のダンプは同じ容量の MIFARE Classic である必要があります。</value>
+  </data>
+  <data name="Cards_CompareSummary" xml:space="preserve">
+    <value>UID / SAK / ATQA / ATS: {0}
+一致バイト数: {1}、相違: {2}、不明: {3}。</value>
+  </data>
+  <data name="Cards_CompareBlock" xml:space="preserve">
+    <value>ブロック {0} · セクター {1}</value>
+  </data>
+  <data name="Cards_CompareBytes" xml:space="preserve">
+    <value>相違バイト数: {0}、不明: {1}。</value>
+  </data>
+  <data name="Cards_CompareIdentitySame" xml:space="preserve">
+    <value>一致</value>
+  </data>
+  <data name="Cards_CompareIdentityDifferent" xml:space="preserve">
+    <value>相違</value>
+  </data>
 </root>

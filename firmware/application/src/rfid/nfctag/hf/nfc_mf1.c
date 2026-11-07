@@ -293,7 +293,7 @@ uint8_t GetAccessCondition(uint8_t Block) {
         Block &= 3;
     else {
         Block &= 15;
-        if (Block & 15)
+        if (Block == 15)
             Block = 3;
         else if (Block <= 4)
             Block = 0;
@@ -927,7 +927,9 @@ void nfc_tag_mf1_state_handler(uint8_t *p_data, uint16_t szDataBits) {
                             uint8_t status;
                             CurrentAddress = p_data[1];
                             uint8_t Acc = abDataAccessConditions[ GetAccessCondition(CurrentAddress) ][ KeyInUse ];
-                            if (blockToSector(CurrentAddress) != AuthenticatedSector || isSectorTrailer(CurrentAddress) || (Acc & ACC_BLOCK_DECREMENT) == 0) {
+                            if (blockToSector(CurrentAddress) != AuthenticatedSector || isSectorTrailer(CurrentAddress)
+                                    || (CurrentAddress == 0 && !m_tag_information->config.mode_gen2_magic)
+                                    || (Acc & ACC_BLOCK_DECREMENT) == 0) {
                                 status = NAK_INVALID_OPERATION_TBIV;
                             } else if (m_tag_information->config.mode_block_write == NFC_TAG_MF1_WRITE_DENIED) {
                                 // Do not judge the current writing mode here to control the writing mode

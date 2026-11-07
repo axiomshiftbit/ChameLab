@@ -48,6 +48,10 @@ jobs:
         run: |
           python3 firmware/tests/test_hf_raw.py
           python3 firmware/tests/test_em4x05_password.py
+      - name: Test MIFARE Classic access conditions for every block
+        run: |
+          python3 firmware/tests/test_mifare_access.py
+          python3 firmware/tests/test_mifare_transfer.py
       - name: Test USB and Bluetooth ownership
         run: |
           cc -std=c99 -Wall -Wextra -Werror \

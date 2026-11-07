@@ -3617,4 +3617,73 @@
   </data>
   <data name="Writer_InspectionCancelled" xml:space="preserve"><value>检查已取消，未写入数据。</value></data>
   <data name="Cards_SearchPlaceholder" xml:space="preserve"><value>搜索卡片</value></data>
+  <data name="Cards_AclTitle" xml:space="preserve">
+    <value>MIFARE Classic 访问权限</value>
+  </data>
+  <data name="Cards_AclHint" xml:space="preserve">
+    <value>根据编辑器当前数据解析的普通 Classic 认证权限。需要已知相应密钥。原厂卡的第 0 块为只读；魔术卡模式可能不同。</value>
+  </data>
+  <data name="Cards_AclUnread" xml:space="preserve">
+    <value>请读取此扇区的尾块以确定访问权限。</value>
+  </data>
+  <data name="Cards_AclInvalid" xml:space="preserve">
+    <value>访问位无效，无法确定权限。请勿将此尾块写入卡片。</value>
+  </data>
+  <data name="Cards_AclReadableB" xml:space="preserve">
+    <value>此扇区的密钥 B 是可读数据，不能用于认证。</value>
+  </data>
+  <data name="Cards_AclBlocks" xml:space="preserve">
+    <value>块 {0} · C1C2C3={1}</value>
+  </data>
+  <data name="Cards_AclTrailer" xml:space="preserve">
+    <value>尾块 {0} · C1C2C3={1}</value>
+  </data>
+  <data name="Cards_AclDataRights" xml:space="preserve">
+    <value>读取：{0}
+写入：{1}
+增值：{2}
+减值 / 传输 / 恢复：{3}</value>
+  </data>
+  <data name="Cards_AclTrailerRights" xml:space="preserve">
+    <value>读取密钥 A：禁止
+写入密钥 A：{0}
+读取访问位：{1}
+写入访问位：{2}
+读取密钥 B：{3}
+写入密钥 B：{4}</value>
+  </data>
+  <data name="Cards_AclEitherKey" xml:space="preserve">
+    <value>密钥 A 或 B</value>
+  </data>
+  <data name="Cards_AclNever" xml:space="preserve">
+    <value>禁止</value>
+  </data>
+  <data name="Cards_CompareFile" xml:space="preserve">
+    <value>与文件比较</value>
+  </data>
+  <data name="Cards_CompareHint" xml:space="preserve">
+    <value>比较相同容量的 MIFARE Classic 转储。仅显示块地址和计数。未读取的字节和未知密钥不能确认匹配。编辑卡片会清除比较结果。</value>
+  </data>
+  <data name="Cards_CompareSingle" xml:space="preserve">
+    <value>请选择只包含一张卡的文件。</value>
+  </data>
+  <data name="Cards_CompareType" xml:space="preserve">
+    <value>两个转储必须是容量相同的 MIFARE Classic。</value>
+  </data>
+  <data name="Cards_CompareSummary" xml:space="preserve">
+    <value>UID / SAK / ATQA / ATS：{0}
+相同字节：{1}；不同：{2}；未知：{3}。</value>
+  </data>
+  <data name="Cards_CompareBlock" xml:space="preserve">
+    <value>块 {0} · 扇区 {1}</value>
+  </data>
+  <data name="Cards_CompareBytes" xml:space="preserve">
+    <value>不同字节：{0}；未知：{1}。</value>
+  </data>
+  <data name="Cards_CompareIdentitySame" xml:space="preserve">
+    <value>相同</value>
+  </data>
+  <data name="Cards_CompareIdentityDifferent" xml:space="preserve">
+    <value>不同</value>
+  </data>
 </root>

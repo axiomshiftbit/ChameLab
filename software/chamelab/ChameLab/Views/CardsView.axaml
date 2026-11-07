@@ -178,8 +178,8 @@
                 ToolTip.Tip="{x:Static loc:Strings.Cards_BackToCards}" b:DialogKeys.IsBack="True">
           <PathIcon Data="{StaticResource Icon.back}" />
         </Button>
-        <!-- Short of room, the buttons drop their labels (Add card last); then the title trims. -->
-        <c:TitleRow Grid.Column="1">
+        <!-- Keep the count above the actions when the header is too narrow for two columns. -->
+        <c:FlowGrid x:Name="LibraryHeader" Grid.Column="1" MinItemWidth="160" ColumnSpacing="12" RowSpacing="12">
         <StackPanel Spacing="2">
           <!-- A folder's title, renamed in place (Rename beside Add card). -->
           <!-- Renaming: the title stays, unseen, so the header keeps its size; the field lies over it. -->
@@ -192,8 +192,7 @@
           </Panel>
           <TextBlock Classes="caption" Text="{Binding CountText}" />
         </StackPanel>
-        <!-- The open folder's Rename and Delete; short of room Delete drops its label first, then Rename.
-             New folder only in Cards: folders are one level. -->
+        <!-- Actions wrap with their labels. New folder only in Cards: folders are one level. -->
         <WrapPanel ItemSpacing="8" LineSpacing="8">
           <Button Command="{Binding RenameCurrentFolderCommand}" ToolTip.Tip="{x:Static loc:Strings.Common_RenameFolder}"
                   IsVisible="{Binding IsInFolder}">
@@ -236,7 +235,7 @@
             </StackPanel>
           </Button>
         </WrapPanel>
-        </c:TitleRow>
+        </c:FlowGrid>
       </Grid>
 
       <!-- Under the title everything scrolls together once the window is too short for the list's
@@ -982,6 +981,54 @@
                     <TextBlock Classes="keyb" Text="{x:Static loc:Strings.Cards_KeyB}" />
                     <TextBlock Classes="changed" Text="{x:Static loc:Strings.Common_Modified}" />
                   </WrapPanel>
+                  <Expander x:Name="MifareAccessExpander" HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            IsVisible="{Binding Form?.IsMifareClassic, TargetNullValue=False}">
+                    <Expander.Header>
+                      <TextBlock Text="{x:Static loc:Strings.Cards_AclTitle}" TextWrapping="Wrap" />
+                    </Expander.Header>
+                    <StackPanel Spacing="10">
+                      <TextBlock Text="{Binding Form?.AccessStatus}" TextWrapping="Wrap" Classes="caption"
+                                 Classes.unavailable="{Binding Form?.AccessUnavailable, TargetNullValue=False}">
+                        <TextBlock.Styles>
+                          <Style Selector="TextBlock.unavailable">
+                            <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}" />
+                          </Style>
+                        </TextBlock.Styles>
+                      </TextBlock>
+                      <ItemsControl ItemsSource="{Binding Form?.AccessRows}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:ScanResultRow">
+                            <StackPanel Spacing="4" Margin="0,0,0,10">
+                              <TextBlock Text="{Binding Field}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                              <TextBlock Text="{Binding Value}" TextWrapping="Wrap" />
+                            </StackPanel>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                  </Expander>
+                  <StackPanel Spacing="8" IsVisible="{Binding Form?.IsMifareClassic, TargetNullValue=False}">
+                    <Button Command="{Binding CompareCommand}">
+                      <TextBlock Text="{x:Static loc:Strings.Cards_CompareFile}" TextWrapping="Wrap" />
+                    </Button>
+                    <TextBlock Text="{x:Static loc:Strings.Cards_CompareHint}" TextWrapping="Wrap" Classes="caption" />
+                    <TextBlock Text="{Binding ComparisonSummary}" TextWrapping="Wrap" FontWeight="SemiBold"
+                               IsVisible="{Binding ComparisonSummary, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                    <ScrollViewer MaxHeight="240" HorizontalScrollBarVisibility="Disabled"
+                                  IsVisible="{Binding ComparisonSummary, Converter={x:Static ObjectConverters.IsNotNull}}">
+                      <ItemsControl ItemsSource="{Binding ComparisonRows}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:ScanResultRow">
+                            <StackPanel Spacing="2" Margin="0,0,0,6">
+                              <TextBlock Text="{Binding Field}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                              <TextBlock Text="{Binding Value}" TextWrapping="Wrap" />
+                            </StackPanel>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </ScrollViewer>
+                  </StackPanel>
                   <WrapPanel Classes="hexlegend" IsVisible="{Binding Form?.IsUltralight, TargetNullValue=False}" Margin="0,6,0,0">
                     <TextBlock Classes="manufacturer" Text="{x:Static loc:Strings.Cards_UID}" />
                     <TextBlock Classes="access" Text="{x:Static loc:Strings.Cards_LockBytes}" />

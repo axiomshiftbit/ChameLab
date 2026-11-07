@@ -397,6 +397,57 @@ public sealed class CardEditorViewModel : ViewModelBase, IProtectionSettings
             memory = memory.Slice(MifareClassic.SectorFirstBlock(_selectedSector), MifareClassic.BlocksInSector(_selectedSector));
         }
         this.RaiseAndSetIfChanged(ref _selectedMemory, memory, nameof(SelectedMemory));
+        RefreshAccess();
+    }
+
+    public IReadOnlyList<ScanResultRow> AccessRows { get; private set; } = Array.Empty<ScanResultRow>();
+    public string AccessStatus { get; private set; } = string.Empty;
+    public bool AccessUnavailable { get; private set; }
+
+    private void RefreshAccess()
+    {
+        var rows = new List<ScanResultRow>();
+        AccessStatus = string.Empty;
+        AccessUnavailable = false;
+        if (_tag.IsMifareClassic())
+        {
+            var first = MifareClassic.SectorFirstBlock(_selectedSector);
+            var last = MifareClassic.SectorTrailerBlock(_selectedSector);
+            var trailer = last < _data.Count ? _data[last] : Array.Empty<byte>();
+            var access = trailer.Length == 16 ? MifareAccess.Trailer(trailer) : null;
+            AccessUnavailable = access is null;
+            AccessStatus = trailer.Length != 16 ? Strings.Cards_AclUnread
+                : access is null ? Strings.Cards_AclInvalid : Strings.Cards_AclHint;
+            if (access is not null)
+            {
+                if (access.ReadKeyB != MifareAccessKey.None) AccessStatus += " " + Strings.Cards_AclReadableB;
+                var groupSize = _selectedSector < 32 ? 1 : 5;
+                for (var block = first; block < last; block += groupSize)
+                {
+                    var data = MifareAccess.DataBlock(trailer, block)!;
+                    var range = groupSize == 1 ? block.ToString() : $"{block}–{block + groupSize - 1}";
+                    rows.Add(new(string.Format(Strings.Cards_AclBlocks, range, Bits(data.Condition)),
+                        string.Format(Strings.Cards_AclDataRights, Key(data.Read), Key(data.Write),
+                            Key(data.Increment), Key(data.DecrementTransferRestore))));
+                }
+                rows.Add(new(string.Format(Strings.Cards_AclTrailer, last, Bits(access.Condition)),
+                    string.Format(Strings.Cards_AclTrailerRights, Key(access.WriteKeyA), Key(access.ReadAccess),
+                        Key(access.WriteAccess), Key(access.ReadKeyB), Key(access.WriteKeyB))));
+            }
+        }
+        AccessRows = rows;
+        this.RaisePropertyChanged(nameof(AccessRows));
+        this.RaisePropertyChanged(nameof(AccessStatus));
+        this.RaisePropertyChanged(nameof(AccessUnavailable));
+
+        static string Bits(byte condition) => Convert.ToString(condition, 2).PadLeft(3, '0');
+        static string Key(MifareAccessKey key) => key switch
+        {
+            MifareAccessKey.A => Strings.Common_KeyA,
+            MifareAccessKey.B => Strings.Common_KeyB,
+            MifareAccessKey.AOrB => Strings.Cards_AclEitherKey,
+            _ => Strings.Cards_AclNever,
+        };
     }
 
     /// <summary>Problems in the memory that would break the card (e.g. corrupt access bits).</summary>
@@ -492,6 +543,7 @@ public sealed class CardEditorViewModel : ViewModelBase, IProtectionSettings
 
     private void RefreshMemoryState()
     {
+        RefreshAccess();
         this.RaisePropertyChanged(nameof(HasData));
         this.RaisePropertyChanged(nameof(DataSummary));
         Ndef?.Refresh();

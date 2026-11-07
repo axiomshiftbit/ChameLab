@@ -3620,4 +3620,73 @@
   </data>
   <data name="Writer_InspectionCancelled" xml:space="preserve"><value>Inspection cancelled. No data was written.</value></data>
   <data name="Cards_SearchPlaceholder" xml:space="preserve"><value>Search cards</value></data>
+  <data name="Cards_AclTitle" xml:space="preserve">
+    <value>MIFARE Classic access rights</value>
+  </data>
+  <data name="Cards_AclHint" xml:space="preserve">
+    <value>Rights from the editor's current data, for normal Classic authentication. The required keys must be known. Block 0 of an original card is read-only; magic-card modes may differ.</value>
+  </data>
+  <data name="Cards_AclUnread" xml:space="preserve">
+    <value>Read this sector's trailer to determine its access rights.</value>
+  </data>
+  <data name="Cards_AclInvalid" xml:space="preserve">
+    <value>Invalid access bits: rights cannot be determined. Do not write this trailer to a card.</value>
+  </data>
+  <data name="Cards_AclReadableB" xml:space="preserve">
+    <value>Key B is readable data in this sector and cannot authenticate it.</value>
+  </data>
+  <data name="Cards_AclBlocks" xml:space="preserve">
+    <value>Blocks {0} · C1C2C3={1}</value>
+  </data>
+  <data name="Cards_AclTrailer" xml:space="preserve">
+    <value>Trailer {0} · C1C2C3={1}</value>
+  </data>
+  <data name="Cards_AclDataRights" xml:space="preserve">
+    <value>Read: {0}
+Write: {1}
+Increment: {2}
+Decrement / transfer / restore: {3}</value>
+  </data>
+  <data name="Cards_AclTrailerRights" xml:space="preserve">
+    <value>Read key A: never
+Write key A: {0}
+Read access bits: {1}
+Write access bits: {2}
+Read key B: {3}
+Write key B: {4}</value>
+  </data>
+  <data name="Cards_AclEitherKey" xml:space="preserve">
+    <value>Key A or B</value>
+  </data>
+  <data name="Cards_AclNever" xml:space="preserve">
+    <value>not allowed</value>
+  </data>
+  <data name="Cards_CompareFile" xml:space="preserve">
+    <value>Compare with file</value>
+  </data>
+  <data name="Cards_CompareHint" xml:space="preserve">
+    <value>Compare a MIFARE Classic dump of the same capacity. Only block addresses and counts are shown. Unread bytes and unknown keys cannot confirm a match. Editing the card clears the result.</value>
+  </data>
+  <data name="Cards_CompareSingle" xml:space="preserve">
+    <value>Select a file containing exactly one card.</value>
+  </data>
+  <data name="Cards_CompareType" xml:space="preserve">
+    <value>Both dumps must be MIFARE Classic of the same capacity.</value>
+  </data>
+  <data name="Cards_CompareSummary" xml:space="preserve">
+    <value>UID / SAK / ATQA / ATS: {0}
+Equal bytes: {1}; different: {2}; unknown: {3}.</value>
+  </data>
+  <data name="Cards_CompareBlock" xml:space="preserve">
+    <value>Block {0} · sector {1}</value>
+  </data>
+  <data name="Cards_CompareBytes" xml:space="preserve">
+    <value>Different bytes: {0}; unknown: {1}.</value>
+  </data>
+  <data name="Cards_CompareIdentitySame" xml:space="preserve">
+    <value>match</value>
+  </data>
+  <data name="Cards_CompareIdentityDifferent" xml:space="preserve">
+    <value>differ</value>
+  </data>
 </root>
