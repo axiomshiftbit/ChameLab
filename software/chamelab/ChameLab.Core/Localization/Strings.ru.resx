@@ -3611,4 +3611,5 @@
   <data name="Search_NotFound" xml:space="preserve"><value>В этом словаре или диапазоне совпадений нет.</value></data>
   <data name="Search_BudgetReached" xml:space="preserve"><value>Достигнут лимит попыток за запуск. Продолжите с следующего кандидата.</value></data>
   <data name="Search_Stopped" xml:space="preserve"><value>Поиск остановлен. Прогресс сохранён в текущем сеансе.</value></data>
+  <data name="Device_T55xxVerificationUnsupported" xml:space="preserve"><value>Команда записи IDTECK отправлена, но эта прошивка не поддерживает обратное чтение IDTECK. Запись НЕ подтверждена; проверьте карту внешним считывателем.</value></data>
 </root>

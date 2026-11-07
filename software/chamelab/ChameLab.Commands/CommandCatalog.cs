@@ -21,7 +21,7 @@ public static class CommandCatalog
     {
         using var stream = typeof(CommandCatalog).Assembly.GetManifestResourceStream("ChameLab.Cli." + name)
             ?? throw new InvalidOperationException("Missing command resource: " + name);
-        return JsonSerializer.Deserialize<T>(stream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+        return (T)JsonSerializer.Deserialize(stream, typeof(T), CommandJsonContext.Default)!;
     }
 
     public static IReadOnlyList<CommandSpec> Commands { get; } = Read<CommandSpec[]>("CommandCatalog.json");

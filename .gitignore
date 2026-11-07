@@ -1,6 +1,12 @@
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudio,c++,c,python,visualstudiocode,macos,windows
 # Edit at https://www.toptal.com/developers/gitignore?templates=visualstudio,c++,c,python,visualstudiocode,macos,windows
 
+# Android release signing material belongs only in the owner's secure storage.
+*.keystore
+*.jks
+*.p12
+*.pfx
+
 ### C ###
 # Prerequisites
 *.d

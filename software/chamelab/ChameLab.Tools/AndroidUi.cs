@@ -11,7 +11,8 @@ internal static class AndroidUi
     public static async Task RunAsync(string apk, string output)
     {
         Directory.CreateDirectory(output);
-        await Adb(["install", "-r", apk]);
+        Console.WriteLine("Installing UI test APK...");
+        await Adb(["install", "--no-streaming", "-r", apk], timeoutMinutes: 5);
         var failures = new List<string>();
         (string Name, int Width, int Height, double Scale)[] profiles =
             [("small",320,640,1), ("phone",360,800,1), ("large-text",360,800,1.5), ("landscape",800,360,1), ("tablet",1280,800,1)];
@@ -19,6 +20,7 @@ internal static class AndroidUi
         {
             foreach (var p in profiles)
             {
+                Console.WriteLine($"Starting UI profile: {p.Name}");
                 var folder = Path.Combine(output, p.Name); Directory.CreateDirectory(folder);
                 await Adb(["shell", "am", "force-stop", Package]);
                 await Adb(["shell", "wm", "size", $"{p.Width}x{p.Height}"]);
@@ -27,7 +29,13 @@ internal static class AndroidUi
                 await Adb(["shell", "run-as", Package, "rm", "-rf", "files/ui-results"]);
                 await Adb(["shell", "run-as", Package, "mkdir", "-p", "files/ui-results"]);
                 var request = Encoding.UTF8.GetBytes(new JsonObject { ["FontScale"] = p.Scale }.ToJsonString());
-                await Adb(["shell", $"run-as {Package} sh -c \"cat > files/ui-results/request.json\""], input: request);
+                var requestPath = Path.Combine(folder, "request.json");
+                await File.WriteAllBytesAsync(requestPath, request);
+                // Legacy adbd (API 23) cannot signal stdin EOF independently from closing
+                // the shell connection. A redirected `cat` can wait forever on that device.
+                await Adb(["push", requestPath, "/data/local/tmp/chamelab-ui-request.json"]);
+                await Adb(["shell", "run-as", Package, "cp", "/data/local/tmp/chamelab-ui-request.json", "files/ui-results/request.json"]);
+                await Adb(["shell", "rm", "/data/local/tmp/chamelab-ui-request.json"]);
                 var activities = Encoding.UTF8.GetString(await Adb(["shell", "cmd", "package", "resolve-activity", "--brief", Package], false));
                 var component = activities.Split('\n').Select(s => s.Trim()).LastOrDefault(s => s.Contains('/'));
                 if (component is not null) await Adb(["shell", "am", "start", "-W", "-n", component]);
@@ -63,7 +71,7 @@ internal static class AndroidUi
         }
         if (failures.Count > 0) throw new InvalidOperationException("Failed UI profiles: " + string.Join(", ", failures));
     }
-    private static async Task<byte[]> Adb(string[] args, bool check = true, byte[]? input = null)
+    private static async Task<byte[]> Adb(string[] args, bool check = true, int timeoutMinutes = 2)
     {
         var start = new ProcessStartInfo("adb") { UseShellExecute = false, RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (var arg in args) start.ArgumentList.Add(arg);
@@ -71,11 +79,10 @@ internal static class AndroidUi
         using var bytes = new MemoryStream();
         var stdout = process.StandardOutput.BaseStream.CopyToAsync(bytes);
         var stderr = process.StandardError.ReadToEndAsync();
-        if (input is not null) await process.StandardInput.BaseStream.WriteAsync(input);
         process.StandardInput.Close();
-        using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+        using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(timeoutMinutes));
         try { await process.WaitForExitAsync(timeout.Token); }
-        catch (OperationCanceledException) { process.Kill(true); throw new TimeoutException("adb timed out."); }
+        catch (OperationCanceledException) { process.Kill(true); throw new TimeoutException($"adb {string.Join(' ', args.Take(3))} timed out."); }
         await stdout; var error = await stderr;
         if (check && process.ExitCode != 0) throw new InvalidOperationException("adb failed: " + error);
         return bytes.ToArray();

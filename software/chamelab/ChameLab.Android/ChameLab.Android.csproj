@@ -50,4 +50,8 @@
     <ApplicationId>io.github.axiomshiftbit.chamelab.uitests</ApplicationId>
     <AndroidLinkMode>None</AndroidLinkMode>
   </PropertyGroup>
+  <ItemGroup>
+    <!-- Lua built-ins are discovered by MoonSharp at runtime. -->
+    <TrimmerRootAssembly Include="MoonSharp.Interpreter" />
+  </ItemGroup>
 </Project>

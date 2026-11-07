@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using ChameLab.Protocol;
+using ChameLab.Localization;
 using ChameLab.Transport;
 using Xunit;
 
@@ -13,6 +14,29 @@ namespace ChameLab.Tests;
 public class Em4305WriteTests
 {
     private static readonly byte[] Id = Convert.FromHexString("123456789A");
+
+    [Fact]
+    public async Task IdteckWriteReportsUnsupportedVerificationAfterSending()
+    {
+        var transport = new Em4305Transport(Status.LfTagOk);
+        await using var connection = new ChameleonConnection(transport);
+        await connection.OpenAsync();
+        var error = await Assert.ThrowsAsync<ChameleonException>(() =>
+            new ChameleonClient(connection).WriteLfToT55xxAsync(TagSpecificType.Idteck, new byte[8]));
+        Assert.Equal(Strings.Device_T55xxVerificationUnsupported, error.Message);
+        Assert.Equal(new[] { Command.ChangeDeviceMode, Command.IdteckWriteToT55xx }, transport.Requests.Select(r => r.Command));
+    }
+
+    [Fact]
+    public async Task InvalidOldT55xxKeyDoesNotSendOrChangeMode()
+    {
+        var transport = new Em4305Transport(Status.LfTagOk);
+        await using var connection = new ChameleonConnection(transport);
+        await connection.OpenAsync();
+        await Assert.ThrowsAsync<ArgumentException>(() => new ChameleonClient(connection)
+            .WriteLfToT55xxAsync(TagSpecificType.Em410x, Id, oldKeys: [new byte[3]]));
+        Assert.Empty(transport.Requests);
+    }
 
     [Theory]
     [InlineData(null)]
@@ -72,7 +96,7 @@ public class Em4305WriteTests
             foreach (var request in _parser.Push(data))
             {
                 Requests.Add(request);
-                var status = request.Command == Command.Em410xWriteToEm4x05 ? writeStatus : Status.Success;
+                var status = request.Command is Command.Em410xWriteToEm4x05 or Command.IdteckWriteToT55xx ? writeStatus : Status.Success;
                 _replies.Writer.TryWrite(FrameCodec.Encode(request.Command, [], (ushort)status));
             }
             return Task.CompletedTask;

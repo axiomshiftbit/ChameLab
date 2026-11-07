@@ -130,7 +130,7 @@ public sealed partial class PluginHost
             var atqa = data.AsSpan(offset, 2).ToArray(); offset += 2; var sak = data[offset++];
             var atsLength = data[offset++];
             if (offset + atsLength > data.Length) throw new FormatException("Incomplete ATS.");
-            tags.Add(TagNode(new(uid, atqa, sak, data.AsSpan(offset, atsLength).ToArray()))); offset += atsLength;
+            tags.Add((JsonNode)TagNode(new(uid, atqa, sak, data.AsSpan(offset, atsLength).ToArray()))); offset += atsLength;
         }
         return tags;
     }

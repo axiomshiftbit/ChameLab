@@ -773,10 +773,10 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
         TagSpecificType type, byte[] id, byte[]? newKey = null, IReadOnlyList<byte[]>? oldKeys = null,
         CancellationToken ct = default)
     {
-        await SetDeviceModeAsync(DeviceMode.Reader, ct);
         newKey ??= DefaultT55xxKey;
         oldKeys ??= DefaultT55xxOldKeys;
-        if (newKey.Length != 4) throw new ArgumentException(Strings.Device_T55xxKeyLength);
+        if (newKey.Length != 4 || oldKeys.Any(k => k.Length != 4))
+            throw new ArgumentException(Strings.Device_T55xxKeyLength);
 
         var cmd = type switch
         {
@@ -798,9 +798,12 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
         var buf = new List<byte>(id);
         buf.AddRange(newKey);
         foreach (var k in oldKeys) buf.AddRange(k);
+        await SetDeviceModeAsync(DeviceMode.Reader, ct);
         var f = await conn.SendAsync(cmd, [.. buf], timeoutMs: 5000, ct: ct);
         if (f.Status != Status.LfTagOk)
             throw new ChameleonException(string.Format(Strings.Device_T55xxWriteFailed, f.Status.Describe()), f.Status);
+        if (type == TagSpecificType.Idteck)
+            throw new ChameleonException(Strings.Device_T55xxVerificationUnsupported, f.Status);
 
         // A T55xx tag never ACKs a write, so the firmware reports success blindly: a tag
         // locked with a password we don't have silently rejects every block. Read the ID

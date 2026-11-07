@@ -171,10 +171,10 @@
   <!-- Long explanatory captions ("hint") shrink to one line when the page is short of height,
        e.g. a phone in landscape or with the keyboard up; the tooltip has the whole text. -->
   <ContainerQuery Name="pagearea" Query="max-height:520">
-    <Style Selector="TextBlock.hint">
+    <Style Selector="TextBlock.hint" x:DataType="TextBlock">
       <Setter Property="MaxLines" Value="1" />
       <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-      <Setter Property="ToolTip.Tip" Value="{ReflectionBinding $self.Text}" />
+      <Setter Property="ToolTip.Tip" Value="{CompiledBinding $self.Text}" />
     </Style>
   </ContainerQuery>
 

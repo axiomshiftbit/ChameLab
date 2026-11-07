@@ -28,4 +28,8 @@
   <ItemGroup>
     <ProjectReference Include="..\ChameLab\ChameLab.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- Lua built-ins are discovered by MoonSharp at runtime. -->
+    <TrimmerRootAssembly Include="MoonSharp.Interpreter" />
+  </ItemGroup>
 </Project>

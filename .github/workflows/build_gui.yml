@@ -3,6 +3,11 @@ name: GUI build
 on:
   workflow_call:
     inputs:
+      sign-android:
+        description: Sign Android release APKs (version tags only)
+        required: false
+        type: boolean
+        default: false
       build-ios:
         description: Include iOS builds when validating all supported platforms
         required: false
@@ -11,6 +16,15 @@ on:
       checkout-sha:
         required: false
         type: string
+    secrets:
+      ANDROID_KEYSTORE_BASE64:
+        required: false
+      ANDROID_KEYSTORE_PASSWORD:
+        required: false
+      ANDROID_KEY_ALIAS:
+        required: false
+      ANDROID_KEY_PASSWORD:
+        required: false
     outputs:
       version:
         description: The app version, e.g. 1.0.7, or 1.0.7-dev.N with N commits after the release
@@ -177,39 +191,58 @@ jobs:
           java-version: '17'
       - name: Install the Android workload
         run: dotnet workload install android
-      - name: Prepare the signing key
-        id: signing
+      - name: Prepare the release signing key
+        if: ${{ inputs.sign-android }}
         env:
-          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          # Without the secrets the APK gets the SDK's throwaway debug key: it installs,
-          # but can't be updated in place by an APK signed on another runner.
-          if [[ -n $KEYSTORE ]]; then
-            echo "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/release.keystore"
-            {
-              echo "args=-p:AndroidKeyStore=true -p:AndroidSigningKeyStore=$RUNNER_TEMP/release.keystore -p:AndroidSigningKeyAlias=$KEY_ALIAS -p:AndroidSigningKeyPass=env:KEYSTORE_PASSWORD -p:AndroidSigningStorePass=env:KEYSTORE_PASSWORD"
-            } >> "$GITHUB_OUTPUT"
-          else
-            echo "::warning::ANDROID_KEYSTORE_BASE64 is not set, the APK is signed with a debug key"
-          fi
-      - name: Publish
+          set -euo pipefail
+          umask 077
+          [[ "$GITHUB_REF" == refs/tags/v* ]] || { echo '::error::Release signing requires a version tag'; exit 1; }
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            [[ -n "${!name}" ]] || { echo "::error::Missing release signing secret: $name"; exit 1; }
+          done
+          mkdir -p "$RUNNER_TEMP/chamelab-signing"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/chamelab-signing/release.keystore"
+          chmod 600 "$RUNNER_TEMP/chamelab-signing/release.keystore"
+      - name: Publish development APKs without release credentials
+        if: ${{ !inputs.sign-android }}
+        run: |
+          for rid in android-arm64 android-arm; do
+            dotnet publish software/chamelab/ChameLab.Android/ChameLab.Android.csproj \
+              -c Release -f net10.0-android -r "$rid" \
+              -p:ApplicationId=io.github.axiomshiftbit.chamelab.dev \
+              -p:Version=${{ needs.version.outputs.version }} \
+              -p:ApplicationDisplayVersion=${{ needs.version.outputs.version }} \
+              -p:ApplicationVersion=${{ needs.version.outputs.code }} -o "publish/$rid"
+            cp publish/"$rid"/*-Signed.apk "chamelab-$rid-development.apk"
+          done
+      - name: Publish release APKs
+        if: ${{ inputs.sign-android }}
         env:
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
-          # One APK per ABI, half the size of a universal one: arm64 for most phones,
-          # arm for 32-bit systems (common on Android 8 and older devices)
           for rid in android-arm64 android-arm; do
             dotnet publish software/chamelab/ChameLab.Android/ChameLab.Android.csproj \
               -c Release -f net10.0-android -r "$rid" \
               -p:Version=${{ needs.version.outputs.version }} \
               -p:ApplicationDisplayVersion=${{ needs.version.outputs.version }} \
               -p:ApplicationVersion=${{ needs.version.outputs.code }} \
-              ${{ steps.signing.outputs.args }} \
-              -o "publish/$rid"
+              -p:AndroidKeyStore=true \
+              -p:AndroidSigningKeyStore="$RUNNER_TEMP/chamelab-signing/release.keystore" \
+              -p:AndroidSigningKeyAlias="$KEY_ALIAS" \
+              -p:AndroidSigningKeyPass=env:KEY_PASSWORD \
+              -p:AndroidSigningStorePass=env:KEYSTORE_PASSWORD -o "publish/$rid"
             cp publish/"$rid"/*-Signed.apk "chamelab-$rid.apk"
           done
+      - name: Delete temporary signing material
+        if: ${{ always() && inputs.sign-android }}
+        run: rm -f "$RUNNER_TEMP/chamelab-signing/release.keystore"
       - name: Upload release artifacts
         uses: actions/upload-artifact@v7
         with:

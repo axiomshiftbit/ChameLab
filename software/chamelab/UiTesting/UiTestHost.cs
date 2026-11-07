@@ -8,6 +8,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media.Imaging;
+using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -59,6 +60,8 @@ public sealed class UiTestHost : ContentControl
                 {
                     Application.Current!.RequestedThemeVariant = theme;
                     var scene = LayoutScenarios.Create(page, language);
+                    scene.Background = TopLevel.GetTopLevel(this)?.Background
+                        ?? (theme == ThemeVariant.Light ? Brushes.White : new SolidColorBrush(Color.FromRgb(32, 32, 32)));
                     Content = scene;
                     await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
                     await Task.Delay(40);
