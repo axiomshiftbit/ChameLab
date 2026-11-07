@@ -2,6 +2,15 @@ name: GUI build
 
 on:
   workflow_call:
+    secrets:
+      ANDROID_KEYSTORE_BASE64:
+        required: false
+      ANDROID_KEYSTORE_PASSWORD:
+        required: false
+      ANDROID_KEY_ALIAS:
+        required: false
+      ANDROID_KEY_PASSWORD:
+        required: false
     inputs:
       sign-android:
         description: Sign Android release APKs (version tags only)

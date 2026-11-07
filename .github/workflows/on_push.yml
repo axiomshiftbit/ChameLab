@@ -27,7 +27,12 @@ jobs:
     uses: ./.github/workflows/build_gui.yml
     with:
       sign-android: ${{ startsWith(github.ref, 'refs/tags/v') }}
-    # Signing credentials are scoped to the release environment in the called job.
+    # Pass the names explicitly; values remain scoped to the called release job.
+    secrets:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
   create_dev_release:
     permissions:
       contents: write

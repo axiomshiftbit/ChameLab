@@ -1,0 +1,107 @@
+name: Sign Android from an existing release tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag, for example v1.5.2
+        required: true
+        type: string
+      expected-sha:
+        description: Reviewed full source commit SHA
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sign-android-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  sign:
+    if: github.ref == 'refs/heads/main'
+    environment: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+      EXPECTED_SHA: ${{ inputs.expected-sha }}
+    steps:
+      - name: Validate the requested tag and commit
+        shell: bash
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+      - uses: actions/checkout@v7
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify source and calculate the release version
+        id: version
+        shell: bash
+        run: |
+          [[ $(git rev-parse HEAD) == "$EXPECTED_SHA" ]] || exit 1
+          [[ $(git rev-parse "refs/tags/$RELEASE_TAG^{commit}") == "$EXPECTED_SHA" ]] || exit 1
+          git merge-base --is-ancestor HEAD "$GITHUB_SHA"
+          base=$(tr -d '\r\n' < software/chamelab/VERSION)
+          [[ "$RELEASE_TAG" == "v$base" ]] || exit 1
+          [[ $base =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]] || exit 1
+          major=${BASH_REMATCH[1]} minor=${BASH_REMATCH[2]} patch=${BASH_REMATCH[3]}
+          code=$(( major * 1000000 + minor * 10000 + patch * 100 ))
+          (( major < 2 )) && code=$(( code + 10000000 ))
+          echo "version=$base" >> "$GITHUB_OUTPUT"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "Source: $RELEASE_TAG ($EXPECTED_SHA)" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install the Android workload
+        run: dotnet workload install android
+      - name: Prepare the release signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            [[ -n "${!name}" ]] || { echo "::error::Missing release signing secret: $name"; exit 1; }
+          done
+          mkdir -p "$RUNNER_TEMP/chamelab-signing"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/chamelab-signing/release.p12"
+          chmod 600 "$RUNNER_TEMP/chamelab-signing/release.p12"
+      - name: Publish release APKs
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          for rid in android-arm64 android-arm; do
+            dotnet publish software/chamelab/ChameLab.Android/ChameLab.Android.csproj \
+              -c Release -f net10.0-android -r "$rid" \
+              -p:Version=${{ steps.version.outputs.version }} \
+              -p:ApplicationDisplayVersion=${{ steps.version.outputs.version }} \
+              -p:ApplicationVersion=${{ steps.version.outputs.code }} \
+              -p:AndroidKeyStore=true \
+              -p:AndroidSigningKeyStore="$RUNNER_TEMP/chamelab-signing/release.p12" \
+              -p:AndroidSigningKeyAlias="$KEY_ALIAS" \
+              -p:AndroidSigningKeyPass=env:KEY_PASSWORD \
+              -p:AndroidSigningStorePass=env:KEYSTORE_PASSWORD -o "publish/$rid"
+            cp publish/"$rid"/*-Signed.apk "chamelab-$rid.apk"
+          done
+      - name: Delete temporary signing material
+        if: always()
+        run: rm -f "$RUNNER_TEMP/chamelab-signing/release.p12"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-artifacts-gui-android
+          path: chamelab-android-*.apk
