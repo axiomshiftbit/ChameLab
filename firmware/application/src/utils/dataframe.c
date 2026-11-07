@@ -1,5 +1,6 @@
 #include "dataframe.h"
 #include "netdata.h"
+#include "app_util_platform.h"
 
 #define NRF_LOG_MODULE_NAME data_frame
 #include "nrf_log.h"
@@ -18,6 +19,9 @@ static uint16_t m_data_status;
 static uint16_t m_data_len;
 static uint8_t *m_data_buffer;
 static volatile bool m_data_completed = false;
+static volatile bool m_data_processing = false;
+static volatile uint32_t m_data_session = 0;
+static uint32_t m_processing_session = 0;
 static data_frame_cbk_t m_frame_process_cbk = NULL;
 
 static uint8_t compute_lrc(uint8_t *buf, uint16_t bufsize) {
@@ -84,6 +88,20 @@ data_frame_tx_t *data_frame_make(uint16_t cmd, uint16_t status, uint16_t data_le
  */
 void data_frame_reset(void) {
     m_data_rx_position = 0;
+}
+
+void data_frame_link_reset(void) {
+    CRITICAL_REGION_ENTER();
+    m_data_session++;
+    data_frame_reset();
+    // An executing command still owns its payload. Discard queued commands, but
+    // keep that buffer locked until the current operation finishes.
+    if (!m_data_processing) m_data_completed = false;
+    CRITICAL_REGION_EXIT();
+}
+
+bool data_frame_response_is_current(void) {
+    return m_data_processing && m_processing_session == m_data_session;
 }
 
 /**
@@ -171,15 +189,25 @@ void data_frame_receive(uint8_t *data, uint16_t length) {
  * If the data processing is time -consuming operation, you need to put this function in the main loop to call
  */
 void data_frame_process(void) {
-    // check if data frame
-    if (m_data_completed) {
+    bool ready;
+    CRITICAL_REGION_ENTER();
+    ready = m_data_completed;
+    if (ready) {
+        m_data_processing = true;
+        m_processing_session = m_data_session;
+    }
+    CRITICAL_REGION_EXIT();
+    if (ready) {
         // to process data frame
         if (m_frame_process_cbk != NULL) {
             m_frame_process_cbk(m_data_cmd, m_data_status, m_data_len, m_data_buffer);
         }
         // reset after process data frame.
+        CRITICAL_REGION_ENTER();
         data_frame_reset();
         m_data_completed = false;
+        m_data_processing = false;
+        CRITICAL_REGION_EXIT();
     }
 }
 

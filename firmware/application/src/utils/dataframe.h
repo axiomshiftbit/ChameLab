@@ -15,6 +15,9 @@ typedef struct {
 
 void data_frame_receive(uint8_t *data, uint16_t length);
 void data_frame_process(void);
+// A link change discards queued input and invalidates replies from the old session.
+void data_frame_link_reset(void);
+bool data_frame_response_is_current(void);
 void on_data_frame_complete(data_frame_cbk_t callback);
 
 data_frame_tx_t *data_frame_make(

@@ -132,6 +132,8 @@ public class BleDisconnectTests
         await transport.ConnectAsync();
         var read = transport.ReadAsync(new byte[20]);
         var closing = transport.DisposeAsync().AsTask();
+        // Two seconds is a fallback for missing callbacks, not a mandatory delay.
+        if (!missingCallback) Assert.True(closing.IsCompletedSuccessfully);
         await Assert.ThrowsAsync<InvalidOperationException>(() => read.WaitAsync(TimeSpan.FromSeconds(1)));
         await closing.WaitAsync(TimeSpan.FromSeconds(4));
         Assert.False(stopUpdates);

@@ -69,6 +69,7 @@ jobs:
           python3 firmware/tests/test_flash_layout.py
           python3 firmware/tests/test_fds_completion.py
           python3 firmware/tests/test_ble_reply.py
+          python3 firmware/tests/test_link_sessions.py
       - name: Work out the firmware version
         id: version
         # firmware/VERSION is bumped only when the firmware changes; commits to firmware/ after

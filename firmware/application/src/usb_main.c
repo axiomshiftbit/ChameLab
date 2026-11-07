@@ -11,6 +11,7 @@
 #include "app_usbd_core.h"
 #include "app_usbd_serial_num.h"
 #include "app_usbd_string_desc.h"
+#include "app_util_platform.h"
 
 #define NRF_LOG_MODULE_NAME usb_cdc
 #include "nrf_log.h"
@@ -79,7 +80,10 @@ static void usb_tx_kick(void) {
 }
 
 static void usb_port_set_open(bool open) {
+    CRITICAL_REGION_ENTER();
+    if (g_usb_port_opened != open) data_frame_link_reset();
     g_usb_port_opened = open;
+    CRITICAL_REGION_EXIT();
     ble_usb_cdc_set_open(open);
 }
 
@@ -119,7 +123,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const *p_inst, app_usb
         case APP_USBD_CDC_ACM_USER_EVT_RX_DONE: {
             // Get amount of data transfered to process data
             size_t size = app_usbd_cdc_acm_rx_size(&m_app_cdc_acm);
-            data_frame_receive(cdc_data_buffer, size);
+            if (g_usb_port_opened) data_frame_receive(cdc_data_buffer, size);
 
             // Setup next transfer
             ret_code_t ret = app_usbd_cdc_acm_read_any(&m_app_cdc_acm, cdc_data_buffer, sizeof(cdc_data_buffer));

@@ -18,6 +18,10 @@ typedef int ret_code_t;
 #define NRF_ERROR_RESOURCES 2
 #define NRF_ERROR_INVALID_STATE 3
 #define NRF_ERROR_NOT_FOUND 4
+#define BLE_ERROR_INVALID_CONN_HANDLE 5
+#define BLE_ERROR_GATTS_SYS_ATTR_MISSING 6
+#define CRITICAL_REGION_ENTER() do {} while (0)
+#define CRITICAL_REGION_EXIT() do {} while (0)
 #define NRF_LOG_INFO(...) ((void)0)
 #define NRF_LOG_DEBUG(...) ((void)0)
 #define NRF_LOG_WARNING(...) ((void)0)
@@ -27,18 +31,23 @@ typedef int ret_code_t;
 static int m_nus, m_conn_handle, mode, calls, sent;
 static uint16_t m_ble_nus_max_data_len = 20;
 static bool g_is_ble_connected = true;
+static bool session_current = true;
+static bool data_frame_response_is_current(void) { return session_current; }
 static uint32_t ticks;
 static uint32_t app_timer_cnt_get(void) { return ticks; }
 static uint32_t app_timer_cnt_diff_compute(uint32_t a, uint32_t b) { return a-b; }
-static void sd_app_evt_wait(void) { ticks += 50; }
+static void sd_app_evt_wait(void) { ticks += 50; if (mode == 6) session_current = false; }
 static ret_code_t ble_nus_data_send(int *nus, uint8_t *data, uint16_t *length, int handle) {
     (void)nus; (void)data; (void)handle;
     assert(++calls < 50); // fail an unbounded loop even in the pre-fix implementation
     if (mode == 1) return NRF_ERROR_INVALID_STATE;
     if (mode == 2) return NRF_ERROR_RESOURCES;
     if (mode == 3) { *length = 0; return NRF_SUCCESS; }
+    if (mode == 4) return BLE_ERROR_INVALID_CONN_HANDLE;
+    if (mode == 5) return BLE_ERROR_GATTS_SYS_ATTR_MISSING;
     if (calls == 1) return NRF_ERROR_BUSY;
     sent += *length;
+    if (mode == 7) session_current = false;
     return NRF_SUCCESS;
 }
 '''
@@ -51,6 +60,8 @@ int main(int argc, char **argv) {
     if (mode == 0) assert(sent == 57);
     if (mode == 1 || mode == 3) assert(calls == 1 && sent == 0);
     if (mode == 2) assert(ticks >= 1000 && sent == 0);
+    if (mode >= 4 && mode <= 6) assert(calls == 1 && sent == 0);
+    if (mode == 7) assert(calls == 2 && sent == 20);
     puts("BLE reply termination check passed");
 }
 '''
@@ -59,5 +70,5 @@ with tempfile.TemporaryDirectory(prefix="chamelab-ble-") as directory:
     (path / "test.c").write_text(harness + sender + tests)
     subprocess.run(["cc", "-std=c99", "-O2", "-Wall", "-Wextra", "-Werror", "-Wno-unused-function",
                     "-fsanitize=address,undefined", str(path / "test.c"), "-o", str(path / "test")], check=True)
-    results = [subprocess.run([str(path / "test"), str(mode)], timeout=5).returncode for mode in range(4)]
-    assert results == [0] * 4, results
+    results = [subprocess.run([str(path / "test"), str(mode)], timeout=5).returncode for mode in range(8)]
+    assert results == [0] * 8, results

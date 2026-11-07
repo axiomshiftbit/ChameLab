@@ -20,6 +20,7 @@
 
 #include "syssleep.h"
 #include "ble_main.h"
+#include "usb_main.h"
 #include "dataframe.h"
 #include "hw_connect.h"
 #include "settings.h"
@@ -184,7 +185,7 @@ static void on_bas_evt(ble_bas_t *p_bas, ble_bas_evt_t *p_evt) {
  */
 /**@snippet [Handling the data received over BLE] */
 static void nus_data_handler(ble_nus_evt_t *p_evt) {
-    if (p_evt->type == BLE_NUS_EVT_RX_DATA) {
+    if (p_evt->type == BLE_NUS_EVT_RX_DATA && !is_usb_working()) {
         NRF_LOG_DEBUG("Received data from BLE NUS.");
         NRF_LOG_DEBUG("BLE RX: %u bytes", p_evt->params.rx_data.length);
         data_frame_receive((uint8_t *)(p_evt->params.rx_data.p_data), p_evt->params.rx_data.length);
@@ -200,7 +201,14 @@ void nus_data_response(uint8_t *p_data, uint16_t length) {
     uint32_t started = app_timer_cnt_get();
     while (count < length && g_is_ble_connected) {
         uint16_t remain = MIN(m_ble_nus_max_data_len, length - count);
-        ret_code_t err_code = ble_nus_data_send(&m_nus, p_data + count, &remain, m_conn_handle);
+        ret_code_t err_code = NRF_ERROR_INVALID_STATE;
+        // A reconnect may reuse the same handle. Check the command's session and
+        // enqueue together so an old reply cannot reach a newly connected client.
+        CRITICAL_REGION_ENTER();
+        if (data_frame_response_is_current() && g_is_ble_connected) {
+            err_code = ble_nus_data_send(&m_nus, p_data + count, &remain, m_conn_handle);
+        }
+        CRITICAL_REGION_EXIT();
         if (err_code == NRF_SUCCESS) {
             if (remain == 0) return;
             count += remain;
@@ -213,7 +221,8 @@ void nus_data_response(uint8_t *p_data, uint16_t length) {
                 return;
             }
             sd_app_evt_wait();
-        } else if (err_code == NRF_ERROR_INVALID_STATE || err_code == NRF_ERROR_NOT_FOUND) {
+        } else if (err_code == NRF_ERROR_INVALID_STATE || err_code == NRF_ERROR_NOT_FOUND ||
+                   err_code == BLE_ERROR_INVALID_CONN_HANDLE || err_code == BLE_ERROR_GATTS_SYS_ATTR_MISSING) {
             return; // connected does not imply that NUS notifications are still enabled
         } else {
             APP_ERROR_CHECK(err_code);
@@ -433,6 +442,8 @@ static void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context) {
     switch (p_ble_evt->header.evt_id) {
         case BLE_GAP_EVT_CONNECTED:
             sleep_timer_stop();
+            m_ble_nus_max_data_len = BLE_GATT_ATT_MTU_DEFAULT - 3;
+            if (!is_usb_working()) data_frame_link_reset();
 
             NRF_LOG_INFO("Connected");
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
@@ -447,6 +458,7 @@ static void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context) {
             // LED indication will be changed when advertising starts.
             m_conn_handle = BLE_CONN_HANDLE_INVALID;
             g_is_ble_connected = false;
+            if (!is_usb_working()) data_frame_link_reset();
             // call sleep_timer_start *after* unsetting g_is_ble_connected
             sleep_timer_start(settings_get_sleep_timeout());
             ble_radio_apply(BLE_RADIO_DISCONNECTED);
