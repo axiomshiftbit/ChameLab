@@ -153,7 +153,7 @@
                           VerticalAlignment="Center"
                           IsVisible="{Binding #RecoveryPanel.ToolbarContent, Converter={x:Static ObjectConverters.IsNotNull}}" />
       </DockPanel>
-      <Grid Height="48" RowDefinitions="40,4" RowSpacing="4"
+      <Grid MinHeight="48" RowDefinitions="Auto,4" RowSpacing="4"
             ColumnDefinitions="*,Auto" ColumnSpacing="12" VerticalAlignment="Center"
             IsVisible="{Binding IsDumpRunning}">
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
@@ -169,16 +169,16 @@
           </Button>
         </StackPanel>
         <Grid Grid.Column="0" Classes="progresslines" Classes.mfkey="{Binding IsMfkey32Progress}"
-              Height="36" RowDefinitions="18,18" RowSpacing="0" VerticalAlignment="Top">
+              MinHeight="36" RowDefinitions="Auto,Auto" RowSpacing="0" VerticalAlignment="Top">
           <TextBlock Classes="caption progresshint" Text="{Binding DumpProgressText}"
-                     TextWrapping="NoWrap" MaxLines="1" LineHeight="18" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                     TextWrapping="Wrap" LineHeight="18" VerticalAlignment="Center"
                      ToolTip.Tip="{Binding DumpProgressText}" />
           <TextBlock Grid.Row="1" Classes="progressdetail" Text="{Binding DumpProgressDetail}"
-                     TextWrapping="NoWrap" MaxLines="1" LineHeight="18" TextTrimming="CharacterEllipsis"
+                     TextWrapping="Wrap" LineHeight="18"
                      ToolTip.Tip="{Binding DumpProgressDetail}"
                      IsVisible="{Binding DumpProgressDetail, Converter={x:Static ObjectConverters.IsNotNull}}" VerticalAlignment="Center" />
           <TextBlock Grid.Row="1" Classes="progressdetail" Text="{Binding Mfkey32CaptureText}"
-                     TextWrapping="NoWrap" MaxLines="1" LineHeight="18" TextTrimming="CharacterEllipsis"
+                     TextWrapping="Wrap" LineHeight="18"
                      ToolTip.Tip="{Binding Mfkey32CaptureText}"
                      IsVisible="{Binding ShowMfkey32CaptureCount}" VerticalAlignment="Center" />
           <TextBlock Grid.Row="1" Classes="progressdetail success" Text="{Binding Mfkey32FoundKey}"
@@ -195,7 +195,7 @@
       </Grid>
     </Grid>
     <TextBlock Classes="caption" Text="{Binding DumpNotice}" VerticalAlignment="Center"
-                 TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                 TextWrapping="Wrap"
                  IsVisible="{Binding ShowDumpNotice}" />
 
     <!-- MIFARE Classic: a key grid, one cell per sector (16 per row), each cell two
@@ -222,7 +222,7 @@
           <Border Classes="blockcell blocklegend" Margin="0" />
           <TextBlock Text="{x:Static loc:Strings.Common_NotTried}" Classes="caption" />
         </StackPanel>
-        <TextBlock Text="{Binding RecoverySectorHint}" Classes="caption" />
+        <TextBlock Text="{Binding RecoverySectorHint}" Classes="caption" TextWrapping="Wrap" />
       </WrapPanel>
       <WrapPanel ItemSpacing="14" LineSpacing="4" Margin="16,0,0,0" IsVisible="{Binding ShowWriteProgress}">
         <StackPanel Orientation="Horizontal" Spacing="5">
@@ -241,7 +241,7 @@
           <Border Classes="blockcell blocklegend" Margin="0" />
           <TextBlock Text="{x:Static loc:Strings.Common_Pending}" Classes="caption" />
         </StackPanel>
-        <TextBlock Text="{Binding RecoverySectorHint}" Classes="caption" />
+        <TextBlock Text="{Binding RecoverySectorHint}" Classes="caption" TextWrapping="Wrap" />
       </WrapPanel>
     </StackPanel>
 

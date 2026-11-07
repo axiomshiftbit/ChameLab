@@ -186,7 +186,7 @@
           <NumericUpDown Value="{Binding AuthBlock}" Minimum="0" Maximum="255" />
           <ComboBox ItemsSource="{Binding AuthKeyTypes}" SelectedItem="{Binding AuthKeyType}" />
           <TextBox Text="{Binding AuthKey}" Classes="mono" />
-          <TextBlock Text="{Binding AuthStatus}" Classes="caption" />
+          <TextBlock Text="{Binding AuthStatus}" Classes="caption" TextWrapping="Wrap" />
         </StackPanel>
 
         <TextBlock Classes="caption hint" TextWrapping="Wrap"

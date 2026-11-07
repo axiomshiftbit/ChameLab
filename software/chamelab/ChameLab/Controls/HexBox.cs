@@ -11,6 +11,7 @@ using Avalonia.Input.TextInput;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using ChameLab.Localization;
 
 namespace ChameLab.Controls;
@@ -43,6 +44,16 @@ public class HexBox : TextBox
         Classes.Add("hex");
         Classes.Add("mono");
         _counter.Classes.Add("hexcount");
+        _counter.PropertyChanged += (_, e) =>
+        {
+            // The inner-content presenter can retain its old width after text scaling.
+            if (e.Property == FontSizeProperty || e.Property == FontFamilyProperty)
+                foreach (var visual in _counter.GetVisualAncestors().OfType<Control>())
+                {
+                    visual.InvalidateMeasure();
+                    if (ReferenceEquals(visual, this)) break;
+                }
+        };
         InnerRightContent = _counter;
         TextInputOptions.SetShowSuggestions(this, false);
         TextInputOptions.SetAutoCapitalization(this, false);

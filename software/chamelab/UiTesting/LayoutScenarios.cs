@@ -6,7 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Data;
+using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using ChameLab.Services;
@@ -14,13 +16,14 @@ using ChameLab.Models;
 using ChameLab.ViewModels;
 using ChameLab.Views;
 using ChameLab.Transport;
+using ChameLab.Localization;
 
 namespace ChameLab.UiTesting;
 
 // Compiled only into UI test projects/builds. All libraries are synthetic and in memory.
 public static class LayoutScenarios
 {
-    public static readonly string[] Pages = ["connect", "connect-found", "settings", "device", "slots", "cards", "cards-library", "card-classic", "card-ultralight", "card-lf", "dictionaries", "dictionary-download", "dictionary-editor", "tools", "hf", "lf", "auth", "ValueBlocks", "T55Password", "T55Block", "Gen4", "RawHf", "RawDevice", "console", "plugins", "key-search", "writer", "writer-classic", "writer-ultralight", "writer-lf", "cards-add", "journal"];
+    public static readonly string[] Pages = ["connect", "connect-found", "notice", "error", "settings", "device", "slots", "cards", "cards-library", "card-classic", "card-ultralight", "card-lf", "dictionaries", "dictionary-download", "dictionary-editor", "tools", "hf", "lf", "auth", "ValueBlocks", "T55Password", "T55Block", "Gen4", "RawHf", "RawDevice", "console", "plugins", "key-search", "writer", "writer-classic", "writer-ultralight", "writer-lf", "cards-add", "journal"];
 
     public static Border Create(string page, string language)
     {
@@ -37,6 +40,7 @@ public static class LayoutScenarios
         {
             "connect" => new ConnectView { DataContext = new ConnectViewModel(device) },
             "connect-found" => ConnectScenario(),
+            "notice" or "error" => MessageScenario(page),
             "settings" => new SettingsView { DataContext = new SettingsViewModel(cards, dictionaries, new AppUpdateViewModel()) },
             "device" => new ChameleonView { DataContext = new ChameleonViewModel(device, cards, firmware) },
             "slots" => new SlotsView { DataContext = new SlotsViewModel(device, cards) },
@@ -60,6 +64,38 @@ public static class LayoutScenarios
         var vm = new ConnectViewModel(new DeviceService([new FixtureScanner()]));
         vm.ScanCommand.Execute(null);
         return new ConnectView { DataContext = vm };
+    }
+
+    private static MainViewModel? _messageShell;
+    private static readonly MessageFixture MessagePage = new();
+    private static Control MessageScenario(string page)
+    {
+        if (_messageShell is null)
+        {
+            var device = new DeviceService([]);
+            var store = new MemoryKeyValueStore();
+            _messageShell = new MainViewModel(device, new CardLibrary(store), new DictionaryLibrary(store), new FirmwareUpdateService(device, []));
+            _messageShell.Connect.StopWatching();
+            _messageShell.NavigateCommand.Execute(MessagePage);
+        }
+        var view = new MainView();
+        view.DataTemplates.Add(new FuncDataTemplate<MessageFixture>((_, _) => new Border()));
+        view.DataContext = _messageShell;
+        // These cases measure shell messages; page preloading has its own lifecycle tests.
+        if (view.GetLogicalDescendants().OfType<ChameLab.Controls.PageHost>().FirstOrDefault() is { } host)
+            host.Preload = null;
+        MessagePage.Show(page == "error");
+        return view;
+    }
+
+    private sealed class MessageFixture() : PageViewModelBase(() => Strings.Connect_Connect, "info")
+    {
+        public void Show(bool error)
+        {
+            ClearMessages();
+            var message = Strings.Connect_NoneFound + " " + Strings.Writer_NotFound;
+            if (error) ReportError(message); else Notify(message);
+        }
     }
 
     private sealed class FixtureScanner : ITransportScanner
@@ -157,7 +193,8 @@ public static class LayoutScenarios
             if (text.Text.StartsWith("Not Found:", StringComparison.Ordinal)) errors.Add(text.Text);
             var layout = text.TextLayout;
             if (layout.Width > text.Bounds.Width + 2 || layout.Height > text.Bounds.Height + 2)
-                errors.Add($"{text.Text}: text {layout.Width:F1}x{layout.Height:F1}, bounds {text.Bounds.Width:F1}x{text.Bounds.Height:F1}");
+                errors.Add($"{text.Text}: text {layout.Width:F1}x{layout.Height:F1}, bounds {text.Bounds.Width:F1}x{text.Bounds.Height:F1}; " +
+                    string.Join(" / ", text.GetSelfAndVisualAncestors().OfType<Control>().Take(5).Select(c => $"{c.GetType().Name}#{c.Name} {c.Bounds.Width:F0} (width={c.Width},max={c.MaxWidth})")));
             var point = text.TranslatePoint(default, root);
             if (point is { } p && (p.X < -2 || p.X + text.Bounds.Width > root.Bounds.Width + 2))
                 errors.Add($"{text.Text}: outside viewport at {p.X:F1}, width {text.Bounds.Width:F1} / {root.Bounds.Width:F1}");
@@ -179,9 +216,11 @@ public static class LayoutScenarios
             ? scene.GetVisualDescendants().OfType<ScrollViewer>().First() : null;
         if (pageScroll is not null) pageScroll.Offset = default;
         for (var i = 0; i < 50; i++) ((DeviceJournal)scene.Tag!).Add("INFO", $"{message} {i}");
-        await Task.Delay(350);
-        scene.UpdateLayout();
         var text = view.GetVisualDescendants().OfType<TextBox>().Single();
+        // Wait for the queued UI refresh, allowing scheduling delays on busy CI hosts.
+        for (var i = 0; i < 40 && text.Text?.Contains(message) != true; i++)
+            await Task.Delay(50);
+        scene.UpdateLayout();
         var errors = new List<string>();
         if (text.Bounds.Height < 160) errors.Add($"Journal viewport is too small: {text.Bounds.Height:F0}.");
         if (text.Text?.Contains(message) != true) errors.Add("New journal entry is not visible in the text control.");

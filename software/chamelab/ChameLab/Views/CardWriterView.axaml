@@ -132,7 +132,7 @@
                 </Border>
                 <TextBlock Classes="caption" IsVisible="{Binding !IsConnected}"
                            Text="{x:Static loc:Strings.Cards_ConnectAChameleonToWriteCards}" />
-                <TextBlock Classes="caption" Text="{Binding ProgressText}"
+                <TextBlock Classes="caption" Text="{Binding ProgressText}" TextWrapping="Wrap"
                            b:BringIntoViewOnShow.IsEnabled="True" IsVisible="{Binding ProgressText, Converter={x:Static ObjectConverters.IsNotNull}}" />
 
                 <StackPanel IsVisible="{Binding ShowWriteSectors}">

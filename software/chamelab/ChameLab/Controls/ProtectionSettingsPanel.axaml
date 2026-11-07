@@ -8,11 +8,15 @@
   <!-- Password settings of an Ultralight EV1 / NTAG21x card: the card's own, or what the writer puts on a target. -->
   <StackPanel Spacing="10">
     <WrapPanel ItemSpacing="24" LineSpacing="6">
-      <CheckBox Content="{x:Static loc:Strings.Protection_ProtectWithAPassword}" IsChecked="{Binding IsProtected}"
-                ToolTip.Tip="{x:Static loc:Strings.Protection_PagesFromTheChosenOneOn}" />
-      <CheckBox Classes="danger" Content="{x:Static loc:Strings.Protection_ProtectReading}" IsChecked="{Binding ReadProtected}"
+      <CheckBox IsChecked="{Binding IsProtected}"
+                ToolTip.Tip="{x:Static loc:Strings.Protection_PagesFromTheChosenOneOn}">
+        <TextBlock Text="{x:Static loc:Strings.Protection_ProtectWithAPassword}" TextWrapping="Wrap" />
+      </CheckBox>
+      <CheckBox Classes="danger" IsChecked="{Binding ReadProtected}"
                 IsEnabled="{Binding IsProtected}"
-                ToolTip.Tip="{x:Static loc:Strings.Protection_PROTWithoutThePasswordTheProtected}" />
+                ToolTip.Tip="{x:Static loc:Strings.Protection_PROTWithoutThePasswordTheProtected}">
+        <TextBlock Text="{x:Static loc:Strings.Protection_ProtectReading}" TextWrapping="Wrap" />
+      </CheckBox>
     </WrapPanel>
     <!-- The settings below only take effect with protection on. -->
     <StackPanel Spacing="10" IsEnabled="{Binding IsProtected}">

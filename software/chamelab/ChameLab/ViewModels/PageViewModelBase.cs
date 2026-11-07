@@ -20,6 +20,7 @@ public abstract class PageViewModelBase : ViewModelBase
 {
     private readonly Func<string> _title;
     private int _running;
+    private long _noticeVersion;
 
     /// <param name="title">Reads the title, so it follows a change of UI language.</param>
     protected PageViewModelBase(Func<string> title, string icon)
@@ -84,10 +85,11 @@ public abstract class PageViewModelBase : ViewModelBase
     /// </summary>
     protected void Notify(string message) => Avalonia.Threading.Dispatcher.UIThread.Post(() =>
     {
+        var version = ++_noticeVersion;
         Notice = message;
         Avalonia.Threading.DispatcherTimer.RunOnce(() =>
         {
-            if (ReferenceEquals(Notice, message)) Notice = null;
+            if (version == _noticeVersion) Notice = null;
         }, NoticeLifetime);
     });
 

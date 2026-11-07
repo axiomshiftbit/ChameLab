@@ -23,6 +23,23 @@ namespace ChameLab.UiTests;
 public class FeedbackTests
 {
     [AvaloniaFact]
+    public async Task RepeatedNoticeKeepsItsOwnFullLifetime()
+    {
+        var model = new NoticeFixture();
+        const string message = "Repeated notification";
+        model.Show(message); Dispatcher.UIThread.RunJobs();
+        await Task.Delay(2100);
+        model.Show(message); Dispatcher.UIThread.RunJobs();
+        await Task.Delay(1300);
+        Assert.Equal(message, model.Notice);
+        await Task.Delay(2000);
+        Assert.Null(model.Notice);
+    }
+
+    private sealed class NoticeFixture() : PageViewModelBase(() => "Test", "info")
+    { public void Show(string message) => Notify(message); }
+
+    [AvaloniaFact]
     public async Task HiddenJournalDoesNotReformatTrafficAndCatchesUpWhenShown()
     {
         var log = new DeviceJournal();

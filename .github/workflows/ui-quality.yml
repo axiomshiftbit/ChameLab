@@ -130,6 +130,9 @@ jobs:
           api-level: ${{ matrix.api }}
           target: google_apis
           arch: x86_64
+          # The generic API 29 AVD otherwise gives system_server a 16 MB heap;
+          # its background configuration update can kill the whole emulator.
+          heap-size: 256M
           disable-animations: true
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect
           script: dotnet run --project software/chamelab/ChameLab.Tools -c Release -- android-ui ui-apk/ChameLab-ui-tests.apk "${{ runner.temp }}/android-ui" "${{ matrix.profile }}"

@@ -4,10 +4,14 @@
 
 [Русский](README.md) · **English**
 
-An application for ChameleonUltra and ChameleonLite on Android, Windows, Linux,
-macOS and the web. This repository also includes ChameLab firmware and a command-line
-client. It is a fork of [m0n5ter/ChameLab](https://github.com/m0n5ter/ChameLab), based on
-[ChameleonUltra](https://github.com/RfidResearchGroup/ChameleonUltra).
+**This is a fork of the [original m0n5ter/ChameLab project](https://github.com/m0n5ter/ChameLab),
+based on [ChameleonUltra](https://github.com/RfidResearchGroup/ChameleonUltra).**
+This fork is developed through **vibe coding** with AI assistants, change review and
+automated tests.
+
+ChameLab is an application for ChameleonUltra and ChameleonLite on Android, Windows,
+Linux, macOS and the web. This repository also includes ChameLab firmware and a
+command-line client.
 
 [Releases](https://github.com/axiomshiftbit/ChameLab/releases) ·
 [Development builds](https://github.com/axiomshiftbit/ChameLab/actions/workflows/ui-quality.yml) ·

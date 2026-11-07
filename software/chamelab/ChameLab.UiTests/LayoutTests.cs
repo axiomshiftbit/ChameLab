@@ -14,6 +14,8 @@ using ChameLab.UiTesting;
 using Xunit;
 
 [assembly: AvaloniaTestApplication(typeof(ChameLab.UiTests.TestAppBuilder))]
+// Async UI cases share application resources, culture and the dispatcher.
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
 
 namespace ChameLab.UiTests;
 

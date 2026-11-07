@@ -41,7 +41,7 @@
           <c:SettingRow Grid.Row="0">
             <Panel IsVisible="False" />
             <TextBlock Text="{x:Static loc:Strings.Connect_DetectedDevices}" Classes="h2" />
-            <TextBlock Classes="caption" Text="{Binding ScanHint}" />
+            <TextBlock Classes="caption" Text="{Binding ScanHint}" TextWrapping="Wrap" />
             <Button Command="{Binding ScanCommand}" ToolTip.Tip="{x:Static loc:Strings.Connect_ScanAgain}">
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <PathIcon Data="{StaticResource Icon.refresh}" />
