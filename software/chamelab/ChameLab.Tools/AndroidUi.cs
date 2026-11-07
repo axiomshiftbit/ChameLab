@@ -44,17 +44,39 @@ internal static class AndroidUi
                 if (component is not null) await Adb(["shell", "am", "start", "-W", "-n", component]);
                 else await Adb(["shell", "monkey", "-p", Package, "-c", "android.intent.category.LAUNCHER", "1"]);
                 JsonNode? report = null;
-                for (var i = 0; i < 180; i++)
+                var elapsed = Stopwatch.StartNew();
+                var lastProgress = TimeSpan.Zero;
+                var completed = -1;
+                // Software rendering on CI can need over six minutes for 540
+                // scenarios. Allow steady progress, but fail stalled runners early.
+                for (var i = 0; elapsed.Elapsed < TimeSpan.FromMinutes(12); i++)
                 {
                     var raw = await Adb(["exec-out", "run-as", Package, "cat", "files/ui-results/result.json"], false);
                     try { if (raw.Length > 0) report = JsonNode.Parse(raw); } catch (System.Text.Json.JsonException) { }
                     if (report is not null) break;
                     if (i > 5 && i % 10 == 0)
                     {
+                        var progressRaw = await Adb(["exec-out", "run-as", Package, "cat", "files/ui-results/progress.json"], false);
+                        try
+                        {
+                            var progress = JsonNode.Parse(progressRaw);
+                            if ((int?)progress?["Completed"] is int count && count > completed)
+                            {
+                                completed = count;
+                                lastProgress = elapsed.Elapsed;
+                                Console.WriteLine($"{p.Name}: completed {count} UI scenarios");
+                            }
+                        }
+                        catch (System.Text.Json.JsonException) { } // A progress file may be mid-write.
                         var processes = Encoding.UTF8.GetString(await Adb(["shell", "ps -A 2>/dev/null || ps"], false));
                         if (!processes.Contains(Package, StringComparison.Ordinal))
                         {
                             Console.WriteLine($"{p.Name}: UI process exited before producing its report.");
+                            break;
+                        }
+                        if (elapsed.Elapsed - lastProgress > TimeSpan.FromMinutes(2))
+                        {
+                            Console.WriteLine($"{p.Name}: no UI progress for two minutes.");
                             break;
                         }
                     }

@@ -82,7 +82,7 @@ jobs:
   android-ui:
     needs: android-build
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 75
     strategy:
       fail-fast: false
       matrix:
