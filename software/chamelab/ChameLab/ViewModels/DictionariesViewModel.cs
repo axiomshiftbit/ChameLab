@@ -23,13 +23,13 @@ public sealed class DictionaryItemViewModel(KeyDictionary dict) : ViewModelBase
 {
     public KeyDictionary Dictionary { get; } = dict;
     public string Name => string.IsNullOrWhiteSpace(Dictionary.Name) ? Strings.Common_NoName : Dictionary.Name;
-    public string CountLabel => Loc.Plural(Strings.Plural_Keys, Dictionary.Count);
+    public string CountLabel => Loc.Plural(Strings.Plural_Keys, Dictionary.Count) + $" · {Dictionary.KeySize * 8}-bit";
     public IBrush ColorBrush => HexBrushConverter.Brush(Dictionary.Color) ?? Brushes.OrangeRed;
 
     /// <summary>The name contains the search, or (two hex digits or more) one of the keys does.</summary>
     public bool Matches(string? f)
     {
-        if (string.IsNullOrWhiteSpace(f) || Name.Contains(f, StringComparison.OrdinalIgnoreCase)) return true;
+        if (string.IsNullOrWhiteSpace(f) || Name.Contains(f, StringComparison.OrdinalIgnoreCase) || Dictionary.Folder.Contains(f, StringComparison.OrdinalIgnoreCase)) return true;
         var hex = f.Replace(" ", string.Empty);
         return hex.Length >= 2 && hex.All(Uri.IsHexDigit)
             && Dictionary.Keys.Any(k => Convert.ToHexString(k).Contains(hex, StringComparison.OrdinalIgnoreCase));
@@ -38,14 +38,16 @@ public sealed class DictionaryItemViewModel(KeyDictionary dict) : ViewModelBase
 
 /// <summary>
 /// Editable working copy of a dictionary: name, color and keys, edited in a hex editor with one
-/// key (6 bytes) per row. <see cref="IsDirty"/> tells whether anything differs from what the
+/// key per row. <see cref="IsDirty"/> tells whether anything differs from what the
 /// editor was opened with.
 /// </summary>
 public sealed class DictionaryEditorViewModel : ViewModelBase
 {
-    private const int KeyLength = 6;
+    public int KeyLength { get; }
 
     private readonly string _id;
+    private readonly string? _folderId;
+    private readonly string _folder;
     private readonly string _baseline;
     private readonly List<byte[]> _rows;
     // Rows whose key already appears higher up, with the row it repeats.
@@ -57,8 +59,11 @@ public sealed class DictionaryEditorViewModel : ViewModelBase
     public DictionaryEditorViewModel(KeyDictionary source)
     {
         _id = source.Id;
+        _folderId = source.FolderId;
+        _folder = source.Folder;
         _name = source.Name;
         _color = source.Color;
+        KeyLength = source.KeySize;
         _rows = source.Keys.Select(k => (byte[])k.Clone()).ToList();
         Keys = new HexBuffer(_rows, KeyLength)
         {
@@ -157,8 +162,11 @@ public sealed class DictionaryEditorViewModel : ViewModelBase
         return new KeyDictionary
         {
             Id = _id,
+            FolderId = _folderId,
+            Folder = _folder,
             Name = _name.Trim(),
             Color = CardSave.NormalizeColor(_color),
+            KeySize = KeyLength,
             Keys = _rows.Where((r, i) => r.Length > 0 && !_repeats.ContainsKey(i)).Select(r => (byte[])r.Clone()).ToList(),
         };
     }
@@ -224,6 +232,7 @@ public sealed class DictionariesViewModel : PageViewModelBase, IReorderableList
             Pane = DictionariesPane.KnownKeys;
         }));
         ImportCommand = ReactiveCommand.Create(() => LeaveThen(() => _ = ImportAsync()));
+        DownloadCommand = ReactiveCommand.Create<DictionarySource>(source => LeaveThen(() => _ = DownloadAsync(source)));
         CloseCommand = ReactiveCommand.Create(() => LeaveThen(ClosePane));
         SaveAndLeaveCommand = ReactiveCommand.Create(() => ResolveLeave(run: Save()));
         DiscardAndLeaveCommand = ReactiveCommand.Create(() => ResolveLeave(run: true));
@@ -482,6 +491,8 @@ public sealed class DictionariesViewModel : PageViewModelBase, IReorderableList
 
     public ICommand NewCommand { get; }
     public ICommand ImportCommand { get; }
+    public ICommand DownloadCommand { get; }
+    public IReadOnlyList<DictionarySource> DownloadSources => DictionaryDownload.Sources;
     public ICommand CloseCommand { get; }
     public ICommand SaveCommand { get; }
     public ICommand DiscardCommand { get; }
@@ -628,7 +639,7 @@ public sealed class DictionariesViewModel : PageViewModelBase, IReorderableList
 
     private Task ImportAsync() => RunAsync(async () =>
     {
-        var picked = await StorageService.OpenAsync(Strings.Dictionaries_ImportTitle, "json", "dic", "keys", "txt");
+        var picked = await StorageService.OpenAsync(Strings.Dictionaries_ImportTitle, "json", "dic", "keys", "txt", "nfc");
         if (picked is not { } file) return;
 
         KeyDictionary dict;
@@ -649,6 +660,12 @@ public sealed class DictionariesViewModel : PageViewModelBase, IReorderableList
 
         // Reviewed (name, color, keys) before it is saved, like a new one.
         Avalonia.Threading.Dispatcher.UIThread.Post(() => OpenNew(dict, string.Format(Strings.Common_ImportedFrom, file.Name)));
+    });
+
+    private Task DownloadAsync(DictionarySource source) => RunAsync(async () =>
+    {
+        var dictionary = await DictionaryDownload.FetchAsync(source);
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => OpenNew(dictionary, source.Name));
     });
 
     private Task ExportAsync() => RunAsync(async () =>

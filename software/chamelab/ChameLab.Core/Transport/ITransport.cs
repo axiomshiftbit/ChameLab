@@ -111,3 +111,9 @@ public interface ITransportWatcher
 
     void StopWatching();
 }
+
+/// <summary>Native serial scanners can also open an explicitly chosen port.</summary>
+public interface IManualSerialScanner
+{
+    TransportCandidate ManualCandidate(string port);
+}

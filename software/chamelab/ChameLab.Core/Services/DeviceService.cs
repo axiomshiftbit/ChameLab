@@ -19,6 +19,7 @@ public enum ConnectionState { Disconnected, Connecting, Connected }
 public sealed class DeviceService(IEnumerable<ITransportScanner> scanners)
 {
     private readonly IReadOnlyList<ITransportScanner> _scanners = scanners.ToList();
+    public DeviceJournal Journal { get; } = new();
     private ChameleonConnection? _conn;
 
     public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
@@ -33,6 +34,7 @@ public sealed class DeviceService(IEnumerable<ITransportScanner> scanners)
 
     private void SetState(ConnectionState s)
     {
+        Journal.Add("INFO", $"{nameof(ConnectionState)}: {s}");
         State = s;
         StateChanged?.Invoke(s);
     }
@@ -50,7 +52,7 @@ public sealed class DeviceService(IEnumerable<ITransportScanner> scanners)
         {
             if (!RunsOn(scanner, trigger)) continue;
             try { all.AddRange(await scanner.ScanAsync(trigger, ct)); }
-            catch (Exception ex) { Console.WriteLine($"[Scan] {scanner.DisplayName} failed: {ex}"); }
+            catch (Exception ex) { Console.WriteLine($"[Scan] {scanner.DisplayName} failed: {ex.GetType().Name}"); }
         }
         return all;
     }
@@ -75,10 +77,10 @@ public sealed class DeviceService(IEnumerable<ITransportScanner> scanners)
         SetState(ConnectionState.Connecting);
         try
         {
-            var conn = new ChameleonConnection(transport);
+            var conn = new ChameleonConnection(transport) { Journal = Journal };
             conn.Disconnected += ex =>
             {
-                Console.WriteLine($"[Device] {candidate.Id} link dropped: {ex}");
+                Console.WriteLine($"[Device] {candidate.Id} link dropped: {ex?.GetType().Name}");
                 _ = HandleDropAsync(conn);
             };
             await conn.OpenAsync(ct);
@@ -94,7 +96,7 @@ public sealed class DeviceService(IEnumerable<ITransportScanner> scanners)
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Device] Connecting to {candidate.Id} failed: {ex}");
+            Console.WriteLine($"[Device] Connecting to {candidate.Id} failed: {ex.GetType().Name}");
             await transport.DisposeAsync();
             SetState(ConnectionState.Disconnected);
             throw;

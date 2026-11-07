@@ -1,7 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
              xmlns:loc="using:ChameLab.Localization"
-        xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
              xmlns:vm="using:ChameLab.ViewModels"
              xmlns:conv="using:ChameLab.Converters"
              xmlns:b="using:ChameLab.Behaviors"
@@ -16,7 +16,7 @@
       <Setter Property="Stroke" Value="Transparent" />
     </Style>
     <Style Selector="Ellipse.ledring.active">
-      <Setter Property="Stroke" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
+      <Setter Property="Stroke" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
     </Style>
     <Style Selector="Border.led">
       <Setter Property="Opacity" Value="0.55" />
@@ -148,7 +148,7 @@
                              Text="{Binding Battery?.ConditionText}"
                              Foreground="{Binding Battery?.Condition, Converter={x:Static conv:BatteryBrushConverter.Instance}}"
                              IsVisible="{Binding Battery?.ConditionText, Converter={x:Static ObjectConverters.IsNotNull}}" />
-                  <TextBlock Text="{x:Static loc:Strings.Chameleon_NotAvailable}" FontSize="18" FontWeight="SemiBold" Margin="0,4,0,0"
+                  <TextBlock Text="{x:Static loc:Strings.Chameleon_NotAvailable}" TextWrapping="Wrap" FontSize="18" FontWeight="SemiBold" Margin="0,4,0,0"
                              IsVisible="{Binding Battery, Converter={x:Static ObjectConverters.IsNull}}" />
                   <TextBlock Text="{x:Static loc:Strings.Chameleon_ThisModelHasNoBatteryGauge}" Classes="caption"
                              IsVisible="{Binding Battery, Converter={x:Static ObjectConverters.IsNull}}" />
@@ -160,7 +160,7 @@
               <StackPanel Spacing="12">
                 <TextBlock Text="{x:Static loc:Strings.Chameleon_OperatingModeHeader}" Classes="overline" />
                 <Border Classes="segmented compact" HorizontalAlignment="Left">
-                  <UniformGrid Rows="1">
+                  <WrapPanel Orientation="Horizontal">
                     <RadioButton Classes="segment" GroupName="DeviceMode"
                                  IsChecked="{Binding ReaderMode, Converter={x:Static conv:InverseBoolConverter.Instance}}">
                       <StackPanel Orientation="Horizontal" Spacing="6">
@@ -174,7 +174,7 @@
                         <TextBlock Text="{x:Static loc:Strings.Chameleon_Reader}" FontWeight="SemiBold" VerticalAlignment="Center" />
                       </StackPanel>
                     </RadioButton>
-                  </UniformGrid>
+                  </WrapPanel>
                 </Border>
                 <TextBlock Classes="caption" IsVisible="{Binding !ReaderMode}"
                            Text="{x:Static loc:Strings.Chameleon_TheDevicePresentsTheActiveSlot}" />
@@ -252,7 +252,7 @@
                     <TextBlock>
                       <Run Text="{Binding HfNick}" FontWeight="Bold" />
                       <Run Text="{Binding HfTypeLabel}" FontSize="12"
-                           Foreground="{actipro:ThemeResource DefaultForegroundBrushSecondary}" />
+                           Foreground="{DynamicResource DefaultForegroundBrushSecondary}" />
                     </TextBlock>
                   </c:Marquee>
                   <TextBlock Grid.Column="2" Classes="caption" Text="{x:Static loc:Strings.Common_Empty}" VerticalAlignment="Center"
@@ -268,7 +268,7 @@
                     <TextBlock>
                       <Run Text="{Binding LfNames}" FontWeight="Bold" />
                       <Run Text="{Binding LfTypeLabel}" FontSize="12"
-                           Foreground="{actipro:ThemeResource DefaultForegroundBrushSecondary}" />
+                           Foreground="{DynamicResource DefaultForegroundBrushSecondary}" />
                     </TextBlock>
                   </c:Marquee>
                   <TextBlock Grid.Column="2" Classes="caption" Text="{x:Static loc:Strings.Common_Empty}" VerticalAlignment="Center"
@@ -282,15 +282,15 @@
         <!-- Device identity -->
         <Border Classes="card">
           <StackPanel Spacing="14">
-            <StackPanel Orientation="Horizontal" Spacing="12">
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
               <Border Classes="iconwell green">
                 <PathIcon Data="{StaticResource Icon.info}" />
               </Border>
-              <StackPanel VerticalAlignment="Center">
+              <StackPanel Grid.Column="1" VerticalAlignment="Center">
                 <TextBlock Text="{Binding Info?.ModelName, TargetNullValue='Device'}" Classes="h2" />
                 <TextBlock Classes="caption" Text="{x:Static loc:Strings.Chameleon_HardwareAndFirmwareIdentity}" />
               </StackPanel>
-            </StackPanel>
+            </Grid>
 
             <UniformGrid Classes="cols2">
               <Border Classes="inset">
@@ -523,7 +523,7 @@
         </Border>
 
         <!-- Danger zone: rows laid out like settings, without icons (hidden placeholders). -->
-        <Border Classes="card" BorderBrush="{actipro:ThemeResource ControlBackgroundBrushSoftDanger}">
+        <Border Classes="card" BorderBrush="{DynamicResource ControlBackgroundBrushSoftDanger}">
           <StackPanel>
             <!-- Bonded BLE devices -->
             <c:SettingRow IsVisible="{Binding SupportsBle}">

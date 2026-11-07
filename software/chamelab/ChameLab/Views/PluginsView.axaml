@@ -1,0 +1,53 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ChameLab.ViewModels" xmlns:a="using:ChameLab.Automation" xmlns:loc="using:ChameLab.Localization"
+             x:Class="ChameLab.Views.PluginsView" x:DataType="vm:PluginsViewModel">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Spacing="12">
+      <TextBlock Text="{x:Static loc:Strings.Plugins_Description}" Classes="caption" TextWrapping="Wrap" />
+      <StackPanel Spacing="10" IsEnabled="{Binding !Working}">
+        <ComboBox ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}" HorizontalAlignment="Stretch">
+          <ComboBox.ItemTemplate><DataTemplate x:DataType="a:DevicePlugin"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" /></DataTemplate></ComboBox.ItemTemplate>
+        </ComboBox>
+        <WrapPanel>
+          <Button Command="{Binding NewCommand}" Content="{x:Static loc:Strings.Plugins_New}" Margin="0,0,8,8" />
+          <Button Command="{Binding ImportCommand}" Content="{x:Static loc:Strings.Common_Import}" Margin="0,0,8,8" />
+          <Button Command="{Binding ExportCommand}" Content="{x:Static loc:Strings.Common_Export}" Margin="0,0,8,8" />
+          <Button Command="{Binding DeleteCommand}" Content="{x:Static loc:Strings.Common_Delete}" Margin="0,0,8,8" />
+        </WrapPanel>
+        <TextBlock Text="{x:Static loc:Strings.Plugins_Name}" TextWrapping="Wrap" />
+        <TextBox Text="{Binding Name}" />
+        <TextBlock Text="{x:Static loc:Strings.Plugins_Summary}" TextWrapping="Wrap" />
+        <TextBox Text="{Binding Description}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60" />
+        <TextBlock Text="{x:Static loc:Strings.Plugins_Code}" TextWrapping="Wrap" />
+        <TextBox Text="{Binding Code}" Classes="mono" AcceptsReturn="True" AcceptsTab="True" TextWrapping="Wrap" MinHeight="200" MaxHeight="480" />
+        <Expander HorizontalAlignment="Stretch">
+          <Expander.Header><TextBlock Text="{x:Static loc:Strings.Plugins_Resources}" TextWrapping="Wrap" /></Expander.Header>
+          <TextBox Text="{Binding Resources}" Classes="mono" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="100" MaxHeight="400" />
+        </Expander>
+        <CheckBox IsChecked="{Binding Compress}"><TextBlock Text="{x:Static loc:Strings.Plugins_Compress}" TextWrapping="Wrap" /></CheckBox>
+        <WrapPanel>
+          <Button Command="{Binding SaveCommand}" Content="{x:Static loc:Strings.Common_Save}" Margin="0,0,8,8" />
+          <Button Command="{Binding RunCommand}" Classes="accent" Content="{x:Static loc:Strings.Plugins_Run}" Margin="0,0,8,8" />
+        </WrapPanel>
+      </StackPanel>
+      <Button IsVisible="{Binding Working}" Command="{Binding StopCommand}" Content="{x:Static loc:Strings.Common_Stop}" />
+      <Border Classes="card" IsVisible="{Binding WaitingForInput}">
+        <StackPanel Spacing="10">
+          <TextBlock Text="{Binding Prompt}" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding PromptDescription}" TextWrapping="Wrap" />
+          <TextBox Text="{Binding Response}" IsVisible="{Binding IsTextInput}" PasswordChar="{Binding PasswordChar}" />
+          <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding ChoiceResponse}" IsVisible="{Binding IsChoiceInput}" HorizontalAlignment="Stretch" />
+          <CheckBox IsChecked="{Binding BooleanResponse}" IsVisible="{Binding IsBooleanInput}"><TextBlock Text="{x:Static loc:Strings.Plugins_Yes}" TextWrapping="Wrap" /></CheckBox>
+          <TextBlock Text="{Binding InputError}" Classes="caption warning" TextWrapping="Wrap" />
+          <WrapPanel>
+            <Button Command="{Binding AcceptCommand}" Content="{x:Static loc:Strings.Plugins_Accept}" Margin="0,0,8,8" />
+            <Button Command="{Binding CancelInputCommand}" Content="{x:Static loc:Strings.Common_Cancel}" Margin="0,0,8,8" />
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+      <TextBox Text="{Binding Output, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="80" MaxHeight="400" />
+      <TextBlock Text="{Binding Error}" Classes="caption warning" TextWrapping="Wrap" />
+      <TextBlock Text="{Binding SaveError}" Classes="caption warning" TextWrapping="Wrap" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

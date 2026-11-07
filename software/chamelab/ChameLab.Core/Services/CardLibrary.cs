@@ -35,8 +35,26 @@ public sealed class CardLibrary
     /// <summary>Folder names, A–Z, numbers by value (Folder 2 before Folder 10).</summary>
     public IReadOnlyList<string> Folders => _folders;
 
+    public FolderLibrary FolderTree => field ??= new FolderLibrary(_store, "cardFolderTree");
+
     /// <summary>Set when the stored library could not be parsed (it is left untouched on disk).</summary>
     public string? LoadError { get; private set; }
+
+    public void ReplaceFolders(IEnumerable<SavedFolder> folders)
+    {
+        if (LoadError is { } error) throw new InvalidOperationException(error);
+        var oldPaths = FolderTree.Paths.Values.ToHashSet();
+        FolderTree.Replace(folders);
+        var paths = FolderTree.Paths;
+        _folders.RemoveAll(oldPaths.Contains);
+        foreach (var card in _cards.Where(c => c.FolderId is not null))
+        {
+            card.Folder = paths.GetValueOrDefault(card.FolderId!) ?? "";
+            if (!paths.ContainsKey(card.FolderId!)) card.FolderId = null;
+        }
+        foreach (var path in paths.Values) AddFolderName(path);
+        Save();
+    }
 
     public event Action? Changed;
 
@@ -221,6 +239,11 @@ public sealed class CardLibrary
         // Only the spelling may change to that of another folder: its own.
         if (FindFolder(n) is { } taken && taken != old) return false;
         if (n == old) return true;
+        if (FolderTree.Paths.FirstOrDefault(p => p.Value == old).Key is { } folderId)
+        {
+            ReplaceFolders(FolderTree.Items.Select(f => f.Id == folderId ? f with { Name = n, ParentId = null } : f));
+            return true;
+        }
         _folders.Remove(old);
         AddFolderName(n);
         foreach (var card in _cards.Where(c => c.Folder == old)) card.Folder = n;
@@ -232,8 +255,15 @@ public sealed class CardLibrary
     public void RemoveFolder(string name)
     {
         if (FindFolder(name) is not { } old) return;
+        var paths = FolderTree.Paths;
+        if (paths.FirstOrDefault(p => p.Value == old).Key is { } folderId)
+        {
+            // GUI deletion keeps records; plugin subtree deletion is explicit and separate.
+            ReplaceFolders(FolderTree.Items.Where(f => f.Id != folderId).Select(f => f.ParentId == folderId
+                ? f with { ParentId = null, Name = paths[f.Id] } : f));
+        }
         _folders.Remove(old);
-        foreach (var card in _cards.Where(c => c.Folder == old)) card.Folder = string.Empty;
+        foreach (var card in _cards.Where(c => c.Folder == old)) { card.Folder = string.Empty; card.FolderId = null; }
         Save();
     }
 
@@ -243,7 +273,8 @@ public sealed class CardLibrary
         var n = FindFolder(folder) ?? CardSave.NormalizeFolder(folder);
         if (_cards.FirstOrDefault(c => c.Id == card.Id) is not { } saved || saved.Folder == n) return;
         saved.Folder = n;
-        if (!ReferenceEquals(saved, card)) card.Folder = n;
+        saved.FolderId = FolderTree.Paths.FirstOrDefault(p => p.Value == n).Key;
+        if (!ReferenceEquals(saved, card)) { card.Folder = n; card.FolderId = saved.FolderId; }
         AddFolderName(n);
         Save();
     }

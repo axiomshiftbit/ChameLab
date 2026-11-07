@@ -18,6 +18,14 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+#if CHAMELAB_UI_TESTS
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime testDesktop)
+            testDesktop.MainWindow = new Avalonia.Controls.Window { Width = 360, Height = 800, Content = new UiTesting.UiTestHost() };
+        else if (ApplicationLifetime is IActivityApplicationLifetime testActivity)
+            testActivity.MainViewFactory = () => new UiTesting.UiTestHost();
+        else if (ApplicationLifetime is ISingleViewApplicationLifetime testSingle)
+            testSingle.MainView = new UiTesting.UiTestHost();
+#else
         AppearanceService.ApplySaved();
         var vm = new MainViewModel(AppServices.Device, AppServices.Cards, AppServices.Dictionaries, AppServices.Firmware);
 
@@ -34,6 +42,7 @@ public partial class App : Application
             singleViewPlatform.MainView = new MainView { DataContext = vm };
         }
 
+#endif
         base.OnFrameworkInitializationCompleted();
     }
 }

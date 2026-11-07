@@ -1,6 +1,9 @@
 using System;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Layout;
+using Avalonia.VisualTree;
 
 namespace ChameLab.Controls;
 
@@ -8,7 +11,7 @@ namespace ChameLab.Controls;
 /// One setting: children are the icon, the title, the description and the control, in that order.
 /// Wide: icon, title over description, and the control on the right. When the text would get narrower
 /// than <see cref="MinTextWidth"/>, the title gets a line of its own beside the icon and the description
-/// sits under it, next to the control.
+/// control use the available width, with the control on a separate line.
 /// </summary>
 public class SettingRow : Panel
 {
@@ -33,6 +36,15 @@ public class SettingRow : Panel
 
     private bool _stacked;
 
+    private void SetStacked(bool stacked)
+    {
+        if (Classes.Contains(StackedClass) == stacked) return;
+        Classes.Set(StackedClass, stacked);
+        foreach (var child in Children)
+            foreach (var item in child.GetSelfAndVisualDescendants().OfType<Layoutable>())
+                item.InvalidateMeasure();
+    }
+
     private Control? Child(int i) => i < Children.Count && Children[i].IsVisible ? Children[i] : null;
 
     private static Size Measure(Control? child, double width)
@@ -48,7 +60,7 @@ public class SettingRow : Panel
         var icon = Measure(Child(0), double.PositiveInfinity);
         // The decision is made with the control at its wide size, so styles that shrink it when
         // stacked cannot flip the row back.
-        Classes.Set(StackedClass, false);
+        SetStacked(false);
         var control = Measure(Child(3), double.PositiveInfinity);
         var lead = icon.Width > 0 ? icon.Width + Spacing : 0;
         var trail = control.Width > 0 ? control.Width + Spacing : 0;
@@ -64,14 +76,13 @@ public class SettingRow : Panel
                 Math.Max(Math.Max(icon.Height, title.Height + description.Height), control.Height));
         }
 
-        Classes.Set(StackedClass, true);
-        control = Measure(Child(3), double.PositiveInfinity);
-        trail = control.Width > 0 ? control.Width + Spacing : 0;
-        textWidth = width - lead - trail;
+        SetStacked(true);
+        control = Measure(Child(3), width);
         var stackedTitle = Measure(Child(1), width - lead);
-        var stackedDescription = Measure(Child(2), textWidth);
-        return new Size(width, Math.Max(icon.Height,
-            stackedTitle.Height + RowSpacing + Math.Max(stackedDescription.Height, control.Height)));
+        var stackedDescription = Measure(Child(2), width);
+        return new Size(width, Math.Max(icon.Height, stackedTitle.Height)
+            + (stackedDescription.Height > 0 ? RowSpacing + stackedDescription.Height : 0)
+            + (control.Height > 0 ? RowSpacing + control.Height : 0));
     }
 
     protected override Size ArrangeOverride(Size finalSize)
@@ -96,15 +107,15 @@ public class SettingRow : Panel
             return finalSize;
         }
 
-        var bottom = Math.Max(description.Height, control.Height);
-        var content = title.Height + RowSpacing + bottom;
-        var top = (finalSize.Height - content) / 2;
-        Child(0)?.Arrange(new Rect(0, (finalSize.Height - icon.Height) / 2, icon.Width, icon.Height));
-        Child(1)?.Arrange(new Rect(lead, top, Math.Max(0, width - lead), title.Height));
-
-        var y = top + title.Height + RowSpacing;
-        Child(2)?.Arrange(new Rect(lead, y + (bottom - description.Height) / 2, Math.Max(0, width - lead - trail), description.Height));
-        Child(3)?.Arrange(new Rect(width - control.Width, y + (bottom - control.Height) / 2, control.Width, control.Height));
+        var headerHeight = Math.Max(icon.Height, title.Height);
+        Child(0)?.Arrange(new Rect(0, (headerHeight - icon.Height) / 2, icon.Width, icon.Height));
+        Child(1)?.Arrange(new Rect(lead, (headerHeight - title.Height) / 2, Math.Max(0, width - lead), title.Height));
+        var y = headerHeight;
+        if (description.Height > 0) y += RowSpacing;
+        Child(2)?.Arrange(new Rect(0, y, width, description.Height));
+        y += description.Height;
+        if (control.Height > 0) y += RowSpacing;
+        Child(3)?.Arrange(new Rect(0, y, width, control.Height));
         return finalSize;
     }
 }

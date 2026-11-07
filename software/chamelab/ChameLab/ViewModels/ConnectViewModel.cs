@@ -21,6 +21,11 @@ public sealed class ConnectViewModel : PageViewModelBase
     {
         _device = device;
 
+        ConnectSerialCommand = ReactiveCommand.CreateFromTask(() => RunAsync(async () =>
+        {
+            var scanner = _device.Scanners.OfType<IManualSerialScanner>().First();
+            await _device.ConnectAsync(scanner.ManualCandidate(ManualSerialPort));
+        }), this.WhenAnyValue(x => x.ManualSerialPort).Select(p => !string.IsNullOrWhiteSpace(p)));
         ScanCommand = ReactiveCommand.CreateFromTask(ScanAsync);
         PickCommand = ReactiveCommand.CreateFromTask(PickAsync);
         ConnectCommand = ReactiveCommand.CreateFromTask(ConnectAsync,
@@ -90,6 +95,9 @@ public sealed class ConnectViewModel : PageViewModelBase
         set => this.RaiseAndSetIfChanged(ref field, value);
     } = "127.0.0.1:4321";
 
+    public bool CanManualSerial => _device.Scanners.OfType<IManualSerialScanner>().Any();
+    public string ManualSerialPort { get; set => this.RaiseAndSetIfChanged(ref field, value); } = "";
+    public ICommand ConnectSerialCommand { get; }
     public ICommand ScanCommand { get; }
     public ICommand PickCommand { get; }
     public ICommand ConnectCommand { get; }

@@ -1,11 +1,11 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
              xmlns:loc="using:ChameLab.Localization"
              xmlns:vm="using:ChameLab.ViewModels"
              xmlns:b="using:ChameLab.Behaviors"
              xmlns:c="using:ChameLab.Controls"
              xmlns:conv="using:ChameLab.Converters"
-             xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
              x:Class="ChameLab.Views.SlotsView"
              x:DataType="vm:SlotsViewModel">
 
@@ -27,7 +27,7 @@
       <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
     <Style Selector="Button.ledpick:pointerover > Border.swatch">
-      <Setter Property="BorderBrush" Value="{actipro:ThemeResource DefaultForegroundBrushSecondary}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DefaultForegroundBrushSecondary}" />
       <Setter Property="BorderThickness" Value="2" />
     </Style>
     <!-- Slot number in the list rows and the editor header. -->
@@ -165,6 +165,9 @@
     <!-- One frequency of the slot: its card, choose / clear, and the LED color. -->
     <DataTemplate x:Key="SlotSide" x:DataType="vm:SlotSideViewModel">
       <StackPanel Spacing="12">
+        <CheckBox IsChecked="{Binding Enabled}" IsEnabled="{Binding HasCard}">
+          <TextBlock Text="{x:Static loc:Strings.Slots_EnableEmulation}" TextWrapping="Wrap" />
+        </CheckBox>
         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
           <Border Classes="chip" Classes.hf="{Binding IsHf}" Classes.lf="{Binding IsLf}">
             <TextBlock Text="{Binding Label}" />
@@ -246,7 +249,7 @@
         <StackPanel Spacing="10" HorizontalAlignment="Center" Margin="0,12">
           <PathIcon Data="{StaticResource Icon.slots}" Width="40" Height="40" Opacity="0.4"
                     HorizontalAlignment="Center" />
-          <TextBlock Text="{x:Static loc:Strings.Slots_NoSlotsToShow}" FontWeight="SemiBold" HorizontalAlignment="Center" />
+          <TextBlock Text="{x:Static loc:Strings.Slots_NoSlotsToShow}" TextWrapping="Wrap" TextAlignment="Center" FontWeight="SemiBold" HorizontalAlignment="Center" />
           <TextBlock Classes="caption" TextAlignment="Center" MaxWidth="360" TextWrapping="Wrap"
                      Text="{x:Static loc:Strings.Slots_ConnectAChameleonToSeeAnd}" />
         </StackPanel>
@@ -395,6 +398,9 @@
               <ContentControl Content="{Binding Lf}" ContentTemplate="{StaticResource SlotSide}"
                               IsVisible="{Binding !SupportsMultiLf}" />
               <StackPanel Spacing="12" IsVisible="{Binding SupportsMultiLf}">
+                <CheckBox IsChecked="{Binding Lf.Enabled}" IsEnabled="{Binding Lf.HasCard}">
+                  <TextBlock Text="{x:Static loc:Strings.Slots_EnableEmulation}" TextWrapping="Wrap" />
+                </CheckBox>
               <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
                 <Border Classes="chip lf"><TextBlock Text="LF" /></Border>
                 <TextBlock Grid.Column="1" Text="{x:Static loc:Strings.Common_125KHz}" Classes="caption" VerticalAlignment="Center" />

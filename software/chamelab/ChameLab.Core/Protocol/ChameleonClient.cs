@@ -15,7 +15,7 @@ namespace ChameLab.Protocol;
 /// Typed, high-level command API over a <see cref="ChameleonConnection"/>.
 /// Each method mirrors a reference-client call and returns decoded results.
 /// </summary>
-public sealed class ChameleonClient(ChameleonConnection conn)
+public sealed partial class ChameleonClient(ChameleonConnection conn)
 {
     public ChameleonConnection Connection => conn;
 
@@ -1936,7 +1936,7 @@ public sealed class ChameleonClient(ChameleonConnection conn)
     /// The remembered PWD for the target's UID: tried when the card refuses <paramref name="pwd"/>, or when none is given.
     /// </param>
     /// <param name="passwordConfirmed">
-    /// Called with the target's UID and its password once the card accepts one, and again once a new one is set.
+    /// Called with the target's UID after authentication, and after a new password write is acknowledged so it remains recoverable if later configuration fails.
     /// </param>
     public async Task<IReadOnlyList<int>> WriteUltralightUserPagesAsync(
         CardSave card, byte[]? pwd = null,
@@ -1962,6 +1962,7 @@ public sealed class ChameleonClient(ChameleonConnection conn)
             .Where(p => card.Data[p].Length == 4)
             .ToList();
 
+        if (targets.Count == 0 && protection is null) throw new ArgumentException(Strings.Writer_NoData);
         var failed = new List<int>();
         var written = 0;
         try
@@ -2004,6 +2005,13 @@ public sealed class ChameleonClient(ChameleonConnection conn)
                 pages?.Report(new MifareBlockProgress(page, 1, MifareBlockState.Reading));
                 var ok = await UltralightWritePageAsync(page, card.Data[page], live, pwd, ct);
                 live = ok;
+                if (ok)
+                {
+                    var readback = await UltralightReadAsync(page, live, pwd, ct);
+                    ok = readback is { Length: 16 } && readback.AsSpan(0, 4).SequenceEqual(card.Data[page]);
+                    live = readback is { Length: 16 };
+                }
+                conn.Journal?.Add(ok ? "INFO" : "ERROR", $"Ultralight page={page}: {(ok ? "VERIFIED" : "NOT VERIFIED")}");
                 if (ok) written++; else failed.Add(page);
                 pages?.Report(new MifareBlockProgress(page, 1, ok ? MifareBlockState.Read : MifareBlockState.ReadError));
                 progress?.Report(new MifareProgress(i + 1, total, written));
@@ -2048,6 +2056,18 @@ public sealed class ChameleonClient(ChameleonConnection conn)
                     pages?.Report(new MifareBlockProgress(page, 1, ok ? MifareBlockState.Read : MifareBlockState.ReadError));
                     progress?.Report(new MifareProgress(targets.Count + i + 1, total, written));
                     if (!ok) break; // later steps would protect the card with settings only half written
+                }
+                if (failed.Count == 0)
+                {
+                    var pack = await UltralightCommandAsync(PwdAuth(protection.Pwd), ct);
+                    var confirmed = pack.AsSpan().SequenceEqual(protection.Pack);
+                    var check = confirmed ? await UltralightReadAsync(cfg0, true, protection.Pwd, ct) : null;
+                    confirmed &= check is { Length: 16 }
+                        && check.AsSpan(0, 4).SequenceEqual(steps[3].Data)
+                        && check.AsSpan(4, 4).SequenceEqual(steps[2].Data);
+                    conn.Journal?.Add(confirmed ? "INFO" : "ERROR", "Ultralight protection: " + (confirmed ? "VERIFIED" : "NOT VERIFIED"));
+                    if (!confirmed) failed.AddRange(steps.Select(step => step.Page));
+                    else passwordConfirmed?.Invoke(uid, protection.Pwd);
                 }
             }
         }
@@ -2168,47 +2188,9 @@ public sealed class ChameleonClient(ChameleonConnection conn)
 
     // ---- Magic-card detection -----------------------------------------
 
-    /// <summary>
-    /// Probes the card on the reader and reports which magic generation it is,
-    /// or <c>null</c> if no tag answers. Gen1a is identified by its magic
-    /// wakeup and Gen3 by its backdoor command; anything else that selects
-    /// normally is reported as Gen2 (the generic / CUID case).
-    /// </summary>
-    public async Task<MagicGeneration?> DetectMagicAsync(CancellationToken ct = default)
-    {
-        await SetDeviceModeAsync(DeviceMode.Reader, ct);
-
-        // Gen1a: the magic wakeup (0x40 at 7 bits, then 0x43) answers with an ACK (0x0a).
-        try
-        {
-            var r = await Hf14aRawAsync(RawOpt.ActivateRfField | RawOpt.WaitResponse | RawOpt.KeepRfField,
-                [0x40], bitLen: 7, ct: ct);
-            if (r.Length > 0 && (r[0] & 0x0f) == 0x0a)
-            {
-                await DropFieldAsync(ct);
-                return MagicGeneration.Gen1a;
-            }
-        }
-        catch { /* not a Gen1a card */ }
-        await DropFieldAsync(ct);
-
-        // Any ordinary 14443-A tag must select for the remaining checks.
-        var tags = await Hf14aScanAsync(ct);
-        if (tags.Count == 0) return null;
-
-        // Gen3: reading block 0 (0x30 0x00) without authentication answers with 16 data bytes + 2 CRC.
-        try
-        {
-            var r = await Hf14aRawAsync(
-                RawOpt.ActivateRfField | RawOpt.WaitResponse | RawOpt.AppendCrc | RawOpt.AutoSelect,
-                [0x30, 0x00], ct: ct);
-            if (r.Length == 18)
-                return MagicGeneration.Gen3;
-        }
-        catch { /* not a Gen3 card */ }
-
-        return MagicGeneration.Gen2;
-    }
+    /// <summary>Returns only positively identified generations; null also means an ordinary/unknown card.</summary>
+    public async Task<MagicGeneration?> DetectMagicAsync(CancellationToken ct = default) =>
+        (await InspectWriteTargetAsync(false, ct: ct))?.Generation;
 
     /// <summary>Drops the RF field so a probe does not leave a card half-selected.</summary>
     private async Task DropFieldAsync(CancellationToken ct)
@@ -2237,12 +2219,14 @@ public sealed class ChameleonClient(ChameleonConnection conn)
         MifareDump dump, IReadOnlyList<byte[]> keyDict, MagicGeneration gen = MagicGeneration.Gen2,
         IProgress<MifareProgress>? progress = null, CancellationToken ct = default,
         IProgress<MifareBlockProgress>? blocks = null, IProgress<MifareKeyProgress>? keyProgress = null,
-        MifareDump? targetKeys = null, bool writeGen2Block0 = false, MifareWriteSession? session = null)
+        MifareDump? targetKeys = null, bool writeGen2Block0 = false, MifareWriteSession? session = null, byte[]? gen4Password = null)
     {
         session ??= new MifareWriteSession(dump, gen, writeGen2Block0, targetKeys);
         session.ValidatePlan(dump, gen, writeGen2Block0);
+        if (session.Total == 0) throw new ArgumentException(Strings.Writer_NoData);
         return gen switch
         {
+            MagicGeneration.Gen4 => WriteGen4Async(session, gen4Password ?? new byte[4], progress, blocks, ct),
             MagicGeneration.Gen1a => WriteGen1aAsync(session, progress, blocks, ct),
             MagicGeneration.Gen3 => WriteGen2Or3Async(session, keyDict, backdoorBlock0: true, progress, blocks, keyProgress, ct),
             _ => WriteGen2Or3Async(session, keyDict, backdoorBlock0: false, progress, blocks, keyProgress, ct),

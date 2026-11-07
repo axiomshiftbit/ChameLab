@@ -3,7 +3,6 @@ using System.Text.Json;
 using ChameLab.Models;
 using ChameLab.Protocol;
 using ChameLab.Transport;
-using ChameLab.Transport.Serial;
 
 namespace ChameLab.Cli;
 
@@ -13,6 +12,20 @@ public sealed partial class CliSession : IAsyncDisposable
     public TextWriter Output { get; }
     public TextWriter Error { get; }
     private ChameleonConnection? _connection;
+    private bool _ownsConnection;
+    public Func<string?, CancellationToken, Task<ITransport>>? OpenTransportAsync { get; init; }
+    public Func<byte[], int, CancellationToken, Task>? ShowPlotAsync { get; init; }
+    public Func<CancellationToken, Task<string?>>? ReadLineAsync { get; init; }
+    public Action? ClearOutput { get; init; }
+    internal CommandFiles Files { get; } = new();
+    public string? WorkingDirectory { get => Files.Root; set => Files.Root = value; }
+
+    // The app retains ownership of its USB/BLE/TCP connection.
+    public void BorrowConnection(ChameleonConnection? connection)
+    {
+        if (_ownsConnection) throw new InvalidOperationException("Disconnect the owned connection first.");
+        _connection = connection;
+    }
     private ChameleonClient Client => _connection is { IsClosed: false } c ? new(c)
         : throw new InvalidOperationException("Please connect to chameleon device first (use 'hw connect').");
     public bool Connected => _connection is { IsClosed: false, IsConnected: true };
@@ -24,7 +37,7 @@ public sealed partial class CliSession : IAsyncDisposable
     {
         Output = output ?? Console.Out; Error = error ?? Console.Error;
         Add("exit", async (_, _) => { ExitRequested = true; await DisconnectAsync(); });
-        Add("clear", (_, _) => { if (!Console.IsOutputRedirected) Console.Clear(); return Task.CompletedTask; });
+        Add("clear", (_, _) => { ClearOutput?.Invoke(); return Task.CompletedTask; });
         Add("rem", (a, _) => { Output.WriteLine($"{DateTime.UtcNow:yyyy-MM-ddTHH:mm:ss.ffffff}Z remark: {string.Join(' ', a.Many("comment"))}"); return Task.CompletedTask; });
         Add("dump_help", (a, _) =>
         {
@@ -114,25 +127,15 @@ public sealed partial class CliSession : IAsyncDisposable
     {
         await DisconnectAsync();
         var connection = new ChameleonConnection(transport);
-        try { await connection.OpenAsync(ct); _connection = connection; }
+        try { await connection.OpenAsync(ct); _connection = connection; _ownsConnection = true; }
         catch { await connection.DisposeAsync(); throw; }
     }
 
     private async Task ConnectAsync(CliArguments a, CancellationToken ct)
     {
-        var port = a.Get("port");
-        if (port is null)
-        {
-            var candidates = await new SerialScanner().ScanAsync(ct);
-            port = candidates.Count switch
-            {
-                0 => throw new IOException("Chameleon not found. Connect it or specify hw connect -p PORT."),
-                1 => candidates[0].Id,
-                _ => throw new ArgumentException("Multiple devices found; use -p: " + string.Join(", ", candidates.Select(c => c.Id)))
-            };
-        }
-        ITransport transport = port.StartsWith("tcp://", StringComparison.OrdinalIgnoreCase)
-            ? new TcpTransport(new Uri(port).Host, new Uri(port).Port) : new SerialTransport(port);
+        if (OpenTransportAsync is null)
+            throw new InvalidOperationException("Connect the device from the app's connection screen.");
+        var transport = await OpenTransportAsync(a.Get("port"), ct);
         await AttachAsync(transport, ct);
         try
         {
@@ -146,7 +149,8 @@ public sealed partial class CliSession : IAsyncDisposable
     private async Task DisconnectAsync()
     {
         var c = _connection; _connection = null;
-        if (c is not null) await c.DisposeAsync();
+        var owned = _ownsConnection; _ownsConnection = false;
+        if (c is not null && owned) await c.DisposeAsync();
     }
     public ValueTask DisposeAsync() => new(DisconnectAsync());
     private void Print(object? value) => Output.WriteLine(value is byte[] b ? Convert.ToHexString(b) : value);

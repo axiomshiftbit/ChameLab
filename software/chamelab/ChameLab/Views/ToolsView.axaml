@@ -1,11 +1,11 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
              xmlns:loc="using:ChameLab.Localization"
              xmlns:vm="using:ChameLab.ViewModels"
              xmlns:b="using:ChameLab.Behaviors"
              xmlns:c="using:ChameLab.Controls"
              xmlns:m="using:ChameLab.Models"
-             xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
              x:Class="ChameLab.Views.ToolsView"
              x:DataType="vm:ToolsViewModel">
 
@@ -29,7 +29,7 @@
     <Style Selector="StackPanel.legend > TextBlock">
       <Setter Property="FontSize" Value="12" />
       <Setter Property="VerticalAlignment" Value="Center" />
-      <Setter Property="Foreground" Value="{actipro:ThemeResource DefaultForegroundBrushSecondary}" />
+      <Setter Property="Foreground" Value="{DynamicResource DefaultForegroundBrushSecondary}" />
     </Style>
 
     <!-- Short of room: icon only (the tooltip names the action), as in the card editor. -->
@@ -44,8 +44,8 @@
 
     <!-- A recovered key. -->
     <Style Selector="Border.keybadge">
-      <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
-      <Setter Property="TextElement.Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSolidSuccess}" />
+      <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSolidSuccess}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ControlForegroundBrushSolidSuccess}" />
       <Setter Property="CornerRadius" Value="6" />
       <Setter Property="Padding" Value="10,5" />
       <Setter Property="HorizontalAlignment" Value="Left" />
@@ -62,7 +62,7 @@
       <Setter Property="Foreground" Value="{DynamicResource BrandBlueBrush}" />
     </Style>
     <Style Selector="TextBlock.dir.card">
-      <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushOutlineSuccess}" />
+      <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushOutlineSuccess}" />
     </Style>
     <Style Selector="ListBox.frames">
       <Setter Property="Height" Value="460" />
@@ -78,44 +78,93 @@
 
   <Grid Classes="page" RowDefinitions="Auto,*" MaxWidth="980">
 
+    <ScrollViewer Grid.Row="0" Grid.RowSpan="2" IsVisible="{Binding IsHome}" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Spacing="12">
+        <TextBlock Classes="h1" Text="{x:Static loc:Strings.Tools_Tools}" />
+        <Button Classes="tile source" Command="{Binding OpenToolCommand}" CommandParameter="key-search" HorizontalContentAlignment="Stretch">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{x:Static loc:Strings.Search_Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Static loc:Strings.Search_Tile}" Classes="caption" TextWrapping="Wrap" />
+          </StackPanel>
+        </Button>
+        <Button Classes="tile source" Command="{Binding OpenToolCommand}" CommandParameter="plugins" HorizontalContentAlignment="Stretch">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{x:Static loc:Strings.Plugins_Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Static loc:Strings.Plugins_Tile}" Classes="caption" TextWrapping="Wrap" />
+          </StackPanel>
+        </Button>
+        <Button Classes="tile source" Command="{Binding OpenToolCommand}" CommandParameter="console" HorizontalContentAlignment="Stretch">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{x:Static loc:Strings.Console_Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Static loc:Strings.Console_Description}" Classes="caption" />
+          </StackPanel>
+        </Button>
+        <Button Classes="tile source" Command="{Binding OpenToolCommand}" CommandParameter="ValueBlocks" HorizontalContentAlignment="Stretch">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{x:Static loc:Strings.Tool_live_value_blocks}" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Static loc:Strings.Tool_value_block_tool_description}" Classes="caption" />
+          </StackPanel>
+        </Button>
+        <Button Classes="tile source" Command="{Binding OpenToolCommand}" CommandParameter="dictionaries" HorizontalContentAlignment="Stretch">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{x:Static loc:Strings.Tool_dictionary_download}" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Static loc:Strings.Tool_dictionary_download_description}" Classes="caption" />
+          </StackPanel>
+        </Button>
+        <Button Classes="tile source" Command="{Binding OpenToolCommand}" CommandParameter="T55Password" HorizontalContentAlignment="Stretch">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{x:Static loc:Strings.Tool_t55xx_password_cleaner}" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Static loc:Strings.Tool_t55xx_password_cleaner_description}" Classes="caption" />
+          </StackPanel>
+        </Button>
+        <Button Classes="tile source" Command="{Binding OpenToolCommand}" CommandParameter="lf" HorizontalContentAlignment="Stretch">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{x:Static loc:Strings.Tool_lf_sniffing}" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Static loc:Strings.Tool_lf_sniffing_description}" Classes="caption" />
+          </StackPanel>
+        </Button>
+        <Button Classes="tile source" Command="{Binding OpenToolCommand}" CommandParameter="hf" HorizontalContentAlignment="Stretch">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{x:Static loc:Strings.Tool_hf_sniffing}" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Static loc:Strings.Tool_hf_sniffing_description}" Classes="caption" />
+          </StackPanel>
+        </Button>
+        <Button Classes="tile source" Command="{Binding OpenToolCommand}" CommandParameter="auth" HorizontalContentAlignment="Stretch">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{x:Static loc:Strings.Tool_hf_auth_trace}" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Static loc:Strings.Tool_hf_auth_description}" Classes="caption" />
+          </StackPanel>
+        </Button>
+        <Button Classes="tile source" Command="{Binding OpenToolCommand}" CommandParameter="Gen4" HorizontalContentAlignment="Stretch">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{x:Static loc:Strings.Tool_mifare_classic_gen4}" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Static loc:Strings.Tool_mifare_classic_gen4_description}" Classes="caption" />
+          </StackPanel>
+        </Button>
+        <Button Classes="tile source" Command="{Binding OpenToolCommand}" CommandParameter="T55Block" HorizontalContentAlignment="Stretch">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{x:Static loc:Strings.Tool_t55xx_block_editor}" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Static loc:Strings.Tool_t55xx_block_editor_description}" Classes="caption" />
+          </StackPanel>
+        </Button>
+        <Button Classes="tile source" Command="{Binding OpenToolCommand}" CommandParameter="RawHf" HorizontalContentAlignment="Stretch">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{x:Static loc:Strings.Tool_raw_hf}" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Static loc:Strings.Tool_raw_hf_description}" Classes="caption" />
+          </StackPanel>
+        </Button>
+        <Button Classes="tile source" Command="{Binding OpenToolCommand}" CommandParameter="RawDevice" HorizontalContentAlignment="Stretch">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{x:Static loc:Strings.Tool_raw_device}" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Static loc:Strings.Tool_raw_device_description}" Classes="caption" />
+          </StackPanel>
+        </Button>
+      </StackPanel>
+    </ScrollViewer>
+    <ContentControl Grid.Row="1" Content="{Binding Extra}" IsVisible="{Binding IsExtra}" />
+
     <!-- ==================== Header: stays put while the results scroll ==================== -->
     <StackPanel Grid.Row="0" Spacing="10">
-      <!-- The list of tools -->
-      <StackPanel Spacing="2" IsVisible="{Binding IsHome}">
-        <TextBlock Text="{x:Static loc:Strings.Tools_Tools}" Classes="h1" />
-        <TextBlock Classes="caption hint" TextWrapping="Wrap"
-                   Text="{x:Static loc:Strings.Tools_LookAtWhatGoesOverThe}" />
-      </StackPanel>
-      <!-- Two tiles to a row while both fit untrimmed, else one under the other. -->
-      <c:FitGrid Columns="2" ColumnSpacing="8" RowSpacing="8" IsVisible="{Binding IsHome}">
-        <Button Classes="tile source" Command="{Binding OpenHfCommand}"
-                ToolTip.Tip="{x:Static loc:Strings.Tools_AnswerAReaderAsACard}">
-          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-            <Border Classes="iconwell blue" VerticalAlignment="Center">
-              <PathIcon Data="{StaticResource Icon.sniff}" />
-            </Border>
-            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-              <TextBlock Text="{x:Static loc:Strings.Tools_SniffHF}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-              <TextBlock Text="{x:Static loc:Strings.Tools_1356MHzISO14443A}" Classes="caption" TextWrapping="NoWrap"
-                         TextTrimming="CharacterEllipsis" />
-            </StackPanel>
-          </Grid>
-        </Button>
-        <Button Classes="tile source" Command="{Binding OpenLfCommand}"
-                ToolTip.Tip="{x:Static loc:Strings.Tools_RecordTheRawSignalAtThe}">
-          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-            <Border Classes="iconwell amber" VerticalAlignment="Center">
-              <PathIcon Data="{StaticResource Icon.sniff}" />
-            </Border>
-            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-              <TextBlock Text="{x:Static loc:Strings.Tools_SniffLF}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-              <TextBlock Text="{x:Static loc:Strings.Tools_125KHzRawSignal}" Classes="caption" TextWrapping="NoWrap"
-                         TextTrimming="CharacterEllipsis" />
-            </StackPanel>
-          </Grid>
-        </Button>
-      </c:FitGrid>
-
       <!-- A tool: Back to the list, as in Add card. -->
       <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="10" IsVisible="{Binding !IsHome}">
         <Button Classes="icon" Margin="-8,0,0,0" Command="{Binding BackCommand}"
@@ -127,11 +176,20 @@
           <PathIcon Data="{StaticResource Icon.sniff}" />
         </Border>
         <TextBlock Grid.Column="2" Classes="h1" VerticalAlignment="Center"
-                   Text="{Binding IsHf, Converter={x:Static vm:ToolsViewModel.ToolTitle}}" />
+                   Text="{Binding CurrentToolTitle}" />
       </Grid>
 
       <!-- HF -->
       <StackPanel Spacing="10" IsVisible="{Binding IsHf}">
+        <StackPanel Spacing="8" IsVisible="{Binding IsAuthentication}">
+          <TextBlock Classes="caption" Text="{x:Static loc:Strings.Tool_hf_auth_description}" />
+          <TextBlock Text="{x:Static loc:Strings.Common_Block}" />
+          <NumericUpDown Value="{Binding AuthBlock}" Minimum="0" Maximum="255" />
+          <ComboBox ItemsSource="{Binding AuthKeyTypes}" SelectedItem="{Binding AuthKeyType}" />
+          <TextBox Text="{Binding AuthKey}" Classes="mono" />
+          <TextBlock Text="{Binding AuthStatus}" Classes="caption" />
+        </StackPanel>
+
         <TextBlock Classes="caption hint" TextWrapping="Wrap"
                    Text="{x:Static loc:Strings.Tools_TheChameleonAnswersAReaderAs}" />
         <TextBlock Classes="caption" TextWrapping="Wrap" IsVisible="{Binding !IsConnected}"
@@ -208,7 +266,7 @@
     </StackPanel>
 
     <!-- ==================== Results ==================== -->
-    <ScrollViewer Grid.Row="1" Margin="0,4,0,0">
+    <ScrollViewer Grid.Row="1" Margin="0,4,0,0" IsVisible="{Binding IsSniff}">
       <StackPanel Classes="panestack">
 
         <!-- ========== HF ========== -->
@@ -367,21 +425,21 @@
               <TextBlock Classes="caption" Text="{Binding CursorText}" TextWrapping="Wrap" />
               <WrapPanel ItemSpacing="16" LineSpacing="4">
                 <StackPanel Classes="legend" Orientation="Horizontal" Spacing="6">
-                  <Border Width="14" Height="8" CornerRadius="2" Background="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
+                  <Border Width="14" Height="8" CornerRadius="2" Background="{DynamicResource ControlBackgroundBrushSolidAccent}" />
                   <TextBlock Text="{x:Static loc:Strings.Tools_Signal}" />
                 </StackPanel>
                 <StackPanel Classes="legend" Orientation="Horizontal" Spacing="6">
                   <Line StartPoint="0,0" EndPoint="16,0" StrokeThickness="1.5" StrokeDashArray="2,2"
-                        Stroke="{actipro:ThemeResource DefaultForegroundBrushTertiary}" VerticalAlignment="Center" />
+                        Stroke="{DynamicResource DefaultForegroundBrushTertiary}" VerticalAlignment="Center" />
                   <TextBlock Text="{Binding Summary?.Threshold, StringFormat={x:Static loc:Strings.Tools_DecodeThreshold}, TargetNullValue=''}" />
                 </StackPanel>
                 <StackPanel Classes="legend" Orientation="Horizontal" Spacing="6">
                   <Line StartPoint="0,0" EndPoint="16,0" StrokeThickness="1.5" StrokeDashArray="1,2"
-                        Stroke="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" VerticalAlignment="Center" />
+                        Stroke="{DynamicResource ControlBackgroundBrushSolidDanger}" VerticalAlignment="Center" />
                   <TextBlock Text="{Binding Summary?.GapThreshold, StringFormat={x:Static loc:Strings.Tools_GapThreshold}, TargetNullValue=''}" />
                 </StackPanel>
                 <StackPanel Classes="legend" Orientation="Horizontal" Spacing="6">
-                  <Border Width="14" Height="10" CornerRadius="2" Background="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" Opacity="0.3" />
+                  <Border Width="14" Height="10" CornerRadius="2" Background="{DynamicResource ControlBackgroundBrushSolidDanger}" Opacity="0.3" />
                   <TextBlock Text="{x:Static loc:Strings.Tools_FieldGap}" />
                 </StackPanel>
                 <StackPanel Classes="legend" Orientation="Horizontal" Spacing="6">
@@ -390,7 +448,7 @@
                 </StackPanel>
                 <StackPanel Classes="legend" Orientation="Horizontal" Spacing="6">
                   <Border Width="14" Height="10" CornerRadius="2" BorderThickness="1.5"
-                          BorderBrush="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
+                          BorderBrush="{DynamicResource ControlBackgroundBrushSolidAccent}" />
                   <TextBlock Text="{x:Static loc:Strings.Tools_ViewInTheCapture}" />
                 </StackPanel>
               </WrapPanel>

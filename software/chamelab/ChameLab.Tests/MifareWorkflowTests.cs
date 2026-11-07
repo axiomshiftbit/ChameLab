@@ -316,9 +316,8 @@ public class MifareWorkflowTests
         await using var connection = new ChameleonConnection(transport);
         await connection.OpenAsync();
 
-        var failed = await new ChameleonClient(connection).WriteMifareDumpToCardAsync(dump, [Key]);
-
-        Assert.Empty(failed);
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            new ChameleonClient(connection).WriteMifareDumpToCardAsync(dump, [Key]));
         Assert.DoesNotContain(transport.Requests, r => r.Command is Command.Mf1AuthOneKeyBlock or Command.Mf1WriteOneBlock);
     }
 
@@ -406,7 +405,7 @@ public class MifareWorkflowTests
     public async Task Recovery_RejectsChangedTargetBeforeSearchingOrWriting()
     {
         var source = KnownCard();
-        source.SetBlock(0, new byte[16]);
+        source.SetBlock(1, new byte[16]);
         var target = new MifareDump(MifareClassicType.Mini, [9, 8, 7, 6]);
         target.KeyA[0] = Key;
         var transport = new CardTransport();

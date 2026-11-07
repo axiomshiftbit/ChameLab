@@ -1,0 +1,147 @@
+name: App and firmware quality
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ui-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet test software/chamelab/ChameLab.Tests -c Release --logger trx --results-directory "$RUNNER_TEMP/unit-tests"
+      - run: dotnet test software/chamelab/ChameLab.Cli.Tests -c Release
+      - run: dotnet run --project software/chamelab/ChameLab.Tools -c Release -- check-languages
+      - run: dotnet test software/chamelab/ChameLab.UiTests -c Release --logger trx --results-directory "$RUNNER_TEMP/layout-tests"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: unit-and-layout-results
+          path: |
+            ${{ runner.temp }}/unit-tests/*.trx
+            ${{ runner.temp }}/layout-tests/*.trx
+          retention-days: 14
+
+  android-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: dotnet workload install android
+      - name: Install Android build dependencies
+        run: dotnet build software/chamelab/ChameLab.Android -t:InstallAndroidDependencies -f net10.0-android -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" -p:AcceptAndroidSDKLicenses=true
+      - name: Build isolated UI test APK
+        run: |
+          dotnet build software/chamelab/ChameLab.Android -t:SignAndroidPackage -c Debug -r android-x64 -p:ChameLabUiTests=true -p:EmbedAssembliesIntoApk=true -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME"
+          mkdir -p "$RUNNER_TEMP/ui-apk"
+          cp software/chamelab/ChameLab.Android/bin/Debug/net10.0-android/android-x64/*-Signed.apk "$RUNNER_TEMP/ui-apk/ChameLab-ui-tests.apk"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: android-ui-test-apk
+          path: ${{ runner.temp }}/ui-apk/*.apk
+          retention-days: 14
+      - name: Build installable Android app
+        run: |
+          dotnet build software/chamelab/ChameLab.Android -t:SignAndroidPackage -c Debug -r android-arm64 -p:EmbedAssembliesIntoApk=true -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME"
+          mkdir -p "$RUNNER_TEMP/android-app"
+          cp software/chamelab/ChameLab.Android/bin/Debug/net10.0-android/android-arm64/*-Signed.apk "$RUNNER_TEMP/android-app/ChameLab-arm64-debug.apk"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: android-arm64-debug
+          path: ${{ runner.temp }}/android-app/*.apk
+          retention-days: 14
+
+  android-ui:
+    needs: android-build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [23, 29, 33, 35, 36]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/download-artifact@v8
+        with:
+          name: android-ui-test-apk
+          path: ui-apk
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect
+          script: dotnet run --project software/chamelab/ChameLab.Tools -c Release -- android-ui ui-apk/ChameLab-ui-tests.apk "${{ runner.temp }}/android-ui"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: android-ui-api-${{ matrix.api }}
+          path: ${{ runner.temp }}/android-ui/
+          retention-days: 14
+
+  windows-ui:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+      - name: Build and run real Windows UI
+        shell: pwsh
+        run: |
+          $env:CHAMELAB_UI_OUTPUT = Join-Path $env:RUNNER_TEMP 'windows-ui'
+          New-Item -ItemType Directory -Force $env:CHAMELAB_UI_OUTPUT | Out-Null
+          '{"Sizes":[[360,800],[800,360],[1280,800]]}' | Set-Content (Join-Path $env:CHAMELAB_UI_OUTPUT 'request.json')
+          dotnet run --project software/chamelab/ChameLab.Desktop -c Release -p:ChameLabUiTests=true
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $result = Get-Content (Join-Path $env:CHAMELAB_UI_OUTPUT 'result.json') | ConvertFrom-Json
+          if (!$result.Complete -or $result.Failed -ne 0 -or $result.Passed -ne $result.Expected) { throw 'Windows UI checks failed' }
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: windows-ui
+          path: ${{ runner.temp }}/windows-ui/
+          retention-days: 14
+
+  firmware:
+    uses: ./.github/workflows/build_firmware.yml
+    with:
+      publish-builder: false

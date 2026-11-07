@@ -13,7 +13,7 @@ public sealed partial class CliSession
         if (a.Flag("offline"))
         {
             if (!a.Has("json")) throw new ArgumentException("--offline requires --json FILE.");
-            challenges = JsonSerializer.Deserialize<Dictionary<string, string>>(await File.ReadAllTextAsync(a.Text("json"), ct))
+            challenges = JsonSerializer.Deserialize<Dictionary<string, string>>(await Files.ReadAllTextAsync(a.Text("json"), ct))
                 ?? throw new InvalidDataException("Invalid challenge file.");
         }
         else
@@ -56,11 +56,11 @@ public sealed partial class CliSession
             await Wire(2018, recovered, ct); Print("Key restored and authentication verified.");
         }
     }
-    private static async Task SaveChallenges(string file, Dictionary<string, string> challenges)
+    private async Task SaveChallenges(string file, Dictionary<string, string> challenges)
     {
         var temp = file + ".tmp";
-        await File.WriteAllTextAsync(temp, JsonSerializer.Serialize(challenges, new JsonSerializerOptions { WriteIndented = true }));
-        File.Move(temp, file, overwrite: true);
+        await Files.WriteAllTextAsync(temp, JsonSerializer.Serialize(challenges, new JsonSerializerOptions { WriteIndented = true }));
+        Files.Move(temp, file, overwrite: true);
     }
     private async Task<string> UlcNonce(CancellationToken ct)
     {

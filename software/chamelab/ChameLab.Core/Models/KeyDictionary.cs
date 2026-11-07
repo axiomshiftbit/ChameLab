@@ -8,7 +8,7 @@ using ChameLab.Localization;
 namespace ChameLab.Models;
 
 /// <summary>
-/// A named set of MIFARE Classic keys (6 bytes each). The JSON shape matches
+/// A named set of equally sized keys (4, 6 or 16 bytes). The JSON shape matches
 /// the Flutter ChameleonUltraGUI <c>Dictionary</c> so dictionaries move between
 /// the two apps; a plain <c>.dic</c> / <c>.keys</c> / <c>.txt</c> file (one hex key per line)
 /// also imports and exports.
@@ -19,7 +19,14 @@ public sealed class KeyDictionary
     public string Name { get; set; } = string.Empty;
     public string Color { get; set; } = CardSave.DefaultColor;
 
-    /// <summary>6-byte keys.</summary>
+    /// <summary>Bytes per key; Flutter's keyLength field counts hex digits instead.</summary>
+    public int KeySize { get; set; } = 6;
+    public string? FolderId { get; set; }
+    public string Folder { get; set; } = "";
+
+    public static bool IsSupportedSize(int size) => size is 4 or 6 or 16;
+
+    /// <summary>Keys retain their complete bytes on import, editing, backup and export.</summary>
     public List<byte[]> Keys { get; set; } = new();
 
     public int Count => Keys.Count;
@@ -37,8 +44,10 @@ public sealed class KeyDictionary
     {
         ["id"] = Id,
         ["name"] = Name,
+        ["folderId"] = FolderId,
+        ["folder"] = Folder,
         ["color"] = Color,
-        ["keyLength"] = 12,
+        ["keyLength"] = KeySize * 2,
         ["keys"] = new JsonArray(Keys.Select(k =>
             (JsonNode)new JsonArray(k.Select(b => (JsonNode)(int)b).ToArray())).ToArray()),
     };
@@ -50,14 +59,19 @@ public sealed class KeyDictionary
         {
             Id = (string?)o["id"] ?? Guid.NewGuid().ToString(),
             Name = (string?)o["name"] ?? string.Empty,
+            FolderId = (string?)o["folderId"],
+            Folder = CardSave.NormalizeFolder((string?)o["folder"]),
             Color = CardSave.NormalizeColor((string?)o["color"]),
+            KeySize = (int?)o["keyLength"] is { } length ? (length % 2 == 0 ? length / 2 : 0) : 6,
         };
+        if (!IsSupportedSize(dict.KeySize)) throw new FormatException(Strings.Import_DictionaryKeySize);
         if (o["keys"] is JsonArray keys)
             foreach (var k in keys)
-                if (k is JsonArray a)
                 {
-                    var bytes = a.Select(v => (byte)((int?)v ?? 0)).ToArray();
-                    if (bytes.Length == 6) dict.Keys.Add(bytes);
+                    if (k is not JsonArray a) throw new FormatException(Strings.Import_DictionaryKeySize);
+                    var bytes = a.Select(v => checked((byte)(v?.GetValue<int>() ?? -1))).ToArray();
+                    if (bytes.Length != dict.KeySize) throw new FormatException(Strings.Import_DictionaryKeySize);
+                    dict.Keys.Add(bytes);
                 }
         return dict;
     }
@@ -67,17 +81,19 @@ public sealed class KeyDictionary
 
     // ---- Plain text (.dic) --------------------------------------------
 
-    /// <summary>Parses a <c>.dic</c> / <c>.txt</c> file: one 12-hex-char key per line, '#' comments.</summary>
+    /// <summary>Parses one key per line, inferring 4/6/16 bytes from the first key; supports '#' comments.</summary>
     public static KeyDictionary FromText(string name, string text)
     {
         var dict = new KeyDictionary { Name = name };
         var seen = new HashSet<string>();
         foreach (var raw in text.Split('\n'))
         {
-            var line = raw.Trim();
-            if (line.Length == 0 || line.StartsWith('#')) continue;
-            if (Hex.TryParse(line, out var key) && key.Length == 6 && seen.Add(Convert.ToHexString(key)))
-                dict.Keys.Add(key);
+            var line = raw.Split('#')[0].Trim().TrimStart('\uFEFF');
+            if (line.Length == 0) continue;
+            if (!Hex.TryParse(line, out var key) || !IsSupportedSize(key.Length)) continue;
+            if (dict.Keys.Count == 0) dict.KeySize = key.Length;
+            if (key.Length != dict.KeySize) throw new FormatException(Strings.Import_DictionaryKeySize);
+            if (seen.Add(Convert.ToHexString(key))) dict.Keys.Add(key);
         }
         return dict;
     }

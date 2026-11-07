@@ -1,0 +1,75 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:vm="using:ChameLab.ViewModels" xmlns:c="using:ChameLab.Controls" xmlns:m="using:ChameLab.Models"
+ xmlns:loc="using:ChameLab.Localization" x:Class="ChameLab.Views.DeviceToolsView" x:DataType="vm:DeviceToolsViewModel">
+ <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+  <StackPanel Spacing="12" Margin="0,0,0,16">
+   <TextBlock Classes="caption" Text="{x:Static loc:Strings.Tool_device_required}" IsVisible="{Binding !IsConnected}" />
+<StackPanel Spacing="10" IsEnabled="{Binding !Working}">
+<StackPanel Spacing="10" IsVisible="{Binding IsRaw}">
+<StackPanel IsVisible="{Binding IsRawDevice}"><StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_raw_command}" TextWrapping="Wrap" /><TextBox Text="{Binding CommandNumber}" Classes="mono" /></StackPanel>
+</StackPanel><StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_raw_payload}" TextWrapping="Wrap" /><TextBox Text="{Binding Payload}" Classes="mono" /></StackPanel>
+<StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_raw_timeout}" TextWrapping="Wrap" /><NumericUpDown Value="{Binding Timeout}" Minimum="1" Maximum="30000" /></StackPanel>
+<StackPanel Spacing="8" IsVisible="{Binding IsRawHf}"><StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_raw_bits}" TextWrapping="Wrap" /><TextBox Text="{Binding Bits}" Classes="mono" /></StackPanel>
+<CheckBox IsChecked="{Binding ActivateRf}"><TextBlock Text="{x:Static loc:Strings.Tool_raw_activate_rf}" TextWrapping="Wrap" /></CheckBox>
+<CheckBox IsChecked="{Binding WaitResponse}"><TextBlock Text="{x:Static loc:Strings.Tool_raw_wait_response}" TextWrapping="Wrap" /></CheckBox>
+<CheckBox IsChecked="{Binding AppendCrc}"><TextBlock Text="{x:Static loc:Strings.Tool_raw_append_crc}" TextWrapping="Wrap" /></CheckBox>
+<CheckBox IsChecked="{Binding AutoSelect}"><TextBlock Text="{x:Static loc:Strings.Tool_raw_auto_select}" TextWrapping="Wrap" /></CheckBox>
+<CheckBox IsChecked="{Binding KeepRf}"><TextBlock Text="{x:Static loc:Strings.Tool_raw_keep_rf}" TextWrapping="Wrap" /></CheckBox>
+<CheckBox IsChecked="{Binding CheckCrc}"><TextBlock Text="{x:Static loc:Strings.Tool_raw_check_crc}" TextWrapping="Wrap" /></CheckBox>
+</StackPanel><Button Command="{Binding ExecuteCommand}" CommandParameter="send"><TextBlock Text="{x:Static loc:Strings.Tool_raw_send}" TextWrapping="Wrap" /></Button>
+</StackPanel>
+<StackPanel Spacing="10" IsVisible="{Binding IsT55Block}"><StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_t55xx_block_editor_page}" TextWrapping="Wrap" /><NumericUpDown Value="{Binding Page}" Minimum="0" Maximum="1" /></StackPanel>
+<StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_block_decimal}" TextWrapping="Wrap" /><NumericUpDown Value="{Binding Block}" Minimum="0" Maximum="7" /></StackPanel>
+<StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_t55xx_block_editor_data}" TextWrapping="Wrap" /><TextBox Text="{Binding Data}" Classes="mono" /></StackPanel>
+<CheckBox IsChecked="{Binding UsePassword}"><TextBlock Text="{x:Static loc:Strings.Tool_t55xx_block_editor_use_password}" TextWrapping="Wrap" /></CheckBox>
+<StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_t55xx_key_prompt}" TextWrapping="Wrap" /><TextBox Text="{Binding Password}" Classes="mono" /></StackPanel>
+<CheckBox IsChecked="{Binding ConfirmWrite}"><TextBlock Text="{x:Static loc:Strings.Tool_confirm_write}" TextWrapping="Wrap" /></CheckBox>
+<Button Command="{Binding ExecuteCommand}" CommandParameter="write"><TextBlock Text="{x:Static loc:Strings.Tool_gen4_write_block}" TextWrapping="Wrap" /></Button>
+</StackPanel>
+<StackPanel Spacing="10" IsVisible="{Binding IsT55Password}"><TextBlock Classes="caption warning" Text="{x:Static loc:Strings.Tool_t55_destructive_hint}" /><ComboBox ItemsSource="{Binding PasswordDictionaries}" SelectedItem="{Binding PasswordDictionary}" HorizontalAlignment="Stretch"><ComboBox.ItemTemplate><DataTemplate x:DataType="m:KeyDictionary"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" /></DataTemplate></ComboBox.ItemTemplate></ComboBox><StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_t55xx_new_key_prompt}" TextWrapping="Wrap" /><TextBox Text="{Binding NewPassword}" Classes="mono" /></StackPanel>
+<CheckBox IsChecked="{Binding ConfirmWrite}"><TextBlock Text="{x:Static loc:Strings.Tool_confirm_write}" TextWrapping="Wrap" /></CheckBox>
+<Button Command="{Binding ExecuteCommand}" CommandParameter="start"><TextBlock Text="{x:Static loc:Strings.Tool_start}" TextWrapping="Wrap" /></Button>
+</StackPanel>
+<StackPanel Spacing="10" IsVisible="{Binding IsGen4}"><StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_gen4_current_password}" TextWrapping="Wrap" /><TextBox Text="{Binding Password}" Classes="mono" /></StackPanel>
+<Button Command="{Binding ExecuteCommand}" CommandParameter="read-config"><TextBlock Text="{x:Static loc:Strings.Tool_gen4_read}" TextWrapping="Wrap" /></Button>
+<StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_gen4_protocol}" TextWrapping="Wrap" /><ComboBox ItemsSource="{Binding ProtocolOptions}" SelectedIndex="{Binding Gen4Protocol}" HorizontalAlignment="Stretch" /></StackPanel>
+<StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_gen4_uid_length}" TextWrapping="Wrap" /><ComboBox ItemsSource="{Binding UidOptions}" SelectedIndex="{Binding UidSize}" HorizontalAlignment="Stretch" /></StackPanel>
+<StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_gen4_shadow}" TextWrapping="Wrap" /><ComboBox ItemsSource="{Binding ShadowOptions}" SelectedIndex="{Binding Shadow}" HorizontalAlignment="Stretch" /></StackPanel>
+<StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_gen4_new_password}" TextWrapping="Wrap" /><TextBox Text="{Binding NewPassword}" Classes="mono" /></StackPanel>
+<StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_ats}" TextWrapping="Wrap" /><TextBox Text="{Binding Ats}" Classes="mono" /></StackPanel>
+<StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_atqa}" TextWrapping="Wrap" /><TextBox Text="{Binding Atqa}" Classes="mono" /></StackPanel>
+<StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_sak}" TextWrapping="Wrap" /><TextBox Text="{Binding Sak}" Classes="mono" /></StackPanel>
+<StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_gen4_ul_mode}" TextWrapping="Wrap" /><ComboBox ItemsSource="{Binding UltralightOptions}" SelectedIndex="{Binding UltralightMode}" HorizontalAlignment="Stretch" /></StackPanel>
+<StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_max_block_decimal}" TextWrapping="Wrap" /><NumericUpDown Value="{Binding MaxBlock}" Minimum="0" Maximum="255" /></StackPanel>
+<StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_gen4_block0}" TextWrapping="Wrap" /><ComboBox ItemsSource="{Binding Block0Options}" SelectedIndex="{Binding Block0Mode}" HorizontalAlignment="Stretch" /></StackPanel>
+<TextBlock Classes="caption warning" Text="{x:Static loc:Strings.Tool_gen4_apply_warning}" /><CheckBox IsChecked="{Binding ConfirmWrite}"><TextBlock Text="{x:Static loc:Strings.Tool_confirm_write}" TextWrapping="Wrap" /></CheckBox>
+<Button Command="{Binding ExecuteCommand}" CommandParameter="apply"><TextBlock Text="{x:Static loc:Strings.Tool_gen4_apply}" TextWrapping="Wrap" /></Button>
+<Expander HorizontalAlignment="Stretch"><Expander.Header><TextBlock Text="{x:Static loc:Strings.Tool_gen4_uid_and_memory}" TextWrapping="Wrap" /></Expander.Header><StackPanel Spacing="10"><StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_uid}" TextWrapping="Wrap" /><TextBox Text="{Binding Uid}" Classes="mono" /></StackPanel>
+<Button Command="{Binding ExecuteCommand}" CommandParameter="write-uid"><TextBlock Text="{x:Static loc:Strings.Tool_gen4_write_uid}" TextWrapping="Wrap" /></Button>
+<StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_block_decimal}" TextWrapping="Wrap" /><NumericUpDown Value="{Binding Block}" Minimum="0" Maximum="255" /></StackPanel>
+<StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_gen4_block_data}" TextWrapping="Wrap" /><TextBox Text="{Binding Data}" Classes="mono" /></StackPanel>
+<WrapPanel ItemSpacing="8" LineSpacing="8"><Button Command="{Binding ExecuteCommand}" CommandParameter="read-block"><TextBlock Text="{x:Static loc:Strings.Tool_gen4_read_block}" TextWrapping="Wrap" /></Button>
+<Button Command="{Binding ExecuteCommand}" CommandParameter="write-block"><TextBlock Text="{x:Static loc:Strings.Tool_gen4_write_block}" TextWrapping="Wrap" /></Button>
+</WrapPanel><ComboBox ItemsSource="{Binding MemoryOptions}" SelectedItem="{Binding Memory}" HorizontalAlignment="Stretch"><ComboBox.ItemTemplate><DataTemplate x:DataType="vm:Gen4MemoryOption"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" /></DataTemplate></ComboBox.ItemTemplate></ComboBox><StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_pack_page_decimal}" TextWrapping="Wrap" /><NumericUpDown Value="{Binding PackPage}" Minimum="-1" Maximum="255" /></StackPanel>
+<StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_raw_payload}" TextWrapping="Wrap" /><TextBox Text="{Binding MemoryData}" Classes="mono" /></StackPanel>
+<WrapPanel ItemSpacing="8" LineSpacing="8"><Button Command="{Binding ExecuteCommand}" CommandParameter="read-memory"><TextBlock Text="{x:Static loc:Strings.Tool_gen4_read_setting}" TextWrapping="Wrap" /></Button>
+<Button Command="{Binding ExecuteCommand}" CommandParameter="write-memory"><TextBlock Text="{x:Static loc:Strings.Tool_gen4_write_setting}" TextWrapping="Wrap" /></Button>
+</WrapPanel></StackPanel></Expander><Expander HorizontalAlignment="Stretch"><Expander.Header><TextBlock Text="{x:Static loc:Strings.Tool_gen4_permanent_lock}" TextWrapping="Wrap" /></Expander.Header><StackPanel Spacing="8"><TextBlock Classes="caption danger" Text="{x:Static loc:Strings.Tool_gen4_fuse_warning}" /><StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_confirm_lock}" TextWrapping="Wrap" /><TextBox Text="{Binding PermanentConfirmation}" Classes="mono" /></StackPanel>
+<Button Command="{Binding ExecuteCommand}" CommandParameter="permanent"><TextBlock Text="{x:Static loc:Strings.Tool_gen4_permanent_lock}" TextWrapping="Wrap" /></Button>
+</StackPanel></Expander></StackPanel>
+<StackPanel Spacing="10" IsVisible="{Binding IsValue}"><c:KeyRecoveryPanel DataContext="{Binding Recovery}" /><Button Command="{Binding ExecuteCommand}" CommandParameter="refresh"><TextBlock Text="{x:Static loc:Strings.Tool_value_block_refresh}" TextWrapping="Wrap" /></Button>
+<StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_value_block_select_source}" TextWrapping="Wrap" /><NumericUpDown Value="{Binding Block}" Minimum="1" Maximum="254" /></StackPanel>
+<StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_value_block_select_destination}" TextWrapping="Wrap" /><NumericUpDown Value="{Binding Destination}" Minimum="1" Maximum="254" /></StackPanel>
+<StackPanel Spacing="4"><TextBlock Text="{x:Static loc:Strings.Tool_amount}" TextWrapping="Wrap" /><NumericUpDown Value="{Binding Amount}" Minimum="-2147483648" Maximum="2147483647" /></StackPanel>
+<CheckBox IsChecked="{Binding ConfirmWrite}"><TextBlock Text="{x:Static loc:Strings.Tool_confirm_write}" TextWrapping="Wrap" /></CheckBox>
+<WrapPanel ItemSpacing="8" LineSpacing="8"><Button Command="{Binding ExecuteCommand}" CommandParameter="write"><TextBlock Text="{x:Static loc:Strings.Tool_value_block_write}" TextWrapping="Wrap" /></Button>
+<Button Command="{Binding ExecuteCommand}" CommandParameter="increment"><TextBlock Text="{x:Static loc:Strings.Tool_value_block_increment}" TextWrapping="Wrap" /></Button>
+<Button Command="{Binding ExecuteCommand}" CommandParameter="decrement"><TextBlock Text="{x:Static loc:Strings.Tool_value_block_decrement}" TextWrapping="Wrap" /></Button>
+<Button Command="{Binding ExecuteCommand}" CommandParameter="transfer"><TextBlock Text="{x:Static loc:Strings.Tool_value_block_copy}" TextWrapping="Wrap" /></Button>
+</WrapPanel><ItemsControl ItemsSource="{Binding Blocks}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:ValueBlockRow"><StackPanel Margin="0,4"><TextBlock Text="{Binding Block, StringFormat='Block {0}'}" /><TextBlock Text="{Binding Data}" Classes="mono" TextWrapping="Wrap" /><TextBlock Text="{Binding Value, StringFormat='Value: {0}'}" /><TextBlock Text="{Binding Address, StringFormat='Address: {0}'}" /></StackPanel></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></StackPanel></StackPanel>
+   <Button Command="{Binding StopCommand}" IsVisible="{Binding Working}"><TextBlock Text="{x:Static loc:Strings.Common_Stop}" /></Button>
+   <SelectableTextBlock Text="{Binding Result}" TextWrapping="Wrap" />
+   <TextBlock Text="{Binding Error}" Classes="danger" TextWrapping="Wrap" />
+  </StackPanel>
+ </ScrollViewer>
+</UserControl>

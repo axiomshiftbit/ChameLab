@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -26,6 +27,9 @@ public static class BackupService
             ["cards"] = new JsonArray(cards.Cards.Select(c => (JsonNode)c.ToJson()).ToArray()),
             ["dictionaries"] = new JsonArray(dictionaries.Dictionaries.Select(d => (JsonNode)d.ToJson()).ToArray()),
             ["knownCardKeys"] = dictionaries.KnownKeys.ToJson(),
+            ["cardFolderTree"] = cards.FolderTree.ToJson(),
+            ["dictionaryFolderTree"] = dictionaries.FolderTree.ToJson(),
+            ["cardFolders"] = new JsonArray(cards.Folders.Select(f => (JsonNode)f).ToArray()),
         };
         return Encoding.UTF8.GetBytes(o.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
     }
@@ -46,10 +50,42 @@ public static class BackupService
             ? da.Where(n => n is not null).Select(n => KeyDictionary.FromJson(n!)).ToList()
             : new();
 
+        var cardFolders = PlanFolders(cards.FolderTree, o["cardFolderTree"]);
+        var dictionaryFolders = PlanFolders(dictionaries.FolderTree, o["dictionaryFolderTree"]);
+        foreach (var card in importedCards)
+        {
+            card.FolderId = card.FolderId is { } id ? cardFolders.Map.GetValueOrDefault(id) : null;
+            if (card.FolderId is { } mapped) card.Folder = cardFolders.Paths[mapped];
+        }
+        foreach (var dictionary in importedDicts)
+        {
+            dictionary.FolderId = dictionary.FolderId is { } id ? dictionaryFolders.Map.GetValueOrDefault(id) : null;
+            if (dictionary.FolderId is { } mapped) dictionary.Folder = dictionaryFolders.Paths[mapped];
+        }
+        // Both hierarchies and all records have been parsed before applying either tree.
+        cards.ReplaceFolders(cardFolders.Folders);
+        dictionaries.ReplaceFolders(dictionaryFolders.Folders);
+        if (o["cardFolders"] is JsonArray legacyFolders)
+            foreach (var folder in legacyFolders) cards.AddFolder((string?)folder ?? "");
         if (o["knownCardKeys"] is { } knownKeys) dictionaries.KnownKeys.Merge(knownKeys);
         if (importedCards.Count > 0) cards.AddRange(importedCards);
         if (importedDicts.Count > 0) dictionaries.AddRange(importedDicts);
         return (importedCards.Count, importedDicts.Count);
+    }
+
+    private static (List<SavedFolder> Folders, Dictionary<string, string> Map, IReadOnlyDictionary<string, string> Paths)
+        PlanFolders(FolderLibrary target, JsonNode? node)
+    {
+        if (target.LoadError is { } error) throw new InvalidOperationException(error);
+        var incoming = node is JsonArray array ? array.Select(n => SavedFolder.FromJson(n!)).ToList() : new List<SavedFolder>();
+        var sourcePaths = SavedFolder.Paths(incoming);
+        var folders = target.Items.ToList(); var paths = target.Paths;
+        var map = incoming.ToDictionary(f => f.Id, f => paths.FirstOrDefault(p =>
+            p.Value.Equals(sourcePaths[f.Id], StringComparison.OrdinalIgnoreCase)).Key ?? Guid.NewGuid().ToString());
+        foreach (var f in incoming)
+            if (!folders.Any(existing => existing.Id == map[f.Id]))
+                folders.Add(f with { Id = map[f.Id], ParentId = f.ParentId is null ? null : map[f.ParentId] });
+        return (folders, map, SavedFolder.Paths(folders));
     }
 
     /// <summary>

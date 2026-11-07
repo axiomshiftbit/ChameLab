@@ -15,8 +15,13 @@ sealed class Program
     [STAThread]
     public static void Main(string[] args)
     {
+
+#if CHAMELAB_UI_TESTS
+        AppServices.Register([], store: new MemoryKeyValueStore());
+#else
         AppServices.Register(new ITransportScanner[] { new SerialScanner() }, dfu: new IDfuLocator[] { new SerialDfuLocator() },
             hardnested: new ManagedHardnestedEngine());
+#endif
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 

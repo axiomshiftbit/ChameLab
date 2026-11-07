@@ -34,6 +34,8 @@ public sealed class ChameleonConnection(ITransport transport) : IAsyncDisposable
     private Task? _readLoop;
     private volatile bool _closed;
 
+    public ChameLab.Services.DeviceJournal Journal { get; set; } = new();
+
     public ITransport Transport => transport;
     public bool IsConnected => transport.IsConnected;
 
@@ -95,6 +97,7 @@ public sealed class ChameleonConnection(ITransport transport) : IAsyncDisposable
         var turn = _commandLocks.GetOrAdd(cmd, _ => new SemaphoreSlim(1, 1));
         await turn.WaitAsync(ct);
         var gated = false;
+        var clock = System.Diagnostics.Stopwatch.StartNew();
         try
         {
             // The timeout starts once the request may go out: waiting behind a long command
@@ -119,6 +122,7 @@ public sealed class ChameleonConnection(ITransport transport) : IAsyncDisposable
                 else tcs.TrySetException(new TimeoutException(string.Format(Strings.Device_CommandTimeout, cmd, timeoutMs)));
             });
 
+            Journal.Add("TX", $"{cmd} ({(ushort)cmd}){ChameLab.Services.DeviceJournal.Address(cmd, data)}");
             var frame = FrameCodec.Encode(cmd, data ?? Array.Empty<byte>(), status);
             await _writeLock.WaitAsync(timeoutCts.Token);
             try
@@ -138,7 +142,14 @@ public sealed class ChameleonConnection(ITransport transport) : IAsyncDisposable
                 _writeLock.Release();
             }
 
-            return await tcs.Task;
+            var reply = await tcs.Task;
+            Journal.Add("RX", $"{cmd}: {reply.Status.Describe()} ({(ushort)reply.Status}), {clock.ElapsedMilliseconds} ms");
+            return reply;
+        }
+        catch (Exception ex)
+        {
+            Journal.Add(ex is OperationCanceledException ? "CANCEL" : "ERROR", $"{cmd}: {ex.GetType().Name}, {clock.ElapsedMilliseconds} ms");
+            throw;
         }
         finally
         {

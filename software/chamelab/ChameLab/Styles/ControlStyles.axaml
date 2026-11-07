@@ -1,12 +1,12 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:c="using:ChameLab.Controls"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui">
+ xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui">
 
   <Style Selector="ComboBox">
     <Setter Property="VerticalContentAlignment" Value="Center" />
   </Style>
-  <!-- Actipro's selected-value presenter stretches its data-template root even with
+  <!-- The selected-value presenter stretches its data-template root even with
        VerticalContentAlignment=Center. Center the presenter itself at its desired height. -->
   <Style Selector="ComboBox /template/ ContentPresenter#content">
     <Setter Property="VerticalAlignment" Value="Center" />
@@ -58,12 +58,12 @@
     <Setter Property="Width" Value="40" />
     <Setter Property="Height" Value="40" />
     <Setter Property="CornerRadius" Value="10" />
-    <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}" />
-    <Setter Property="TextElement.Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSoftAccent}" />
+    <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSoftAccent}" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource ControlForegroundBrushSoftAccent}" />
   </Style>
   <Style Selector="Border.iconwell.green">
-    <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}" />
-    <Setter Property="TextElement.Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSoftAccent}" />
+    <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSoftAccent}" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource ControlForegroundBrushSoftAccent}" />
   </Style>
   <Style Selector="Border.iconwell.blue">
     <Setter Property="Background" Value="{DynamicResource BrandBlueSoftBrush}" />
@@ -107,24 +107,28 @@
     <Setter Property="TextElement.Foreground" Value="{DynamicResource BrandAmberBrush}" />
   </Style>
   <Style Selector="Border.chip.active">
-    <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
-    <Setter Property="TextElement.Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSolidSuccess}" />
+    <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSolidSuccess}" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource ControlForegroundBrushSolidSuccess}" />
   </Style>
 
   <!-- ==================== Typography ==================== -->
 
+  <Style Selector="TextBlock.h1, TextBlock.h2, TextBlock.overline, c|SettingRow > TextBlock">
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
   <Style Selector="TextBlock.warning">
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushOutlineWarning}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushOutlineWarning}" />
   </Style>
   <Style Selector="TextBlock.danger">
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushOutlineDanger}" />
   </Style>
   <!-- A risky option: red label, and the danger variant of the theme's check mark. -->
   <Style Selector="CheckBox.danger">
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushOutlineDanger}" />
   </Style>
   <Style Selector="TextBlock.success">
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushOutlineSuccess}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushOutlineSuccess}" />
   </Style>
 
   <Style Selector="TextBlock.h1">
@@ -136,18 +140,18 @@
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
   <Style Selector="TextBlock.caption">
-    <Setter Property="Foreground" Value="{actipro:ThemeResource DefaultForegroundBrushSecondary}" />
+    <Setter Property="Foreground" Value="{DynamicResource DefaultForegroundBrushSecondary}" />
     <Setter Property="FontSize" Value="12" />
     <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
   <Style Selector="TextBlock.overline">
-    <Setter Property="Foreground" Value="{actipro:ThemeResource DefaultForegroundBrushTertiary}" />
+    <Setter Property="Foreground" Value="{DynamicResource DefaultForegroundBrushTertiary}" />
     <Setter Property="FontSize" Value="11" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="LetterSpacing" Value="0.6" />
   </Style>
   <Style Selector="c|MarkdownView">
-    <Setter Property="LinkForeground" Value="{actipro:ThemeResource ControlForegroundBrushOutlineAccent}" />
+    <Setter Property="LinkForeground" Value="{DynamicResource ControlForegroundBrushOutlineAccent}" />
     <Setter Property="CodeBackground" Value="{actipro:ThemeResource Container3BackgroundBrush}" />
   </Style>
   <Style Selector="TextBlock.mono, SelectableTextBlock.mono">
@@ -256,47 +260,47 @@
     <Setter Property="Height" Value="14" />
   </Style>
 
-  <!-- Primary / accent action; theme-outline keeps Actipro's outline accent look. -->
+  <!-- Primary / accent action; theme-outline keeps the outline accent look. -->
   <Style Selector="Button.accent:not(.theme-outline)">
-    <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSolidAccent}" />
+    <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushSolidAccent}" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="Padding" Value="16,9" />
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
   <Style Selector="Button.accent:pointerover:not(.theme-outline) /template/ ContentPresenter">
-    <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccentPointerOver}" />
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSolidAccent}" />
+    <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSolidAccentPointerOver}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushSolidAccent}" />
   </Style>
   <Style Selector="Button.accent:pressed:not(.theme-outline) /template/ ContentPresenter">
-    <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccentPressed}" />
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSolidAccent}" />
+    <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSolidAccentPressed}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushSolidAccent}" />
   </Style>
   <Style Selector="Button.accent:disabled:not(.theme-outline) /template/ ContentPresenter">
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSolidAccent}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushSolidAccent}" />
     <Setter Property="Opacity" Value="0.5" />
   </Style>
 
   <Style Selector="Button.success">
-    <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSolidSuccess}" />
+    <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSolidSuccess}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushSolidSuccess}" />
     <Setter Property="BorderThickness" Value="0" />
   </Style>
   <Style Selector="Button.success:pointerover /template/ ContentPresenter">
-    <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccessPointerOver}" />
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSolidSuccess}" />
+    <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSolidSuccessPointerOver}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushSolidSuccess}" />
   </Style>
   <Style Selector="Button.success:pressed /template/ ContentPresenter">
-    <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccessPressed}" />
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSolidSuccess}" />
+    <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSolidSuccessPressed}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushSolidSuccess}" />
   </Style>
 
   <!-- Quiet destructive action: red text, red fill on hover. -->
   <Style Selector="Button.danger">
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushOutlineDanger}" />
   </Style>
   <Style Selector="Button.danger:pointerover /template/ ContentPresenter">
-    <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+    <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSolidDanger}" />
     <Setter Property="Foreground" Value="White" />
   </Style>
   <!-- Brand-blue action (Write, Write another): blue text and outline, blue fill on hover. -->
@@ -310,7 +314,7 @@
     <Setter Property="Foreground" Value="White" />
   </Style>
   <Style Selector="Button.danger.solid">
-    <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+    <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSolidDanger}" />
     <Setter Property="Foreground" Value="White" />
   </Style>
 
@@ -319,15 +323,12 @@
        icon buttons and the other drawn-content buttons keep their own size; .mini is a small inline link. -->
   <Style Selector="Button:not(.icon):not(.tile):not(.slot):not(.cardtile):not(.foldertile):not(.copycell):not(.colorpick):not(.ledpick):not(.slottarget):not(.mini), DropDownButton">
     <!-- Comfortable to tap on a phone. -->
-    <Setter Property="Height" Value="40" />
-    <Setter Property="MinHeight" Value="0" />
-    <Setter Property="Padding" Value="14,0" />
+    <Setter Property="MinHeight" Value="40" />
+        <Setter Property="Padding" Value="14,8" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
   </Style>
-  <Style Selector="actipro|ToggleThemeButton">
-    <Setter Property="Height" Value="40" />
-    <Setter Property="MinWidth" Value="40" />
-  </Style>
+
+  <Style Selector="actipro|ToggleThemeButton"><Setter Property="Height" Value="40" /><Setter Property="MinWidth" Value="40" /></Style>
 
   <!-- Large clickable tile (scan buttons). -->
   <Style Selector="Button.tile">
@@ -341,7 +342,7 @@
   </Style>
   <Style Selector="Button.tile:pointerover /template/ ContentPresenter">
     <Setter Property="Background" Value="{actipro:ThemeResource Container2BackgroundBrush}" />
-    <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
   </Style>
 
   <!-- Read-only value field that copies itself on click (looks like an inset). -->
@@ -362,35 +363,35 @@
 
   <!-- Dump sector key grid (drawn control): A/B squares per sector, colors match the legend. -->
   <Style Selector="c|KeyRecoveryPanel">
-    <Setter Property="ProgressDetailForeground" Value="{actipro:ThemeResource DefaultForegroundBrushSecondary}" />
+    <Setter Property="ProgressDetailForeground" Value="{DynamicResource DefaultForegroundBrushSecondary}" />
   </Style>
   <Style Selector="c|SectorKeyGrid">
-    <Setter Property="WriteErrorBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
-    <Setter Property="SelectionBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
-    <Setter Property="FoundBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+    <Setter Property="WriteErrorBrush" Value="{DynamicResource ControlBackgroundBrushSolidDanger}" />
+    <Setter Property="SelectionBrush" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
+    <Setter Property="FoundBrush" Value="{DynamicResource ControlBackgroundBrushSolidSuccess}" />
     <Setter Property="SearchingBrush" Value="{DynamicResource BrandBlueBrush}" />
-    <Setter Property="NotFoundBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+    <Setter Property="NotFoundBrush" Value="{DynamicResource ControlBackgroundBrushSolidDanger}" />
     <Setter Property="UnknownBrush" Value="{actipro:ThemeResource Container5BackgroundBrush}" />
-    <Setter Property="LabelBrush" Value="{actipro:ThemeResource DefaultForegroundBrushTertiary}" />
+    <Setter Property="LabelBrush" Value="{DynamicResource DefaultForegroundBrushTertiary}" />
   </Style>
 
   <!-- Dump block strip (drawn control); colors match the legend cells below. -->
   <Style Selector="c|LfWaveform">
-    <Setter Property="LineBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
-    <Setter Property="ThresholdBrush" Value="{actipro:ThemeResource DefaultForegroundBrushTertiary}" />
-    <Setter Property="GapBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+    <Setter Property="LineBrush" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
+    <Setter Property="ThresholdBrush" Value="{DynamicResource DefaultForegroundBrushTertiary}" />
+    <Setter Property="GapBrush" Value="{DynamicResource ControlBackgroundBrushSolidDanger}" />
     <Setter Property="CursorBrush" Value="{DynamicResource BrandAmberBrush}" />
   </Style>
   <Style Selector="c|BlockStrip">
     <Setter Property="PendingBrush" Value="{actipro:ThemeResource Container5BackgroundBrush}" />
     <Setter Property="ReadingBrush" Value="{DynamicResource BrandBlueBrush}" />
-    <Setter Property="ReadBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
-    <Setter Property="ReadErrorBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}" />
-    <Setter Property="NoKeyBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+    <Setter Property="ReadBrush" Value="{DynamicResource ControlBackgroundBrushSolidSuccess}" />
+    <Setter Property="ReadErrorBrush" Value="{DynamicResource ControlBackgroundBrushSolidWarning}" />
+    <Setter Property="NoKeyBrush" Value="{DynamicResource ControlBackgroundBrushSolidDanger}" />
   </Style>
   <Style Selector="c|BlockStrip.write">
     <Setter Property="ReadingBrush" Value="{DynamicResource BrandBlueBrush}" />
-    <Setter Property="ReadErrorBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+    <Setter Property="ReadErrorBrush" Value="{DynamicResource ControlBackgroundBrushSolidDanger}" />
   </Style>
 
   <!-- Legend cells for the dump block strip, colored by read state. -->
@@ -407,16 +408,16 @@
     <Setter Property="Background" Value="{DynamicResource BrandBlueBrush}" />
   </Style>
   <Style Selector="Border.blockcell.read">
-    <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+    <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSolidSuccess}" />
   </Style>
   <Style Selector="Border.blockcell.readerror">
-    <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}" />
+    <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSolidWarning}" />
   </Style>
   <Style Selector="Border.blockcell.writeerror">
-    <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+    <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSolidDanger}" />
   </Style>
   <Style Selector="Border.blockcell.nokey">
-    <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+    <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSolidDanger}" />
   </Style>
   <Style Selector="Border.blocklegend">
     <Setter Property="Width" Value="10" />
@@ -457,7 +458,7 @@
     <Setter Property="BorderBrush" Value="{actipro:ThemeResource Container3BorderBrush}" />
   </Style>
   <Style Selector="Border.slotcard.active, Button.slot:pointerover Border.slotcard.active">
-    <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
   </Style>
   <Style Selector="Border.slotnum">
     <Setter Property="Width" Value="36" />
@@ -466,8 +467,8 @@
     <Setter Property="Background" Value="{actipro:ThemeResource Container3BackgroundBrush}" />
   </Style>
   <Style Selector="Border.slotnum.active">
-    <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
-    <Setter Property="TextElement.Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSolidAccent}" />
+    <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource ControlForegroundBrushSolidAccent}" />
   </Style>
 
   <!-- Segmented two-way switch built from radio buttons. -->
@@ -496,21 +497,21 @@
     </Setter>
     <Setter Property="Cursor" Value="Hand" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />
-    <Setter Property="Foreground" Value="{actipro:ThemeResource DefaultForegroundBrushSecondary}" />
+    <Setter Property="Foreground" Value="{DynamicResource DefaultForegroundBrushSecondary}" />
   </Style>
   <Style Selector="RadioButton.segment:pointerover /template/ Border#PART_Bg">
     <Setter Property="Background" Value="{actipro:ThemeResource Container3BackgroundBrush}" />
   </Style>
   <Style Selector="RadioButton.segment:checked">
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSolidAccent}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushSolidAccent}" />
   </Style>
   <Style Selector="RadioButton.segment:checked /template/ Border#PART_Bg">
-    <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
+    <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
   </Style>
   <!-- Unavailable segments get dim text and a neutral pill instead of a faded accent, which read as a
        murky dark block against the container. -->
   <Style Selector="RadioButton.segment:disabled">
-    <Setter Property="Foreground" Value="{actipro:ThemeResource DefaultForegroundBrushDisabled}" />
+    <Setter Property="Foreground" Value="{DynamicResource DefaultForegroundBrushDisabled}" />
     <Setter Property="Cursor" Value="Arrow" />
   </Style>
   <Style Selector="RadioButton.segment:checked:disabled /template/ Border#PART_Bg">
@@ -568,13 +569,13 @@
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushOutlineAccent}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushOutlineAccent}" />
   </Style>
   <Style Selector="RepeatButton.step:pointerover /template/ ContentPresenter">
     <Setter Property="Background" Value="{actipro:ThemeResource Container2BackgroundBrush}" />
   </Style>
   <Style Selector="RepeatButton.step:pressed /template/ ContentPresenter">
-    <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}" />
+    <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSoftAccent}" />
   </Style>
   <Style Selector="RepeatButton.step:disabled">
     <Setter Property="Opacity" Value="0.35" />
@@ -622,19 +623,19 @@
   </Style>
   <!-- The theme's own list item brushes, as the item would have drawn them. -->
   <Style Selector="ListBox.nav ListBoxItem:pointerover Border.navrow">
-    <Setter Property="Background" Value="{actipro:ThemeResource ListItemBackgroundBrushPointerOver}" />
+    <Setter Property="Background" Value="{DynamicResource ListItemBackgroundBrushPointerOver}" />
   </Style>
   <Style Selector="ListBox.nav ListBoxItem:pressed Border.navrow">
-    <Setter Property="Background" Value="{actipro:ThemeResource ListItemBackgroundBrushPressed}" />
+    <Setter Property="Background" Value="{DynamicResource ListItemBackgroundBrushPressed}" />
   </Style>
   <Style Selector="ListBox.nav ListBoxItem:selected Border.navrow">
-    <Setter Property="Background" Value="{actipro:ThemeResource ListItemBackgroundBrushSelected}" />
+    <Setter Property="Background" Value="{DynamicResource ListItemBackgroundBrushSelected}" />
   </Style>
   <Style Selector="ListBox.nav ListBoxItem:selected:pointerover Border.navrow">
-    <Setter Property="Background" Value="{actipro:ThemeResource ListItemBackgroundBrushSelectedPointerOver}" />
+    <Setter Property="Background" Value="{DynamicResource ListItemBackgroundBrushSelectedPointerOver}" />
   </Style>
   <Style Selector="ListBox.nav ListBoxItem:selected:pressed Border.navrow">
-    <Setter Property="Background" Value="{actipro:ThemeResource ListItemBackgroundBrushSelectedPressed}" />
+    <Setter Property="Background" Value="{DynamicResource ListItemBackgroundBrushSelectedPressed}" />
   </Style>
   <!-- A card dragged over a folder (or Cards) in the navigation pane. -->
   <Style Selector="ListBox.nav Border.navrow.droptarget">
@@ -682,7 +683,7 @@
     <Setter Property="Width" Value="3" />
     <Setter Property="Height" Value="18" />
     <Setter Property="CornerRadius" Value="2" />
-    <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
+    <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
   </Style>
 
   <!-- ==================== Card rows (saved cards, dictionaries, write) ==================== -->
@@ -726,12 +727,12 @@
     <Setter Property="CornerRadius" Value="12" />
   </Style>
   <Style Selector="ListBoxItem:selected Border.cardrow">
-    <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
   </Style>
   <!-- Hover: like a card tile (Button.cardtile). After the row's own style, which it overrides. -->
   <Style Selector="ListBox.cards ListBoxItem:pointerover Border.cardrow">
     <Setter Property="Background" Value="{actipro:ThemeResource Container2BackgroundBrush}" />
-    <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
   </Style>
   <!-- Clips the color stripe to the inner edge of the frame (12 - 1.5) so it never paints over it. -->
   <Style Selector="Border.cardrow > Border.cardclip">
@@ -754,7 +755,7 @@
   </Style>
   <Style Selector="Button.cardtile:pointerover /template/ ContentPresenter">
     <Setter Property="Background" Value="{actipro:ThemeResource Container2BackgroundBrush}" />
-    <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
   </Style>
   <!-- A folder in the Cards list: a row like a card's, dimmed while empty. Padded like the list rows,
        so the gaps between folders are part of them too. -->
@@ -773,7 +774,7 @@
   </Style>
   <Style Selector="Button.foldertile:pointerover Border.cardrow, Button.foldertile.droptarget Border.cardrow">
     <Setter Property="Background" Value="{actipro:ThemeResource Container2BackgroundBrush}" />
-    <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
   </Style>
   <Style Selector="Button.foldertile PathIcon.foldericon">
     <Setter Property="Opacity" Value="0.75" />
@@ -810,7 +811,7 @@
     <Setter Property="IsHitTestVisible" Value="False" />
     <Setter Property="CornerRadius" Value="12" />
     <Setter Property="BorderThickness" Value="3" />
-    <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
   </Style>
   <Style Selector="ListBox.cards ListBoxItem.dragging Border.dragframe">
     <Setter Property="IsVisible" Value="True" />
@@ -860,14 +861,14 @@
   </Style>
   <!-- The tile under the pointer, or holding the focus, shows its edge in the accent color. -->
   <Style Selector="ListBox.ndef ListBoxItem:pointerover Border.ndefrecord, ListBox.ndef ListBoxItem:focus-within Border.ndefrecord">
-    <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
   </Style>
   <Style Selector="ListBox.ndef ListBoxItem.dragging">
     <Setter Property="ZIndex" Value="1" />
     <Setter Property="ClipToBounds" Value="False" />
   </Style>
   <Style Selector="ListBox.ndef ListBoxItem.dragging Border.ndefrecord">
-    <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
     <Setter Property="BoxShadow" Value="0 4 14 -2 #80000000" />
   </Style>
   <!-- A record is dragged by any spot that isn't an input; the inputs keep their own cursor. -->
@@ -888,7 +889,7 @@
   </Style>
   <!-- Bytes taken when the records are more than the card holds. -->
   <Style Selector="TextBlock.caption.overcapacity">
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushOutlineDanger}" />
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
 
@@ -952,7 +953,7 @@
     <Setter Property="CornerRadius" Value="8" />
   </Style>
   <Style Selector="Button.colorpick:pointerover > Border">
-    <Setter Property="BorderBrush" Value="{actipro:ThemeResource DefaultForegroundBrushSecondary}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource DefaultForegroundBrushSecondary}" />
     <Setter Property="BorderThickness" Value="2" />
   </Style>
   <!-- Header name: reads as a title, turns into a field on hover / focus. -->
@@ -969,7 +970,7 @@
     <Setter Property="BorderBrush" Value="{actipro:ThemeResource Container1BorderBrush}" />
   </Style>
   <Style Selector="TextBox.titlebox:focus-within">
-    <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
   </Style>
   <!-- Actions short of room: icon only (the tooltip names the action). Only the label in the
        button's content: a plain descendant selector would also blank the tooltip's text. -->
@@ -1035,11 +1036,11 @@
     <Setter Property="CornerRadius" Value="10" />
     <Setter Property="Padding" Value="14,6,6,6" />
     <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="Background" Value="{actipro:ThemeResource InfoBarBackgroundBrushError}" />
-    <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+    <Setter Property="Background" Value="{DynamicResource InfoBarBackgroundBrushError}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ControlBackgroundBrushSolidDanger}" />
   </Style>
   <Style Selector="Border.banner PathIcon.state">
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlBackgroundBrushSolidDanger}" />
   </Style>
 
   <!-- A passing confirmation: fades in, never takes clicks or focus. -->
@@ -1047,8 +1048,8 @@
     <Setter Property="CornerRadius" Value="16" />
     <Setter Property="Padding" Value="12,6" />
     <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="Background" Value="{actipro:ThemeResource InfoBarBackgroundBrushSuccess}" />
-    <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+    <Setter Property="Background" Value="{DynamicResource InfoBarBackgroundBrushSuccess}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ControlBackgroundBrushSolidSuccess}" />
     <Setter Property="BoxShadow" Value="0 2 8 0 #26000000" />
     <Setter Property="Opacity" Value="0" />
     <Setter Property="IsVisible" Value="False" />
@@ -1063,7 +1064,7 @@
     <Setter Property="IsVisible" Value="True" />
   </Style>
   <Style Selector="Border.notice PathIcon.state">
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlBackgroundBrushSolidSuccess}" />
   </Style>
 
   <!-- Why the edits could not be saved: in the save bar, above its buttons. -->
@@ -1077,11 +1078,11 @@
     <Setter Property="Height" Value="16" />
     <Setter Property="VerticalAlignment" Value="Top" />
     <Setter Property="Margin" Value="0,1,0,0" />
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlBackgroundBrushSolidDanger}" />
   </Style>
   <Style Selector="DockPanel.saveerror > TextBlock">
     <Setter Property="TextWrapping" Value="Wrap" />
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushOutlineDanger}" />
   </Style>
 
   <!-- ==================== Compact (phone-width) overrides ==================== -->
@@ -1127,7 +1128,6 @@
   </Style>
   <!-- Scroll bars float over the content as a thin strip instead of taking a column. -->
   <Style Selector=".compact ScrollViewer">
-    <!-- Actipro's default theme always reserves a column for the bar; the overlay theme doesn't. -->
     <Setter Property="Theme" Value="{actipro:ControlTheme ScrollViewerOverlay}" />
     <Setter Property="AllowAutoHide" Value="True" />
   </Style>
@@ -1137,9 +1137,7 @@
     <Setter Property="Theme" Value="{actipro:ControlTheme ScrollViewer}" />
     <Setter Property="AllowAutoHide" Value="False" />
   </Style>
-  <Style Selector=".compact ScrollBar">
-    <Setter Property="actipro:ThemeProperties.ScrollBarHasLineButtons" Value="False" />
-  </Style>
+  <Style Selector=".compact ScrollBar"><Setter Property="actipro:ThemeProperties.ScrollBarHasLineButtons" Value="False" /></Style>
   <Style Selector=".compact ScrollBar:vertical">
     <Setter Property="Width" Value="8" />
     <Setter Property="MinWidth" Value="0" />
@@ -1178,7 +1176,7 @@
     <Setter Property="MinHeight" Value="0" />
     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
     <Setter Property="Cursor" Value="Hand" />
-    <Setter Property="Foreground" Value="{actipro:ThemeResource DefaultForegroundBrushSecondary}" />
+    <Setter Property="Foreground" Value="{DynamicResource DefaultForegroundBrushSecondary}" />
   </Style>
   <Style Selector="ListBox.tabbar ListBoxItem /template/ ContentPresenter, ListBox.tabbar ListBoxItem:pointerover /template/ ContentPresenter, ListBox.tabbar ListBoxItem:selected /template/ ContentPresenter, ListBox.tabbar ListBoxItem:pressed /template/ ContentPresenter, ListBox.tabbar ListBoxItem:selected:pointerover /template/ ContentPresenter, ListBox.tabbar ListBoxItem:selected:focus /template/ ContentPresenter">
     <Setter Property="Background" Value="Transparent" />
@@ -1190,13 +1188,13 @@
     <Setter Property="Background" Value="Transparent" />
   </Style>
   <Style Selector="ListBox.tabbar ListBoxItem:pointerover Border.tabpill">
-    <Setter Property="Background" Value="{actipro:ThemeResource ListItemBackgroundBrushPointerOver}" />
+    <Setter Property="Background" Value="{DynamicResource ListItemBackgroundBrushPointerOver}" />
   </Style>
   <Style Selector="ListBox.tabbar ListBoxItem:selected Border.tabpill">
-    <Setter Property="Background" Value="{actipro:ThemeResource ListItemBackgroundBrushSelected}" />
+    <Setter Property="Background" Value="{DynamicResource ListItemBackgroundBrushSelected}" />
   </Style>
   <Style Selector="ListBox.tabbar ListBoxItem:selected">
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushOutlineAccent}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushOutlineAccent}" />
   </Style>
   <!-- ==================== Hex editing ==================== -->
 
@@ -1204,30 +1202,30 @@
     <Setter Property="FontFamily" Value="{x:Static c:AppFonts.Mono}" />
   </Style>
   <Style Selector="TextBox.hex TextBlock.hexcount">
-    <Setter Property="Foreground" Value="{actipro:ThemeResource DefaultForegroundBrushTertiary}" />
+    <Setter Property="Foreground" Value="{DynamicResource DefaultForegroundBrushTertiary}" />
     <Setter Property="FontSize" Value="11" />
     <Setter Property="Margin" Value="6,0,10,0" />
   </Style>
   <Style Selector="TextBox.hex:invalid TextBlock.hexcount">
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushOutlineDanger}" />
   </Style>
   <Style Selector="TextBox.hex:invalid:not(:focus-within)">
-    <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ControlForegroundBrushOutlineDanger}" />
   </Style>
 
   <Style Selector="c|HexEditor">
     <Setter Property="FontFamily" Value="{x:Static c:AppFonts.Mono}" />
     <Setter Property="FontSize" Value="12" />
     <Setter Property="Foreground" Value="{actipro:ThemeResource DefaultForegroundBrush}" />
-    <Setter Property="LabelBrush" Value="{actipro:ThemeResource DefaultForegroundBrushTertiary}" />
-    <Setter Property="DimBrush" Value="{actipro:ThemeResource DefaultForegroundBrushDisabled}" />
+    <Setter Property="LabelBrush" Value="{DynamicResource DefaultForegroundBrushTertiary}" />
+    <Setter Property="DimBrush" Value="{DynamicResource DefaultForegroundBrushDisabled}" />
     <Setter Property="ChangedBrush" Value="{DynamicResource BrandRedBrush}" />
-    <Setter Property="ManufacturerBrush" Value="{actipro:ThemeResource ControlForegroundBrushOutlineAccent}" />
+    <Setter Property="ManufacturerBrush" Value="{DynamicResource ControlForegroundBrushOutlineAccent}" />
     <Setter Property="KeyABrush" Value="{DynamicResource BrandBlueBrush}" />
     <Setter Property="AccessBitsBrush" Value="{DynamicResource BrandAmberBrush}" />
     <Setter Property="KeyBBrush" Value="{DynamicResource HexKeyBBrush}" />
-    <Setter Property="CaretBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
-    <Setter Property="CaretCellBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSoftAccent}" />
+    <Setter Property="CaretBrush" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
+    <Setter Property="CaretCellBrush" Value="{DynamicResource ControlBackgroundBrushSoftAccent}" />
     <Setter Property="SelectionBrush" Value="{DynamicResource BrandBlueSoftBrush}" />
     <Setter Property="ActiveRowBrush" Value="{actipro:ThemeResource Container3BackgroundBrush}" />
     <Setter Property="SeparatorBrush" Value="{actipro:ThemeResource Container1BorderBrush}" />
@@ -1241,7 +1239,7 @@
     <Setter Property="FontSize" Value="11" />
   </Style>
   <Style Selector="WrapPanel.hexlegend > TextBlock.manufacturer">
-    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushOutlineAccent}" />
+    <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushOutlineAccent}" />
   </Style>
   <Style Selector="WrapPanel.hexlegend > TextBlock.keya">
     <Setter Property="Foreground" Value="{DynamicResource BrandBlueBrush}" />

@@ -134,6 +134,7 @@ public enum MagicGeneration
     Gen2,
     /// <summary>Gen3 / APDU: a normal MIFARE where block 0 is set with a backdoor command.</summary>
     Gen3,
+    Gen4,
 }
 
 public enum ButtonType : byte
@@ -223,6 +224,7 @@ public static class EnumLabels
 
     public static string Label(this MagicGeneration g) => g switch
     {
+        MagicGeneration.Gen4 => "Gen4 GTU / Ultimate",
         MagicGeneration.Gen1a => "Gen1a (UID)",
         MagicGeneration.Gen2 => "Gen2 / CUID",
         MagicGeneration.Gen3 => "Gen3 (APDU)",

@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
              xmlns:loc="using:ChameLab.Localization"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -7,7 +8,6 @@
              xmlns:b="using:ChameLab.Behaviors"
              xmlns:c="using:ChameLab.Controls"
              xmlns:conv="using:ChameLab.Converters"
-             xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
              mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
              x:Class="ChameLab.Views.MainView"
              x:DataType="vm:MainViewModel">
@@ -42,7 +42,7 @@
                 <PathIcon Data="{StaticResource Icon.upload}" Width="12" Height="12"
                           VerticalAlignment="Center" IsVisible="{Binding AppUpdate.IsUpdateAvailable}"
                           Classes.pulse="{Binding AppUpdate.IsUpdateAvailable}"
-                          Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
+                          Foreground="{DynamicResource ControlBackgroundBrushSolidAccent}" />
               </StackPanel>
               <TextBlock Text="{Binding Settings.AppVersion}" Classes="caption" FontSize="11"
                          Foreground="{actipro:ThemeResource DefaultForegroundBrush}" />
@@ -60,9 +60,9 @@
                 Background="{actipro:ThemeResource Container2BackgroundBrush}">
           <StackPanel Orientation="Horizontal" Spacing="7">
             <Ellipse Width="8" Height="8" VerticalAlignment="Center"
-                     Fill="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" IsVisible="{Binding IsConnected}" />
+                     Fill="{DynamicResource ControlBackgroundBrushSolidSuccess}" IsVisible="{Binding IsConnected}" />
             <Ellipse Width="8" Height="8" VerticalAlignment="Center"
-                     Fill="{actipro:ThemeResource DefaultForegroundBrushTertiary}" IsVisible="{Binding !IsConnected}" />
+                     Fill="{DynamicResource DefaultForegroundBrushTertiary}" IsVisible="{Binding !IsConnected}" />
             <Panel Classes="header-connection-label">
               <TextBlock Text="{x:Static loc:Strings.Main_Online}" FontSize="12" IsVisible="{Binding IsConnected}" VerticalAlignment="Center" />
               <TextBlock Text="{x:Static loc:Strings.Main_Offline}" FontSize="12" IsVisible="{Binding !IsConnected}" VerticalAlignment="Center" />
@@ -259,7 +259,7 @@
 
           <!-- Thin activity bar while the current page talks to the device. -->
           <ProgressBar Grid.Row="0" VerticalAlignment="Top" IsIndeterminate="True" Height="3" MinHeight="3"
-                       CornerRadius="0" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" Background="Transparent"
+                       CornerRadius="0" Foreground="{DynamicResource ControlBackgroundBrushSolidAccent}" Background="Transparent"
                        IsVisible="{Binding CurrentPage.IsBusy}" />
 
           <!-- A passing confirmation at the top of the page: clears itself, and clicks go through it. -->
@@ -281,15 +281,15 @@
       <Border Padding="4,4,4,6" Background="{actipro:ThemeResource Container1BackgroundBrush}"
               BorderBrush="{actipro:ThemeResource Container1BorderBrush}" BorderThickness="0,1,0,0">
         <ListBox Classes="tabbar" ItemsSource="{Binding NavPages}" SelectedItem="{Binding SelectedNavPage}"
-                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Disabled">
           <ListBox.ItemsPanel>
             <ItemsPanelTemplate>
-              <UniformGrid Rows="1" />
+              <StackPanel Orientation="Horizontal" />
             </ItemsPanelTemplate>
           </ListBox.ItemsPanel>
           <ListBox.ItemTemplate>
             <DataTemplate x:DataType="vm:PageViewModelBase">
-              <StackPanel Spacing="3" HorizontalAlignment="Center">
+              <StackPanel Spacing="3" MinWidth="72" HorizontalAlignment="Center">
                 <Border Classes="tabpill" HorizontalAlignment="Center">
                   <PathIcon Width="20" Height="20"
                             Data="{Binding Icon, Converter={x:Static conv:IconGeometryConverter.Instance}}" />

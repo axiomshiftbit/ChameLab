@@ -208,6 +208,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         CancelWriteCommand = ReactiveCommand.Create(() =>
         {
             if (IsWriting) CancelWrite();
+            else if (IsStandaloneWriter) { ResetWriteRecovery(); ClearMessages(); }
             else Action = CardAction.None;
         });
         ConfirmDeleteCommand = ReactiveCommand.Create(ConfirmDelete);
@@ -215,13 +216,18 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         RefreshSlotsCommand = ReactiveCommand.CreateFromTask(RefreshSlotsAsync, connected);
         WriteNowCommand = ReactiveCommand.CreateFromTask(WriteAsync,
             this.WhenAnyValue(x => x.IsConnected, x => x.WritePasswordError, x => x.WriteLfPasswordError,
-                x => x.WriteLfNewKeyError, x => x.IsBusy, x => x.HasRequiredWriteKeys, x => x.IsWriteSuccessful,
-                (online, ulError, lfError, lfNewError, busy, keysReady, succeeded) =>
-                    online && !busy && !succeeded && keysReady && ulError is null && lfError is null && lfNewError is null));
+                x => x.WriteLfNewKeyError, x => x.IsBusy, x => x.HasRequiredWriteKeys, x => x.IsWriteSuccessful, x => x.TargetConfirmed, x => x.HasWriteTarget, x => x.LfBlankAcknowledged,
+                (online, ulError, lfError, lfNewError, busy, keysReady, succeeded, confirmed, found, lfBlank) =>
+                    online && !busy && !succeeded && keysReady && confirmed && (found || lfBlank) && ulError is null && lfError is null && lfNewError is null));
         WriteAnotherCommand = ReactiveCommand.CreateFromTask(WriteAnotherAsync,
             this.WhenAnyValue(x => x.IsConnected, x => x.IsBusy, x => x.IsWriteSuccessful,
                 (online, busy, succeeded) => online && !busy && succeeded));
-        DetectCommand = ReactiveCommand.CreateFromTask(DetectAsync, connected);
+        Journal = new JournalViewModel(device.Journal);
+        DetectCommand = ReactiveCommand.CreateFromTask(() => InspectTargetAsync(false), connected);
+        TestScanLfCommand = ReactiveCommand.CreateFromTask(TestScanLfAsync, connected);
+        InspectBlankCommand = ReactiveCommand.CreateFromTask(() => InspectTargetAsync(true), connected);
+        StopInspectionCommand = ReactiveCommand.Create(() => _inspectCts?.Cancel());
+        this.WhenAnyValue(x => x.HasWriteTarget, x => x.IsBusy).Subscribe(_ => this.RaisePropertyChanged(nameof(CanConfirmTarget)));
         ResetFiltersCommand = ReactiveCommand.Create(ResetFilters, this.WhenAnyValue(x => x.HasFilters));
         NewFolderCommand = ReactiveCommand.Create(NewFolder);
         OpenNewFolderCommand = ReactiveCommand.Create(OpenNewFolder);
@@ -720,6 +726,8 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
     /// <summary>The first Pending tick (covering the whole card) sizes the sector grid.</summary>
     private void OnDumpSectorBlock(MifareBlockProgress p)
     {
+        _device.Journal.Add(p.State == MifareBlockState.ReadError ? "ERROR" : "INFO",
+            string.Format(Strings.Journal_Block, p.First, p.Count, p.State));
         if (p is { State: MifareBlockState.Pending, First: 0 } && DumpSectors.Count == 0) ResetDumpSectors(p.Count);
         if (p.State == MifareBlockState.Reading)
         {
@@ -1763,6 +1771,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         });
 
         var clock = System.Diagnostics.Stopwatch.StartNew();
+        _device.Journal.Add("INFO", Strings.Journal_ReadStarted);
         var learnedDump = _classicDump;
         try
         {
@@ -1772,6 +1781,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
                 ? await WithMissFeedback(client.ReadMifareClassicAsync(keys, progress, cts.Token, blockProgress, keyProgress, type, _classicDump))
                 : _classicDump!;
             learnedDump = dump;
+            _device.Journal.Add(cts.IsCancellationRequested ? "CANCEL" : "INFO", string.Format(Strings.Journal_ReadResult, dump.RecoveredBlocks, dump.BlockCount));
             dump.FillRecoveredKeys();
             clock.Stop();
             var stopped = cts.IsCancellationRequested;
@@ -2001,7 +2011,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         DumpKeySources.Add(NewKeySource(KnownCardKeys.Id, KnownCardKeys.Name,
             _classicDump is { } dump ? _dictionaries.KnownKeys.ForUid(dump.Uid) : Array.Empty<byte[]>()));
         DumpKeySources.Add(NewKeySource(DumpKeySourceViewModel.BuiltInId, Strings.Common_BuiltInKeys, MifareClassic.DefaultKeys));
-        foreach (var d in _dictionaries.Dictionaries)
+        foreach (var d in _dictionaries.Dictionaries.Where(d => d.KeySize == 6))
             DumpKeySources.Add(NewKeySource(d.Id, string.IsNullOrWhiteSpace(d.Name) ? Strings.Common_Untitled : d.Name, d.Keys));
         WriteRecovery.SetKeySources(DumpKeySources);
         UpdateDumpKeyCount();
@@ -2358,7 +2368,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
 
     public bool IsWriting => _writeProgressText is not null;
 
-    public string CancelWriteLabel => IsWriting ? Strings.Common_Cancel : Strings.Common_Close;
+    public string CancelWriteLabel => IsWriting ? Strings.Common_Cancel : IsStandaloneWriter ? Strings.Writer_Reset : Strings.Common_Close;
 
     public string CancelWriteTip => IsWriting
         ? Strings.Cards_StopWriteTip
@@ -2385,6 +2395,8 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
 
     private void OnWriteBlocks(MifareBlockProgress p)
     {
+        _device.Journal.Add(p.State == MifareBlockState.ReadError ? "ERROR" : "INFO",
+            string.Format(Strings.Journal_Block, p.First, p.Count, p.State));
         if (IsMifareWrite) WriteRecovery.ApplyWriteProgress(p);
         if (p is { State: MifareBlockState.Pending, First: 0 })
         {
@@ -2429,7 +2441,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
     public bool IsMifareWrite => ActionTag?.IsMifareClassic() == true;
 
     public IReadOnlyList<MagicGeneration> MagicGenerations { get; } =
-        new[] { MagicGeneration.Gen1a, MagicGeneration.Gen2, MagicGeneration.Gen3 };
+        new[] { MagicGeneration.Gen1a, MagicGeneration.Gen2, MagicGeneration.Gen3, MagicGeneration.Gen4 };
 
     // The magic card kind chosen or detected last; a set of blanks is usually one kind.
     private const string GenerationSetting = "cardsWriteGeneration";
@@ -2446,6 +2458,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
             if (field == value) return;
             this.RaiseAndSetIfChanged(ref field, value);
             AppSettings.Set(Gen2Block0Setting, value);
+            TargetConfirmed = false;
             this.RaisePropertyChanged(nameof(WriteInstructions));
             this.RaisePropertyChanged(nameof(WriteWarning));
             RefreshWritePreview();
@@ -2613,6 +2626,8 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
             this.RaisePropertyChanged(nameof(WriteWarning));
             this.RaisePropertyChanged(nameof(ShowWriteSectors));
             this.RaisePropertyChanged(nameof(IsGen2Write));
+            this.RaisePropertyChanged(nameof(IsGen4Write));
+            TargetConfirmed = false;
             ResetWriteRecovery();
             RaiseWriteKeyAvailability();
             AppSettings.Set(GenerationSetting, value.ToString());
@@ -2637,6 +2652,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
                 Strings.Cards_WriteHintGen1a,
             MagicGeneration.Gen3 =>
                 Strings.Cards_WriteHintGen3,
+            MagicGeneration.Gen4 => Strings.Writer_Gen4Hint,
             _ =>
                 WriteGen2Block0
                     ? Strings.Cards_WriteHintGen2
@@ -2664,6 +2680,8 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
 
     private void RaiseCardInfo()
     {
+        this.RaisePropertyChanged(nameof(HasWriterSource));
+        this.RaisePropertyChanged(nameof(IsGen4Write));
         RaiseWriteKeyAvailability();
         this.RaisePropertyChanged(nameof(SelectedCardFolder));
         this.RaisePropertyChanged(nameof(CardFolderLabel));
@@ -2685,28 +2703,6 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         this.RaisePropertyChanged(nameof(WriteInstructions));
         this.RaisePropertyChanged(nameof(WriteWarning));
     }
-
-    private Task DetectAsync() => RunAsync(async () =>
-    {
-        var client = _device.Client;
-        if (client is null) return;
-        var gen = await client.DetectMagicAsync();
-        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-        {
-            if (gen is null)
-            {
-                ReportError(Strings.Cards_NoCardOnReader);
-                return;
-            }
-            SelectedGeneration = gen.Value;
-            Notify(gen.Value switch
-            {
-                MagicGeneration.Gen1a => Strings.Cards_DetectedGen1a,
-                MagicGeneration.Gen3 => Strings.Cards_DetectedGen3,
-                _ => Strings.Cards_AssumingGen2,
-            });
-        });
-    });
 
     private void Duplicate()
     {
@@ -2791,7 +2787,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         Notify(string.Format(Strings.Cards_NowEmulated, card.Name, target.Index));
     });
 
-    private Task WriteAsync() => RunAsync(async () =>
+    private Task WriteAsync() => _writeTask = RunAsync(async () =>
     {
         var client = _device.Client;
         if (client is null || ActionCard() is not { } card) return;
@@ -2801,6 +2797,11 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
             return;
         }
 
+        if (card.Tag.IsMifareClassic() && !card.Data.Where((_, b) => b != 0 || IncludeWriteBlock0).Any(data => data.Length == 16)
+            || card.Tag.IsUltralight() && !card.Data.Skip(4).Any(data => data.Length == 4))
+            throw new InvalidOperationException(Strings.Writer_NoData);
+        await CheckWriteTargetAsync(client, CancellationToken.None);
+        _device.Journal.Add("INFO", string.Format(Strings.Journal_WriteStarted, card.Tag.DisplayName()));
         var unit = card.Tag.IsUltralight() ? "page" : "block";
         var version = _writeVersion;
         var resume = _writeSession is not null;
@@ -2875,10 +2876,19 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
             {
                 failed = await client.WriteMifareDumpToCardAsync(card.ToMifareDump(), writeKeys,
                     SelectedGeneration, progress, cts.Token, blockProgress, keyProgress,
-                    session.TargetKeys, WriteGen2Block0, session);
+                    session.TargetKeys, WriteGen2Block0, session,
+                    ParseGen4Password());
             }
             else return;
 
+            if (failed.Count == 0 && session is not null)
+            {
+                WriteProgressText = Strings.Writer_Verifying;
+                _device.Journal.Add("INFO", Strings.Writer_Verifying);
+                failed = await client.VerifyMifareWriteAsync(session,
+                    ParseGen4Password(), cts.Token);
+                if (failed.Count > 0) _device.Journal.Add("ERROR", string.Format(Strings.Writer_VerifyFail, string.Join(", ", failed)));
+            }
             succeeded = failed.Count == 0;
             if (succeeded) Notify(string.Format(Strings.Cards_WroteCard, card.Name));
             else ReportError(Loc.Plural(card.Tag.IsUltralight() ? Strings.Plural_WriteFailedPages : Strings.Plural_WriteFailedBlocks,
@@ -2901,6 +2911,9 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
                 WriteProgressText = null;
                 if (session is not null) WriteRecovery.FinishWrite(session);
                 IsWriteSuccessful = succeeded;
+                TargetConfirmed = false;
+                _device.Journal.Add(succeeded ? "OK" : "ERROR", succeeded ? Strings.Journal_WriteDone
+                    : cts.IsCancellationRequested ? Strings.Journal_Cancelled : Strings.Journal_WriteIncomplete);
             });
         }
     });

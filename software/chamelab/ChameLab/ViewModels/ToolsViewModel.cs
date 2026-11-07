@@ -24,6 +24,8 @@ public sealed partial class ToolsViewModel : PageViewModelBase
     private const int CaptureTimeoutMs = 2000;
 
     private readonly DeviceService _device;
+    private readonly DictionaryLibrary _dictionaries;
+    private readonly CardLibrary _cards;
     private byte[]? _samples;
     private LfSniffSummary? _summary;
     private LfModulationResult? _modulation;
@@ -33,10 +35,13 @@ public sealed partial class ToolsViewModel : PageViewModelBase
     private double _zoom = 1;
     private int _cursorIndex = -1;
     private SniffTool _tool;
+    private readonly Dictionary<string, PageViewModelBase> _extraTools = new();
 
-    public ToolsViewModel(DeviceService device) : base(() => Strings.Tools_Tools, "tools")
+    public ToolsViewModel(DeviceService device, DictionaryLibrary? dictionaries = null, CardLibrary? cards = null) : base(() => Strings.Tools_Tools, "tools")
     {
         _device = device;
+        _dictionaries = dictionaries ?? AppServices.Dictionaries;
+        _cards = cards ?? AppServices.Cards;
         var idle = this.WhenAnyValue(x => x.IsBusy, busy => !busy);
         var canCapture = this.WhenAnyValue(x => x.IsBusy, x => x.IsSupported,
             (busy, supported) => !busy && supported != false);
@@ -47,12 +52,18 @@ public sealed partial class ToolsViewModel : PageViewModelBase
         InitHf(idle);
         OpenHfCommand = ReactiveCommand.Create(() => { Tool = SniffTool.Hf; });
         OpenLfCommand = ReactiveCommand.Create(() => { Tool = SniffTool.Lf; });
-        BackCommand = ReactiveCommand.Create(() => { Tool = SniffTool.None; }, idle);
+        OpenToolCommand = ReactiveCommand.Create<string>(OpenTool);
+        BackCommand = ReactiveCommand.Create(() =>
+        {
+            if (Extra is KeySearchViewModel { Working: true } or PluginsViewModel { Working: true } or CommandConsoleViewModel { Working: true } or DeviceToolsViewModel { Working: true } or DeviceToolsViewModel { Recovery.IsDumpRunning: true }) return;
+            Tool = SniffTool.None;
+        }, idle);
         _device.StateChanged += _ => Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
             this.RaisePropertyChanged(nameof(IsConnected));
             IsSupported = null;
             IsHfSupported = null;
+            IsAuthSupported = null;
         });
     }
 
@@ -86,17 +97,45 @@ public sealed partial class ToolsViewModel : PageViewModelBase
             this.RaisePropertyChanged(nameof(IsHome));
             this.RaisePropertyChanged(nameof(IsHf));
             this.RaisePropertyChanged(nameof(IsLf));
+            this.RaisePropertyChanged(nameof(IsExtra));
+            this.RaisePropertyChanged(nameof(IsSniff));
+            this.RaisePropertyChanged(nameof(IsCaptureSupported));
+            this.RaisePropertyChanged(nameof(IsHfUnsupported));
+            this.RaisePropertyChanged(nameof(IsAuthentication));
+            this.RaisePropertyChanged(nameof(CurrentToolTitle));
         }
     }
 
     public bool IsHome => _tool == SniffTool.None;
-    public bool IsHf => _tool == SniffTool.Hf;
+    public bool IsHf => _tool is SniffTool.Hf or SniffTool.Authentication;
     public bool IsLf => _tool == SniffTool.Lf;
+    public bool IsAuthentication => _tool == SniffTool.Authentication;
+    public bool IsSniff => IsHf || IsLf;
+    public bool IsExtra => _tool == SniffTool.Extra;
+    public PageViewModelBase? Extra { get; private set => this.RaiseAndSetIfChanged(ref field, value); }
+    public string CurrentToolTitle => IsExtra ? Extra?.Title ?? "" : IsAuthentication ? Strings.Tool_hf_auth_trace
+        : IsHf ? Strings.Tools_SniffHF : Strings.Tools_SniffLF;
+    public ICommand OpenToolCommand { get; }
+
+    private void OpenTool(string tool)
+    {
+        if (tool == "hf") { Tool = SniffTool.Hf; return; }
+        if (tool == "lf") { Tool = SniffTool.Lf; return; }
+        if (tool == "auth") { Tool = SniffTool.Authentication; return; }
+        if (!_extraTools.TryGetValue(tool, out var extra))
+            _extraTools[tool] = extra = tool == "key-search" ? new KeySearchViewModel(_device, _dictionaries) : tool == "plugins" ? new PluginsViewModel(_device, _cards, _dictionaries) : tool == "console" ? new CommandConsoleViewModel(_device) : tool == "dictionaries"
+            ? new DictionariesViewModel(_dictionaries, _cards)
+            : new DeviceToolsViewModel(_device, _dictionaries, Enum.Parse<DeviceTool>(tool));
+        Extra = extra;
+        Tool = SniffTool.Extra;
+    }
 
     public ICommand OpenHfCommand { get; }
     public ICommand OpenLfCommand { get; }
     /// <summary>Back from a tool to the list; what it captured stays for the next visit.</summary>
     public ICommand BackCommand { get; }
+
+    public override Task OnDeactivatedAsync() => Extra?.OnDeactivatedAsync() ?? Task.CompletedTask;
 
     public override async Task OnActivatedAsync()
     {
@@ -108,6 +147,7 @@ public sealed partial class ToolsViewModel : PageViewModelBase
             if (capabilities.Count == 0) return;
             IsSupported = capabilities.Contains((ushort)Command.LfSniff);
             IsHfSupported = capabilities.Contains((ushort)Command.Hf14aSniff);
+            IsAuthSupported = capabilities.Contains((ushort)Command.Hf14aAuthTrace);
         }
         catch { /* unknown: just try */ }
     }
@@ -319,4 +359,4 @@ public sealed partial class ToolsViewModel : PageViewModelBase
         };
 }
 
-public enum SniffTool { None, Hf, Lf }
+public enum SniffTool { None, Hf, Lf, Authentication, Extra }

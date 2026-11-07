@@ -10,6 +10,8 @@
   <Project Path="ChameLab.Cli.Tests/ChameLab.Cli.Tests.csproj" />
   <Project Path="ChameLab.Cli/ChameLab.Cli.csproj" />
   <Project Path="ChameLab.Core/ChameLab.Core.csproj" />
+  <Project Path="ChameLab.Commands/ChameLab.Commands.csproj" />
+  <Project Path="ChameLab.UiTests/ChameLab.UiTests.csproj" />
   <Project Path="ChameLab.Desktop/ChameLab.Desktop.csproj" />
   <Project Path="ChameLab.iOS/ChameLab.iOS.csproj">
     <Deploy />

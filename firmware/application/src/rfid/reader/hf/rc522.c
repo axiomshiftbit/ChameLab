@@ -739,7 +739,7 @@ uint8_t pcd_14a_reader_scan_once(picc_14a_tag_t *tag) {
         memcpy(sel_uid + 2, uid_resp, 5);   // the UID received during anticollision with original BCC
         uint8_t bcc = sel_uid[2] ^ sel_uid[3] ^ sel_uid[4] ^ sel_uid[5]; // calculate BCC
         if (sel_uid[6] != bcc) {
-            NRF_LOG_INFO("BCC%d incorrect, got 0x%02x, expected 0x%02x\n", cascade_level, sel_uid[6], bcc);
+            NRF_LOG_INFO("BCC incorrect at cascade level %d", cascade_level);
 
             if (hf14aconfig.forcebcc == 0) {
                 return STATUS_HF_ERR_BCC;

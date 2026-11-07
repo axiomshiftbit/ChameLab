@@ -95,6 +95,7 @@ public static class ChameleonGuiImport
             card.Folder = (string?)item["folderId"] is { } folderId && folders.ContainsKey(folderId)
                 ? PathOf(folderId)
                 : string.Empty;
+            card.FolderId = null; // Legacy import uses display paths; never retain foreign tree identities.
             cards.Add(card);
         }
 

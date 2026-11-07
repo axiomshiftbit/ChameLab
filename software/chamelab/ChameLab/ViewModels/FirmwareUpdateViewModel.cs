@@ -80,7 +80,7 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
 
     public bool IsChecking => _checkState == FirmwareCheckState.Checking;
     public bool IsUpdateAvailable => _checkState == FirmwareCheckState.Available;
-    public bool CanInstallLatest => IsUpdateAvailable && CanInstall && _latest?.PackageUrl is not null;
+    public bool CanInstallLatest => !IsChecking && CanInstall && _latest?.PackageUrl is not null;
 
     public string CheckMessage
     {

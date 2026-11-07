@@ -1,0 +1,11 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:vm="using:ChameLab.ViewModels" xmlns:loc="using:ChameLab.Localization" x:Class="ChameLab.Views.LicensesView" x:DataType="vm:LicensesViewModel">
+ <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="10">
+  <TextBlock Text="{x:Static loc:Strings.Settings_LicensesHint}" TextWrapping="Wrap" />
+  <ComboBox Grid.Row="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Documents}" SelectedItem="{Binding Selected}">
+   <ComboBox.ItemTemplate><DataTemplate x:DataType="vm:LicenseDocument"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" /></DataTemplate></ComboBox.ItemTemplate>
+  </ComboBox>
+  <TextBox Grid.Row="2" Text="{Binding Text, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" />
+  <Button Grid.Row="3" Command="{Binding OpenSourceCommand}"><TextBlock Text="{x:Static loc:Strings.Settings_ForkSource}" TextWrapping="Wrap" /></Button>
+ </Grid>
+</UserControl>

@@ -4,6 +4,8 @@ using System.Windows.Input;
 using System.Linq;
 using System.Collections.Generic;
 using Avalonia.Threading;
+using Avalonia;
+using Avalonia.Styling;
 using ChameLab.Services;
 using ReactiveUI;
 using ChameLab.Localization;
@@ -39,6 +41,24 @@ public sealed class SettingsViewModel : PageViewModelBase
     public bool CanUseFiles => StorageService.IsAvailable;
 
     public IReadOnlyList<AccentOption> Accents => AppearanceService.Accents;
+
+    public IReadOnlyList<ThemeOption> Themes =>
+    [
+        new(ThemeVariant.Default, Strings.Settings_ThemeSystem),
+        new(ThemeVariant.Light, Strings.Settings_ThemeLight),
+        new(ThemeVariant.Dark, Strings.Settings_ThemeDark),
+    ];
+
+    public ThemeOption Theme
+    {
+        get => Themes.First(t => t.Variant == (Application.Current?.RequestedThemeVariant ?? ThemeVariant.Default));
+        set
+        {
+            if (value is null || Application.Current is not { } app) return;
+            app.RequestedThemeVariant = value.Variant;
+            this.RaisePropertyChanged();
+        }
+    }
 
     /// <summary>App accent color; applied and remembered as soon as it changes.</summary>
     public AccentOption Accent
@@ -117,6 +137,8 @@ public sealed class SettingsViewModel : PageViewModelBase
     });
 
     /// <summary>Application version, from the assembly's informational version.</summary>
+    public LicensesViewModel Licenses { get; } = new();
+
     public string AppVersion => AppUpdateService.CurrentVersion;
 
     /// <summary>The app's own update check, shown in the About card.</summary>
@@ -133,7 +155,7 @@ public sealed class SettingsViewModel : PageViewModelBase
         Discord,
     ];
 
-    public const string WebsiteUrl = "https://m0n5ter.github.io/ChameLab/";
+    public const string WebsiteUrl = "https://github.com/axiomshiftbit/ChameLab";
 
     /// <summary>
     /// Links for the About card: the website first, then the Russian-speaking channels only in
@@ -161,3 +183,5 @@ public sealed class SettingsViewModel : PageViewModelBase
 /// <paramref name="Priority"/> drops its label first (see <see cref="Controls.ActionRow"/>).
 /// </summary>
 public sealed record SocialLink(string Name, string Url, string IconKey, int Priority);
+
+public sealed record ThemeOption(ThemeVariant Variant, string Name);

@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:vm="using:ChameLab.ViewModels" xmlns:views="using:ChameLab.Views" xmlns:models="using:ChameLab.Models"
+ xmlns:loc="using:ChameLab.Localization" x:Class="ChameLab.Views.WriterView" x:DataType="vm:WriterViewModel">
+ <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+  <StackPanel Margin="20" Spacing="16" MaxWidth="980">
+   <TextBlock Text="{x:Static loc:Strings.Nav_Writer}" Classes="h1" />
+   <TextBlock Text="{x:Static loc:Strings.Writer_Source}" TextWrapping="Wrap" />
+   <ComboBox ItemsSource="{Binding Sources}" SelectedItem="{Binding Source}" HorizontalAlignment="Stretch" IsEnabled="{Binding !Engine.IsBusy}">
+    <ComboBox.ItemTemplate><DataTemplate x:DataType="models:CardSave"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" /></DataTemplate></ComboBox.ItemTemplate>
+   </ComboBox>
+   <Button Command="{Binding ImportCommand}" HorizontalAlignment="Left"><TextBlock Text="{x:Static loc:Strings.Cards_ImportFile}" TextWrapping="Wrap" /></Button>
+   <views:CardWriterView DataContext="{Binding Engine}" />
+   <TextBlock Text="{Binding Engine.Error}" Classes="warning" TextWrapping="Wrap" />
+   <TextBlock Text="{Binding Engine.Notice}" TextWrapping="Wrap" />
+  </StackPanel>
+ </ScrollViewer>
+</UserControl>

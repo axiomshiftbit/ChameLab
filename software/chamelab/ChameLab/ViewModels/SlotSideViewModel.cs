@@ -25,7 +25,7 @@ public enum SlotColorMode
 /// One frequency (HF or LF) of the slot editor. The card it holds is shown as the saved card
 /// it matches (same type and UID, the name picking among several), or by name and type with an
 /// offer to save it. A card in the
-/// slot is always emulated (saving enables it). Picking a saved card, clearing and the LED color
+/// slot can be enabled or disabled independently. Picking a saved card, clearing and the LED color
 /// are edits held until the slot is saved.
 /// </summary>
 public sealed class SlotSideViewModel : ViewModelBase
@@ -44,6 +44,8 @@ public sealed class SlotSideViewModel : ViewModelBase
 
     private CardSave? _pending;
     private bool _cleared;
+    private bool _enabled;
+    private bool _savedEnabled;
     private SlotColorMode _colorMode;
     private string _customColor;
     private CardItemViewModel? _match;
@@ -60,6 +62,7 @@ public sealed class SlotSideViewModel : ViewModelBase
         _changed = changed;
 
         var hf = sense == TagSenseType.Hf;
+        _enabled = _savedEnabled = hf ? info.HfEnabled : info.LfEnabled;
         _savedType = hf ? info.HfType : info.LfType;
         _savedNick = hf ? info.HfNick : info.LfNick;
         FindMatch();
@@ -77,6 +80,16 @@ public sealed class SlotSideViewModel : ViewModelBase
     public TagSenseType Sense { get; }
     public bool IsHf => Sense == TagSenseType.Hf;
     public bool IsLf => Sense == TagSenseType.Lf;
+    public bool Enabled
+    {
+        get => HasCard && _enabled;
+        set
+        {
+            if (_enabled == value) return;
+            this.RaiseAndSetIfChanged(ref _enabled, value);
+            _changed();
+        }
+    }
     public string Label => IsHf ? "HF" : "LF";
     public string Band => IsHf ? Strings.Cards_1356MHz : Strings.Common_125KHz;
 
@@ -149,6 +162,7 @@ public sealed class SlotSideViewModel : ViewModelBase
     /// <summary>Puts <paramref name="card"/> into the frequency (on save), colored like the card where the firmware can.</summary>
     public void Pick(CardSave card)
     {
+        _enabled = true;
         _pending = card;
         _cleared = false;
         FindMatch();
@@ -158,6 +172,7 @@ public sealed class SlotSideViewModel : ViewModelBase
 
     private void Clear()
     {
+        _enabled = false;
         _pending = null;
         _cleared = _savedType != TagSpecificType.Undefined;
         FindMatch();
@@ -167,6 +182,7 @@ public sealed class SlotSideViewModel : ViewModelBase
     /// <summary>Puts the fields back to what the frequency holds.</summary>
     public void Discard()
     {
+        _enabled = _savedEnabled;
         _pending = null;
         _cleared = false;
         FindMatch();
@@ -276,13 +292,14 @@ public sealed class SlotSideViewModel : ViewModelBase
         IsEmpty
             ? _cleared
             : _pending is not null
+              || _enabled != _savedEnabled
               || _colorMode != _savedMode
               || (_colorMode == SlotColorMode.Custom && _customColor != _savedCustom);
 
     /// <summary>Writes the edits to <paramref name="slot"/> (not yet to flash).</summary>
     public async Task WriteAsync(ChameleonClient client, int slot, IProgress<MifareProgress>? progress)
     {
-        var (pending, cleared, hasCard, color) = (_pending, _cleared, HasCard, EffectiveColor);
+        var (pending, cleared, hasCard, color, enabled) = (_pending, _cleared, HasCard, EffectiveColor, Enabled);
         if (cleared)
         {
             await client.DeleteSlotSenseTypeAsync(slot, Sense);
@@ -290,13 +307,14 @@ public sealed class SlotSideViewModel : ViewModelBase
         }
         if (!hasCard) return;
         if (pending is not null) await client.LoadCardToSlotAsync(pending, slot, progress);
-        await client.SetSlotEnableAsync(slot, Sense, enabled: true);
+        await client.SetSlotEnableAsync(slot, Sense, enabled);
         if (SupportsColors) await client.SetSlotColorAsync(slot, Sense, color);
     }
 
     /// <summary>The edits are on the device now.</summary>
     public void MarkSaved()
     {
+        _savedEnabled = Enabled;
         if (_pending is { } card) _savedUid = card.Uid.Length > 0 ? card.Uid : null;
         else if (_cleared) _savedUid = null;
         _savedType = Type;
@@ -318,7 +336,7 @@ public sealed class SlotSideViewModel : ViewModelBase
     {
         foreach (var name in new[]
                  {
-                     nameof(Type), nameof(Nick), nameof(HasCard), nameof(IsEmpty), nameof(Match), nameof(HasMatch),
+                     nameof(Type), nameof(Nick), nameof(HasCard), nameof(IsEmpty), nameof(Match), nameof(HasMatch), nameof(Enabled),
                      nameof(IsUnmatched), nameof(Name), nameof(TypeLabel), nameof(UnmatchedSummary), nameof(CanUseCardColor),
                  })
             this.RaisePropertyChanged(name);

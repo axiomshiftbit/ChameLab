@@ -65,6 +65,12 @@ public sealed partial class CliSession
             if ((config & (1 << 18)) != 0) Print("Read login required.");
             if ((config & (1 << 20)) != 0) Print("Write login required.");
         });
+        Add("lf em 4x05 auth", async (a, ct) =>
+        {
+            var target = await Client.PrepareKeySearchAsync(KeySearchKind.Em4x05, ct: ct);
+            Print(await Client.CheckSearchCandidateAsync(target, a.Hex("pwd", 4), ct)
+                ? "Password verified without writing." : "Password rejected.");
+        });
         Add("lf em 4x05 rdbl", async (a, ct) => Print($"{await ReadEm4305Word(a, ct):X8}"));
         Add("lf em 4x05 wrbl", async (a, ct) =>
         {
@@ -88,7 +94,7 @@ public sealed partial class CliSession
         {
             _lfCapture = await Client.LfSniffAsync(Range(a.Int("timeout"), 1, 10000, "timeout"), ct);
             Json(LfSniff.Summarize(_lfCapture));
-            if (a.Has("out")) await File.WriteAllBytesAsync(a.Text("out"), _lfCapture, ct);
+            if (a.Has("out")) await Files.WriteAllBytesAsync(a.Text("out"), _lfCapture, ct);
             if (a.Flag("hex")) Dump(_lfCapture, 16);
         });
         Add("data hexsamples", (a, _) => { Dump(Capture().Take(Range(a.Int("num"), 1, int.MaxValue, "num")).ToArray(), 16); return Task.CompletedTask; });
@@ -189,7 +195,7 @@ public sealed partial class CliSession
     {
         var capture = Capture(); var start = Range(a.Int("start"), 0, capture.Length - 1, "start");
         var samples = capture.Skip(start).Take(Range(a.Int("len"), 1, int.MaxValue, "len")).ToArray();
-        if (!a.Flag("ascii")) { await WaveformPlot.ShowAsync(samples, start, ct); return; }
+        if (!a.Flag("ascii") && ShowPlotAsync is not null) { await ShowPlotAsync(samples, start, ct); return; }
         const int columns = 64;
         var buckets = samples.Chunk(Math.Max(1, (samples.Length + columns - 1) / columns)).Select(c => c.Average(b => (double)b)).ToArray();
         for (var level = 224; level >= 0; level -= 32)

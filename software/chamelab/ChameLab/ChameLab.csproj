@@ -32,5 +32,9 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ChameLab.Core\ChameLab.Core.csproj" />
+    <ProjectReference Include="../ChameLab.Commands/ChameLab.Commands.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(ChameLabUiTests)' == 'true'">
+    <Compile Include="../UiTesting/*.cs" Link="UiTesting/%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Android.App;
 using Android.Content.PM;
@@ -28,10 +28,15 @@ public class MainActivity : AvaloniaMainActivity
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
+#if CHAMELAB_UI_TESTS
+        UiTesting.UiTestHost.OutputDirectory = System.IO.Path.Combine(FilesDir!.AbsolutePath, "ui-results");
+#endif
         base.OnCreate(savedInstanceState);
         // Back on the start screen would only move the task to the background (Android 12+).
         PlatformExit.Quit = Finish;
+#if !CHAMELAB_UI_TESTS
         RequestBlePermissions();
+#endif
     }
 
     protected override void OnDestroy()

@@ -1,0 +1,197 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:loc="using:ChameLab.Localization" xmlns:vm="using:ChameLab.ViewModels" xmlns:b="using:ChameLab.Behaviors"
+ xmlns:c="using:ChameLab.Controls" xmlns:conv="using:ChameLab.Converters"
+ x:Class="ChameLab.Views.CardWriterView" x:DataType="vm:CardsViewModel">
+ <StackPanel Spacing="14">
+  <Border Classes="inset">
+   <StackPanel Spacing="10">
+    <TextBlock Text="{x:Static loc:Strings.Writer_Target}" Classes="h2" TextWrapping="Wrap" />
+    <TextBlock Text="{x:Static loc:Strings.Writer_Position}" TextWrapping="Wrap" />
+    <WrapPanel ItemSpacing="8" LineSpacing="8">
+     <Button Command="{Binding DetectCommand}"><TextBlock Text="{x:Static loc:Strings.Writer_Scan}" TextWrapping="Wrap" /></Button>
+     <Button Command="{Binding InspectBlankCommand}"><TextBlock Text="{x:Static loc:Strings.Writer_Inspect}" TextWrapping="Wrap" /></Button>
+     <Button Command="{Binding StopInspectionCommand}" IsVisible="{Binding IsInspecting}"><TextBlock Text="{x:Static loc:Strings.Common_Cancel}" TextWrapping="Wrap" /></Button>
+    </WrapPanel>
+    <TextBlock Text="{Binding TargetSummary}" TextWrapping="Wrap" />
+    <CheckBox IsVisible="{Binding IsLfWrite}" IsChecked="{Binding LfBlankAcknowledged}">
+     <TextBlock Text="{x:Static loc:Strings.Writer_LfBlank}" TextWrapping="Wrap" />
+    </CheckBox>
+    <CheckBox IsChecked="{Binding TargetConfirmed}" IsEnabled="{Binding CanConfirmTarget}" IsVisible="{Binding HasWriterSource}">
+     <TextBlock Text="{x:Static loc:Strings.Writer_Confirm}" TextWrapping="Wrap" />
+    </CheckBox>
+   </StackPanel>
+  </Border>
+<StackPanel Spacing="12" IsVisible="{Binding IsWriteOpen}">
+                <TextBlock Text="{Binding WriteKind}" FontWeight="SemiBold" TextWrapping="Wrap" />
+
+                <!-- MIFARE Classic: pick the magic generation, or let the device detect it -->
+                <StackPanel Spacing="6" IsVisible="{Binding IsMifareWrite}">
+                  <TextBlock Text="{x:Static loc:Strings.Cards_MagicGenerationHeader}" Classes="overline" />
+                  <StackPanel Spacing="8">
+                    <ComboBox Grid.Column="0" HorizontalAlignment="Stretch" IsEnabled="{Binding CanChangeWriteOptions}"
+                              ItemsSource="{Binding MagicGenerations}"
+                              SelectedItem="{Binding SelectedGeneration}">
+                      <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                          <TextBlock Text="{Binding Converter={x:Static conv:EnumLabelConverter.Instance}}" />
+                        </DataTemplate>
+                      </ComboBox.ItemTemplate>
+                    </ComboBox>
+                  </StackPanel>
+                  <CheckBox Content="{x:Static loc:Strings.Cards_WriteBlock0UID}" IsChecked="{Binding WriteGen2Block0}"
+                            IsVisible="{Binding IsGen2Write}" IsEnabled="{Binding CanChangeWriteOptions}"
+                            ToolTip.Tip="{x:Static loc:Strings.Cards_WriteTheSourceDumpsManufacturerBlock}" />
+                </StackPanel>
+
+                <StackPanel Spacing="6" IsVisible="{Binding IsGen4Write}">
+                  <TextBlock Text="{x:Static loc:Strings.Writer_Gen4Password}" TextWrapping="Wrap" />
+                  <c:HexBox Text="{Binding Gen4Password}" ByteLengths="4" IsEnabled="{Binding CanChangeWriteOptions}" />
+                </StackPanel>
+                <!-- Ultralight / NTAG: optional password of the target card -->
+                <StackPanel Spacing="4" IsVisible="{Binding IsUltralightWrite}">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="{x:Static loc:Strings.Cards_CurrentCardPassword}" Classes="caption" VerticalAlignment="Center" />
+                    <c:HexBox Grid.Column="1" Text="{Binding WritePassword}" ByteLengths="4"
+                              IsEnabled="{Binding !IsBusy}" PlaceholderText="{x:Static loc:Strings.Cards_Optional}"
+                              ToolTip.Tip="{x:Static loc:Strings.Cards_PWD4BytesOfTheTarget}" />
+                  </StackPanel>
+                  <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding WritePasswordError}"
+                             Foreground="{DynamicResource ControlForegroundBrushOutlineDanger}"
+                             IsVisible="{Binding WritePasswordError, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                </StackPanel>
+
+                <!-- Ultralight EV1 / NTAG21x: password settings for the target, starting from this card's -->
+                <StackPanel Spacing="10" IsVisible="{Binding CanWriteProtection}" IsEnabled="{Binding !IsBusy}">
+                  <!-- Laid out like a slot's LED color choice: label, then a compact segmented switch. -->
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <TextBlock Text="{x:Static loc:Strings.Cards_PasswordSettings}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                    <Border Grid.Column="1" Classes="segmented compact">
+                      <StackPanel Orientation="Horizontal">
+                        <RadioButton Classes="segment" IsChecked="{Binding KeepProtection}"
+                                     ToolTip.Tip="{x:Static loc:Strings.Cards_LeaveTheTargetCardsPasswordPACK}">
+                          <TextBlock Text="{x:Static loc:Strings.Cards_Keep}" FontWeight="SemiBold" />
+                        </RadioButton>
+                        <RadioButton Classes="segment" IsChecked="{Binding RewriteProtection}"
+                                     ToolTip.Tip="{x:Static loc:Strings.Cards_AfterThePagesWriteTheSettings}">
+                          <TextBlock Text="{x:Static loc:Strings.Cards_WriteNew}" FontWeight="SemiBold" />
+                        </RadioButton>
+                      </StackPanel>
+                    </Border>
+                  </Grid>
+                  <Border Classes="inset" IsVisible="{Binding RewriteProtection}">
+                    <c:ProtectionSettingsPanel DataContext="{Binding WriteProtection}" />
+                  </Border>
+                </StackPanel>
+
+                <!-- EM410x: clone onto a T55xx (default) or an EM4205 / EM4305 -->
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" IsVisible="{Binding CanWriteEm4305}" IsEnabled="{Binding !IsBusy}">
+                  <TextBlock Text="{x:Static loc:Strings.Cards_LfChip}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                  <Border Grid.Column="1" Classes="segmented compact">
+                    <StackPanel Orientation="Horizontal">
+                      <RadioButton Classes="segment" IsChecked="{Binding WriteToT55xx}">
+                        <TextBlock Text="T55xx" FontWeight="SemiBold" />
+                      </RadioButton>
+                      <RadioButton Classes="segment" IsChecked="{Binding WriteToEm4305}">
+                        <TextBlock Text="EM4305" FontWeight="SemiBold" />
+                      </RadioButton>
+                    </StackPanel>
+                  </Border>
+                </Grid>
+
+                <!-- T55xx: current password (to unlock a locked tag) and the new password it's locked with.
+                     EM4305: only the current password, sent with LOGIN when the tag is write-protected. -->
+                <StackPanel Spacing="4" IsVisible="{Binding IsLfWrite}">
+                  <StackPanel Spacing="6">
+                    <TextBlock Grid.Row="0" Text="{x:Static loc:Strings.Cards_CurrentPassword}" Classes="caption" VerticalAlignment="Center" />
+                    <c:HexBox Grid.Row="0" Grid.Column="1" Text="{Binding WriteLfPassword}" ByteLengths="4"
+                              IsEnabled="{Binding !IsBusy}" PlaceholderText="{x:Static loc:Strings.Cards_Optional}"
+                              ToolTip.Tip="{Binding WriteLfPasswordTip}" />
+                    <TextBlock Grid.Row="1" Text="{x:Static loc:Strings.Cards_NewPassword}" Classes="caption" VerticalAlignment="Center"
+                               IsVisible="{Binding IsT55xxWrite}" />
+                    <c:HexBox Grid.Row="1" Grid.Column="1" Text="{Binding WriteLfNewKey}" ByteLengths="4"
+                              IsEnabled="{Binding !IsBusy}" PlaceholderText="{x:Static loc:Strings.Cards_KeepCurrent}"
+                              IsVisible="{Binding IsT55xxWrite}"
+                              ToolTip.Tip="{x:Static loc:Strings.Cards_Password4BytesTheTagIs}" />
+                  </StackPanel>
+                  <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding WriteLfPasswordError}"
+                             Foreground="{DynamicResource ControlForegroundBrushOutlineDanger}"
+                             IsVisible="{Binding WriteLfPasswordError, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                  <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding WriteLfNewKeyError}"
+                             Foreground="{DynamicResource ControlForegroundBrushOutlineDanger}"
+                             IsVisible="{Binding WriteLfNewKeyError, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                </StackPanel>
+
+                <Border Classes="inset">
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="{Binding WriteInstructions}" TextWrapping="Wrap" />
+                    <TextBlock Classes="warning" Text="{Binding WriteWarning}" TextWrapping="Wrap"
+                               IsVisible="{Binding WriteWarning, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                  </StackPanel>
+                </Border>
+                <TextBlock Classes="caption" IsVisible="{Binding !IsConnected}"
+                           Text="{x:Static loc:Strings.Cards_ConnectAChameleonToWriteCards}" />
+                <TextBlock Classes="caption" Text="{Binding ProgressText}"
+                           b:BringIntoViewOnShow.IsEnabled="True" IsVisible="{Binding ProgressText, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+                <StackPanel IsVisible="{Binding ShowWriteSectors}">
+                  <c:KeyRecoveryPanel DataContext="{Binding WriteRecovery}" />
+                </StackPanel>
+                <TextBlock Classes="caption" Text="{Binding WriteKeyHint}" TextWrapping="Wrap"
+                           IsVisible="{Binding WriteKeyHint, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+                <!-- Block strip: one cell per block / page, as for a dump; kept after the write. -->
+                <StackPanel Spacing="4" b:BringIntoViewOnShow.IsEnabled="True" IsVisible="{Binding HasWriteBlocks}">
+                  <c:BlockStrip Classes="write" States="{Binding WriteBlockStates}" Unit="{Binding WriteUnit}" IsWrite="True"
+                                HorizontalAlignment="Stretch" />
+                  <WrapPanel ItemSpacing="14" LineSpacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                      <Border Classes="blockcell blocklegend read" Margin="0" />
+                      <TextBlock Text="{x:Static loc:Strings.Common_Written}" Classes="caption" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                      <Border Classes="blockcell blocklegend searching" Margin="0" />
+                      <TextBlock Text="{x:Static loc:Strings.Common_Writing}" Classes="caption" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                      <Border Classes="blockcell blocklegend writeerror" Margin="0" />
+                      <TextBlock Text="{x:Static loc:Strings.Common_Error}" Classes="caption" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                      <Border Classes="blockcell blocklegend" Margin="0" />
+                      <TextBlock Text="{x:Static loc:Strings.Common_Pending}" Classes="caption" />
+                    </StackPanel>
+                  </WrapPanel>
+                </StackPanel>
+
+                <WrapPanel ItemSpacing="8" LineSpacing="8">
+                  <TextBlock Classes="caption" Text="{Binding WriteProgressText}"
+                             VerticalAlignment="Center" TextWrapping="Wrap"
+                             IsVisible="{Binding IsWriting}" />
+                  <!-- While a write runs, Cancel stops it and the writer stays open to show the result;
+                       otherwise the button is Close. -->
+                  <Button Grid.Column="1" Content="{Binding CancelWriteLabel}" Command="{Binding CancelWriteCommand}"
+                          Classes.danger="{Binding IsWriting}"
+                          ToolTip.Tip="{Binding CancelWriteTip}" />
+                  <Button Grid.Column="2" Classes="brandblue" Command="{Binding WriteNowCommand}"
+                          IsVisible="{Binding !IsWriteSuccessful}"
+                          IsEnabled="{Binding IsConnected}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <PathIcon Data="{StaticResource Icon.upload}" />
+                      <TextBlock Text="{x:Static loc:Strings.Cards_Write}" VerticalAlignment="Center" />
+                    </StackPanel>
+                  </Button>
+                  <Button Grid.Column="2" Classes="brandblue" Command="{Binding WriteAnotherCommand}"
+                          IsVisible="{Binding IsWriteSuccessful}"
+                          ToolTip.Tip="{x:Static loc:Strings.Cards_WriteTheSameCardToAnother}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <PathIcon Data="{StaticResource Icon.upload}" />
+                      <TextBlock Text="{x:Static loc:Strings.Cards_WriteAnother}" VerticalAlignment="Center" />
+                    </StackPanel>
+                  </Button>
+                </WrapPanel>
+              </StackPanel>
+ <Expander Header="{x:Static loc:Strings.Nav_Journal}" HorizontalAlignment="Stretch">
+ <ContentControl Height="360" Content="{Binding Journal}" />
+ </Expander>
+ </StackPanel>
+</UserControl>

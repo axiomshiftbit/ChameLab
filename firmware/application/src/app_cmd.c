@@ -735,6 +735,18 @@ static data_frame_tx_t *cmd_processor_hf14a_raw(uint16_t cmd, uint16_t status, u
         return data_frame_make(cmd, STATUS_PAR_ERR, 0, NULL);
     }
 
+    const uint16_t bits = U16NTOHS(payload->data_bitlength);
+    const uint16_t bytes = (bits + 7u) / 8u;
+    if (bits > DEF_FIFO_LENGTH * 8u || bytes > length - sizeof(payload_t)
+            || (payload->options.append_crc && (bits == 0 || bits % 8u != 0
+                || bytes > DEF_FIFO_LENGTH - DEF_CRC_LENGTH))) {
+        return data_frame_make(cmd, STATUS_PAR_ERR, 0, NULL);
+    }
+    // The RF routine appends CRC in place. Keep it inside a dedicated FIFO-sized
+    // buffer instead of modifying or reading past the received command payload.
+    uint8_t tx[DEF_FIFO_LENGTH] = {0};
+    memcpy(tx, payload->data_buffer, bytes);
+
     NRF_LOG_INFO("activate_rf_field  = %d", payload->options.activate_rf_field);
     NRF_LOG_INFO("wait_response      = %d", payload->options.wait_response);
     NRF_LOG_INFO("append_crc         = %d", payload->options.append_crc);
@@ -753,8 +765,8 @@ static data_frame_tx_t *cmd_processor_hf14a_raw(uint16_t cmd, uint16_t status, u
 
                  U16NTOHS(payload->resp_timeout),
 
-                 U16NTOHS(payload->data_bitlength),
-                 payload->data_buffer,
+                 bits,
+                 tx,
 
                  resp,
                  &resp_length,
@@ -2363,6 +2375,37 @@ static bool em4x05_take_password(const uint8_t *data, uint16_t length, uint16_t 
     return *pwd != 0;
 }
 
+/* Read-only password verification for tags with READ LOGIN enabled.
+ * Request: [password:4], including 00000000. Success returns the public UID.
+ * A write-only password cannot be verified by an unprotected read. */
+static data_frame_tx_t *cmd_processor_em4x05_check_password(uint16_t cmd, uint16_t status, uint16_t length, uint8_t *data) {
+    if (length != 4) {
+        return data_frame_make(cmd, STATUS_PAR_ERR, 0, NULL);
+    }
+    uint32_t uid = 0, config = 0;
+    start_lf_125khz_radio();
+    bsp_delay_ms(10);
+    if (!em4x05_read_word(EM4X05_BLOCK_UID, &uid, 80)) {
+        status = STATUS_LF_TAG_NO_FOUND;
+    } else if (em4x05_read_word(EM4X05_BLOCK_CONFIG, &config, 80)) {
+        status = STATUS_NOT_IMPLEMENTED; /* no proof that LOGIN was needed */
+    } else {
+        em4x05_send_login(bytes_to_num(data, 4));
+        bsp_delay_ms(5);
+        if (!em4x05_read_word(EM4X05_BLOCK_CONFIG, &config, 80)) {
+            uint32_t still_uid = 0;
+            status = em4x05_read_word(EM4X05_BLOCK_UID, &still_uid, 80) && still_uid == uid
+                ? STATUS_LF_TAG_LOGIN_REQUIRED : STATUS_LF_TAG_NO_FOUND;
+        } else {
+            status = (config & EM4X05_CFG_READ_LOGIN) ? STATUS_LF_TAG_OK : STATUS_NOT_IMPLEMENTED;
+        }
+    }
+    stop_lf_125khz_radio();
+    uint32_t be = U32HTONL(uid);
+    return data_frame_make(cmd, status, status == STATUS_LF_TAG_OK ? sizeof(be) : 0,
+                           status == STATUS_LF_TAG_OK ? (uint8_t *)&be : NULL);
+}
+
 static data_frame_tx_t *cmd_processor_em4x05_scan(uint16_t cmd, uint16_t status, uint16_t length, uint8_t *data) {
     em4x05_data_t tag = {0};
     tag.use_password = em4x05_take_password(data, length, 0, &tag.password);
@@ -3543,6 +3586,7 @@ static cmd_data_map_t m_data_cmd_map[] = {
     {    DATA_CMD_EM410X_WRITE_TO_EM4X05,       before_reader_run,           cmd_processor_em410x_write_to_em4x05,        NULL                   },
     {    DATA_CMD_EM4X05_WRITE_WORD,            before_reader_run,           cmd_processor_em4x05_write_word,             NULL                   },
     {    DATA_CMD_EM4X05_READ_WORD,             before_reader_run,           cmd_processor_em4x05_read_word,              NULL                   },
+    {    DATA_CMD_EM4X05_CHECK_PASSWORD,        before_reader_run,           cmd_processor_em4x05_check_password,         NULL                   },
     {    DATA_CMD_LF_SNIFF,                     before_reader_run,           cmd_processor_lf_sniff,                      NULL                   },
     {    DATA_CMD_HF14A_SNIFF,                  NULL,                        cmd_processor_hf14a_sniff,                   NULL                   },
     {    DATA_CMD_HF14A_AUTH_TRACE,             before_hf_reader_run,        cmd_processor_hf14a_auth_trace,              after_hf_reader_run    },

@@ -5,6 +5,23 @@ namespace ChameLab.Cli;
 
 public static class Program
 {
+    private static async Task<ChameLab.Transport.ITransport> OpenTransportAsync(string? port, CancellationToken ct)
+    {
+        if (port is null)
+        {
+            var candidates = await new ChameLab.Transport.Serial.SerialScanner().ScanAsync(ct);
+            port = candidates.Count switch
+            {
+                0 => throw new IOException("Chameleon not found. Connect it or specify hw connect -p PORT."),
+                1 => candidates[0].Id,
+                _ => throw new ArgumentException("Multiple devices found; use -p: " + string.Join(", ", candidates.Select(c => c.Id)))
+            };
+        }
+        return port.StartsWith("tcp://", StringComparison.OrdinalIgnoreCase)
+            ? new ChameLab.Transport.TcpTransport(new Uri(port).Host, new Uri(port).Port)
+            : new ChameLab.Transport.Serial.SerialTransport(port);
+    }
+
     [STAThread]
     public static async Task<int> Main(string[] args)
     {
@@ -29,7 +46,13 @@ public static class Program
         }
         if (commands.Count == 0 && Console.IsInputRedirected)
         { Console.Error.WriteLine("An interactive terminal is required unless --command is used."); return 2; }
-        await using var session = new CliSession();
+        await using var session = new CliSession
+        {
+            OpenTransportAsync = OpenTransportAsync,
+            ShowPlotAsync = WaveformPlot.ShowAsync,
+            ReadLineAsync = Console.IsInputRedirected ? null : ct => Console.In.ReadLineAsync(ct).AsTask(),
+            ClearOutput = () => { if (!Console.IsOutputRedirected) Console.Clear(); }
+        };
         CancellationTokenSource? active = null;
         ConsoleCancelEventHandler cancel = (_, e) => { e.Cancel = true; active?.Cancel(); };
         Console.CancelKeyPress += cancel;

@@ -144,9 +144,12 @@ public sealed partial class CardsViewModel
 
     public override async Task OnDeactivatedAsync()
     {
+        _inspectCts?.Cancel();
+        if (_inspectTask is { IsCompleted: false } inspection) await inspection;
         WriteRecovery.Cancel();
         if (WriteRecovery.RunningTask is { IsCompleted: false } recovery) await recovery;
         CancelWrite();
+        if (_writeTask is { IsCompleted: false } write) await write;
         if (!_mfkey32Running) return;
         CancelDump();
         if (_mfkey32Task is { } task) await task;

@@ -1,4 +1,7 @@
 <Project>
+  <PropertyGroup Condition="'$(ChameLabUiTests)' == 'true'">
+    <DefineConstants>$(DefineConstants);CHAMELAB_UI_TESTS</DefineConstants>
+  </PropertyGroup>
   <PropertyGroup>
     <!-- Every configuration (Debug and Release) builds warning-free. -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>

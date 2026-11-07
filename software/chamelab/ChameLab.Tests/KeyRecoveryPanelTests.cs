@@ -163,6 +163,9 @@ public class KeyRecoveryPanelTests
             vm.WriteRecovery.ApplyKey(new MifareKeyProgress(target.SectorCount - 1, MfKeyType.B,
                 MifareKeyPhase.Found, 1, 1, key));
             Assert.True(vm.WriteRecovery.AllTargetKeysRecovered);
+            Assert.False(vm.WriteNowCommand.CanExecute(null));
+            typeof(CardsViewModel).GetProperty(nameof(CardsViewModel.HasWriteTarget))!.SetValue(vm, true);
+            vm.TargetConfirmed = true;
             Assert.True(vm.WriteNowCommand.CanExecute(null));
             Assert.Null(vm.WriteKeyHint);
             Assert.False(vm.WriteRecovery.ShowDumpActions);
@@ -208,7 +211,7 @@ public class KeyRecoveryPanelTests
 
     [Theory]
     [InlineData(MagicGeneration.Gen1a)]
-    [InlineData(MagicGeneration.Gen3)]
+    [InlineData(MagicGeneration.Gen4)]
     public void OtherGenerationsDoNotRequireRecoveredTargetKeys(MagicGeneration generation)
     {
         var original = AppSettings.Get("cardsWriteGeneration");
@@ -223,6 +226,9 @@ public class KeyRecoveryPanelTests
             vm.SelectedGeneration = generation;
             typeof(CardsViewModel).GetProperty(nameof(CardsViewModel.IsConnected))!.SetValue(vm, true);
             Assert.True(vm.HasRequiredWriteKeys);
+            Assert.False(vm.WriteNowCommand.CanExecute(null));
+            typeof(CardsViewModel).GetProperty(nameof(CardsViewModel.HasWriteTarget))!.SetValue(vm, true);
+            vm.TargetConfirmed = true;
             Assert.True(vm.WriteNowCommand.CanExecute(null));
         }
         finally { AppSettings.Set("cardsWriteGeneration", original); }

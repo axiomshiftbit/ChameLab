@@ -3396,4 +3396,219 @@
   <data name="Settings_UpdateChannelDev" xml:space="preserve">
     <value>Разработка</value>
   </data>
+  <data name="Settings_Theme" xml:space="preserve"><value>Тема</value></data>
+  <data name="Settings_ThemeHint" xml:space="preserve"><value>Следовать системной теме или выбрать постоянное оформление.</value></data>
+  <data name="Settings_ThemeSystem" xml:space="preserve"><value>Как в системе</value></data>
+  <data name="Settings_ThemeLight" xml:space="preserve"><value>Светлая</value></data>
+  <data name="Settings_ThemeDark" xml:space="preserve"><value>Тёмная</value></data>
+  <data name="Slots_EnableEmulation" xml:space="preserve"><value>Включить эмуляцию</value></data>
+  <data name="Import_DictionaryKeySize" xml:space="preserve"><value>Словарь должен содержать ключи одной длины: 4, 6 или 16 байт.</value></data>
+  <data name="Dictionaries_Download" xml:space="preserve"><value>Загрузить словари</value></data>
+  <data name="Tool_amount" xml:space="preserve"><value>Значение / величина изменения</value></data>
+  <data name="Tool_atqa" xml:space="preserve"><value>ATQA (hex)</value></data>
+  <data name="Tool_ats" xml:space="preserve"><value>ATS (hex)</value></data>
+  <data name="Tool_block_decimal" xml:space="preserve"><value>Номер блока (десятичный)</value></data>
+  <data name="Tool_confirm_lock" xml:space="preserve"><value>Введите LOCK для необратимой блокировки.</value></data>
+  <data name="Tool_confirm_write" xml:space="preserve"><value>Подтверждаю запись на эту карту.</value></data>
+  <data name="Tool_device_required" xml:space="preserve"><value>Требуется устройство</value></data>
+  <data name="Tool_dictionary_download" xml:space="preserve"><value>Загрузка словаря</value></data>
+  <data name="Tool_dictionary_download_description" xml:space="preserve"><value>Загрузка внешних словарей</value></data>
+  <data name="Tool_disabled" xml:space="preserve"><value>Отключено</value></data>
+  <data name="Tool_enabled" xml:space="preserve"><value>Включено</value></data>
+  <data name="Tool_gen4_apply" xml:space="preserve"><value>Применить конфигурацию</value></data>
+  <data name="Tool_gen4_apply_warning" xml:space="preserve"><value>Записать эти настройки? Протокол, длина UID, ATS и параметры выбора должны соответствовать памяти карты. Неверные значения могут привести к тому, что карта перестанет распознаваться. Не убирайте карту до завершения проверки.</value></data>
+  <data name="Tool_gen4_block0" xml:space="preserve"><value>Direct writes to block 0</value></data>
+  <data name="Tool_gen4_block_data" xml:space="preserve"><value>Block data (16 hex bytes)</value></data>
+  <data name="Tool_gen4_current_password" xml:space="preserve"><value>Текущий пароль бэкдора (4 байта)</value></data>
+  <data name="Tool_gen4_factory_default" xml:space="preserve"><value>Factory default</value></data>
+  <data name="Tool_gen4_fuse_warning" xml:space="preserve"><value>This permanently locks these settings, including the password. You cannot change them again. Save the password before continuing.</value></data>
+  <data name="Tool_gen4_high_speed" xml:space="preserve"><value>Disabled / high speed</value></data>
+  <data name="Tool_gen4_new_password" xml:space="preserve"><value>Новый пароль бэкдора (4 байта)</value></data>
+  <data name="Tool_gen4_ntag_password" xml:space="preserve"><value>Пароль NTAG (не пароль для backdoor)</value></data>
+  <data name="Tool_gen4_otp" xml:space="preserve"><value>OTP</value></data>
+  <data name="Tool_gen4_pack_page_required" xml:space="preserve"><value>Выберите страницу PACK для этой ревизии карты.</value></data>
+  <data name="Tool_gen4_permanent_lock" xml:space="preserve"><value>Permanently lock configuration</value></data>
+  <data name="Tool_gen4_prewrite" xml:space="preserve"><value>Pre-write</value></data>
+  <data name="Tool_gen4_protocol" xml:space="preserve"><value>Эмулируемый протокол</value></data>
+  <data name="Tool_gen4_read" xml:space="preserve"><value>Прочитать конфигурацию</value></data>
+  <data name="Tool_gen4_read_block" xml:space="preserve"><value>Read block</value></data>
+  <data name="Tool_gen4_read_setting" xml:space="preserve"><value>Read setting</value></data>
+  <data name="Tool_gen4_restore" xml:space="preserve"><value>Восстановить</value></data>
+  <data name="Tool_gen4_shadow" xml:space="preserve"><value>Теневой режим</value></data>
+  <data name="Tool_gen4_signature" xml:space="preserve"><value>Originality signature</value></data>
+  <data name="Tool_gen4_split" xml:space="preserve"><value>Разделить</value></data>
+  <data name="Tool_gen4_uid_and_memory" xml:space="preserve"><value>UID и расширенный доступ к памяти</value></data>
+  <data name="Tool_gen4_uid_length" xml:space="preserve"><value>Длина UID (в байтах)</value></data>
+  <data name="Tool_gen4_ul_mode" xml:space="preserve"><value>Ultralight / NTAG вариант</value></data>
+  <data name="Tool_gen4_write_block" xml:space="preserve"><value>Write block</value></data>
+  <data name="Tool_gen4_write_setting" xml:space="preserve"><value>Write setting</value></data>
+  <data name="Tool_gen4_write_uid" xml:space="preserve"><value>Записать UID</value></data>
+  <data name="Tool_hf_auth_description" xml:space="preserve"><value>Authenticate with a known MIFARE Classic key and inspect the exchange.</value></data>
+  <data name="Tool_hf_auth_trace" xml:space="preserve"><value>Active authentication trace</value></data>
+  <data name="Tool_hf_sniffing" xml:space="preserve"><value>Перехват ВЧ</value></data>
+  <data name="Tool_hf_sniffing_description" xml:space="preserve"><value>Перехват и анализ трафика ISO14443-A когда Chameleon эмулирует метку</value></data>
+  <data name="Tool_invalid_configuration" xml:space="preserve"><value>Некорректные параметры конфигурации.</value></data>
+  <data name="Tool_invalid_hex" xml:space="preserve"><value>Введите полные шестнадцатеричные байты нужной длины.</value></data>
+  <data name="Tool_lf_sniffing" xml:space="preserve"><value>Перехват НЧ</value></data>
+  <data name="Tool_lf_sniffing_description" xml:space="preserve"><value>Перехват и анализ сырых образцов НЧ поля</value></data>
+  <data name="Tool_live_value_blocks" xml:space="preserve"><value>Live value blocks</value></data>
+  <data name="Tool_lock_sent" xml:space="preserve"><value>Необратимая блокировка подтверждена картой. Эти настройки больше нельзя изменить.</value></data>
+  <data name="Tool_max_block_decimal" xml:space="preserve"><value>Последний блок (десятичный: 63 для 1K, 255 для 4K)</value></data>
+  <data name="Tool_mifare_classic_gen4" xml:space="preserve"><value>Mifare Classic Gen4</value></data>
+  <data name="Tool_mifare_classic_gen4_description" xml:space="preserve"><value>Настройки и конфигурация Gen4 карт</value></data>
+  <data name="Tool_operation_verified" xml:space="preserve"><value>Операция проверена повторным чтением.</value></data>
+  <data name="Tool_pack_page_decimal" xml:space="preserve"><value>Страница PACK (десятичная: 19 или 230; -1 — неизвестна)</value></data>
+  <data name="Tool_password_not_found" xml:space="preserve"><value>Подходящий пароль не найден.</value></data>
+  <data name="Tool_raw_activate_rf" xml:space="preserve"><value>Активировать RF-поле</value></data>
+  <data name="Tool_raw_append_crc" xml:space="preserve"><value>Append CRC</value></data>
+  <data name="Tool_raw_auto_select" xml:space="preserve"><value>Select card automatically</value></data>
+  <data name="Tool_raw_bits" xml:space="preserve"><value>Bits (optional)</value></data>
+  <data name="Tool_raw_check_crc" xml:space="preserve"><value>Check response CRC</value></data>
+  <data name="Tool_raw_command" xml:space="preserve"><value>Идентификатор команды</value></data>
+  <data name="Tool_raw_device" xml:space="preserve"><value>Команды устройства</value></data>
+  <data name="Tool_raw_device_description" xml:space="preserve"><value>Send numeric firmware commands and inspect status and data.</value></data>
+  <data name="Tool_raw_hf" xml:space="preserve"><value>Необработанные ВЧ команды</value></data>
+  <data name="Tool_raw_hf_description" xml:space="preserve"><value>Обменивайтесь необработанными кадрами стандарта ISO 14443-A с картой.</value></data>
+  <data name="Tool_raw_keep_rf" xml:space="preserve"><value>Держать RF поле включенным</value></data>
+  <data name="Tool_raw_payload" xml:space="preserve"><value>Payload (hex)</value></data>
+  <data name="Tool_raw_send" xml:space="preserve"><value>Отправить</value></data>
+  <data name="Tool_raw_timeout" xml:space="preserve"><value>Тайм-аут (мс)</value></data>
+  <data name="Tool_raw_wait_response" xml:space="preserve"><value>Ожидание ответа карты</value></data>
+  <data name="Tool_read_configuration_first" xml:space="preserve"><value>Сначала прочитайте конфигурацию карты.</value></data>
+  <data name="Tool_sak" xml:space="preserve"><value>SAK (hex)</value></data>
+  <data name="Tool_scan_card_first" xml:space="preserve"><value>Сначала отсканируйте карту и получите её ключи.</value></data>
+  <data name="Tool_select_dictionary" xml:space="preserve"><value>Выберите словарь четырёхбайтовых паролей.</value></data>
+  <data name="Tool_start" xml:space="preserve"><value>Начать</value></data>
+  <data name="Tool_t55_destructive_hint" xml:space="preserve"><value>Содержимое метки заменяется на EM410x ID DEADBEEFFF, пароль изменяется. Используйте тестовую метку; остановка доступна между попытками.</value></data>
+  <data name="Tool_t55xx_block_editor" xml:space="preserve"><value>Редактор блоков T55xx</value></data>
+  <data name="Tool_t55xx_block_editor_data" xml:space="preserve"><value>Block data (8 hex digits)</value></data>
+  <data name="Tool_t55xx_block_editor_description" xml:space="preserve"><value>Write raw 32-bit blocks to T55xx tags</value></data>
+  <data name="Tool_t55xx_block_editor_page" xml:space="preserve"><value>Page</value></data>
+  <data name="Tool_t55xx_block_editor_sent" xml:space="preserve"><value>Запись завершена. Содержимое тега не проверено.</value></data>
+  <data name="Tool_t55xx_block_editor_use_password" xml:space="preserve"><value>Authenticate with password</value></data>
+  <data name="Tool_t55xx_key_prompt" xml:space="preserve"><value>Введите ключ от T55XX. Ключ по умолчанию у CU - 20206666</value></data>
+  <data name="Tool_t55xx_new_key_prompt" xml:space="preserve"><value>новый ключ T55XX, если вы хотите изменить его</value></data>
+  <data name="Tool_t55xx_password_cleaner" xml:space="preserve"><value>Очистка пароля T55XX</value></data>
+  <data name="Tool_t55xx_password_cleaner_description" xml:space="preserve"><value>Удаляет пароли от тегов T55XX</value></data>
+  <data name="Tool_uid" xml:space="preserve"><value>UID (hex)</value></data>
+  <data name="Tool_unsupported_firmware" xml:space="preserve"><value>Прошивка не поддерживает эту команду.</value></data>
+  <data name="Tool_value_block_copy" xml:space="preserve"><value>Скопировать значение</value></data>
+  <data name="Tool_value_block_decrement" xml:space="preserve"><value>Decrement</value></data>
+  <data name="Tool_value_block_increment" xml:space="preserve"><value>Increment</value></data>
+  <data name="Tool_value_block_no_access" xml:space="preserve"><value>Для этой операции требуется блок значений, поддерживаемая прошивкой команда и восстановленные ключи с необходимыми правами доступа.</value></data>
+  <data name="Tool_value_block_refresh" xml:space="preserve"><value>Read blocks</value></data>
+  <data name="Tool_value_block_select_destination" xml:space="preserve"><value>Destination</value></data>
+  <data name="Tool_value_block_select_source" xml:space="preserve"><value>Источник</value></data>
+  <data name="Tool_value_block_tool_description" xml:space="preserve"><value>Восстановление ключей и управление блоками значений напрямую на карте MIFARE Classic.</value></data>
+  <data name="Tool_value_block_write" xml:space="preserve"><value>Записать значение</value></data>
+  <data name="Tool_verification_failed" xml:space="preserve"><value>Повторное чтение не удалось или данные отличаются. Прочитайте карту перед повторной записью.</value></data>
+  <data name="Tool_version" xml:space="preserve"><value>Версия</value></data>
+  <data name="Connect_ManualSerial" xml:space="preserve"><value>Последовательный порт вручную</value></data>
+  <data name="Connect_SerialUnavailable" xml:space="preserve"><value>Указанный порт недоступен.</value></data>
+  <data name="Console_Title" xml:space="preserve"><value>Консоль команд</value></data>
+  <data name="Console_Description" xml:space="preserve"><value>Все группы команд клиента через USB, Bluetooth и TCP: HF/LF, память слотов, Ultralight, DESFire, SEOS, ISO 14443-4 и диагностика. Выберите команду для просмотра аргументов.</value></data>
+  <data name="Console_Help" xml:space="preserve"><value>Справка по команде</value></data>
+  <data name="Console_Run" xml:space="preserve"><value>Выполнить</value></data>
+  <data name="Console_Stop" xml:space="preserve"><value>Остановить</value></data>
+  <data name="Console_Clear" xml:space="preserve"><value>Очистить вывод</value></data>
+  <data name="Console_Respond" xml:space="preserve"><value>Отправить ответ</value></data>
+  <data name="Console_Files" xml:space="preserve"><value>Файлы команд</value></data>
+  <data name="Console_Import" xml:space="preserve"><value>Импорт файла</value></data>
+  <data name="Console_Export" xml:space="preserve"><value>Экспорт файла</value></data>
+  <data name="Console_FileHint" xml:space="preserve"><value>Импортируйте исходные файлы здесь и указывайте их имена в командах. Созданные файлы появятся в списке для экспорта.</value></data>
+  <data name="Nav_Writer" xml:space="preserve"><value>Запись</value></data>
+  <data name="Nav_Journal" xml:space="preserve"><value>Журнал</value></data>
+  <data name="Journal_Export" xml:space="preserve"><value>Сохранить полный журнал</value></data>
+  <data name="Journal_Clear" xml:space="preserve"><value>Очистить журнал</value></data>
+  <data name="Journal_Details" xml:space="preserve"><value>Команды и ответы устройства</value></data>
+  <data name="Journal_Hint" xml:space="preserve"><value>История сеанса: до 10 000 событий, на экране — последние 1500. При сохранении выгружаются все оставшиеся события. Ключи, содержимое карт и идентификаторы не записываются.</value></data>
+  <data name="Journal_Cancelled" xml:space="preserve"><value>Операция отменена; уже записанные блоки остаются на карте.</value></data>
+  <data name="Journal_WriteStarted" xml:space="preserve"><value>Начата запись: {0}.</value></data>
+  <data name="Journal_Block" xml:space="preserve"><value>Блок/страница {0}, количество {1}: {2}.</value></data>
+  <data name="Journal_WriteDone" xml:space="preserve"><value>Запись завершена. Результаты контрольного чтения указаны отдельно.</value></data>
+  <data name="Journal_WriteIncomplete" xml:space="preserve"><value>Запись не завершена успешно. Проверьте ошибки блоков и ответы устройства.</value></data>
+  <data name="Writer_Source" xml:space="preserve"><value>1. Выберите сохранённую карту-источник или импортируйте дамп. Данные источника сохраняются.</value></data>
+  <data name="Writer_Target" xml:space="preserve"><value>2. Проверьте карту для записи</value></data>
+  <data name="Writer_Position" xml:space="preserve"><value>Приложите одну заготовку к антенне. После перемещения или замены повторите сканирование. Проверка не записывает данные на карту.</value></data>
+  <data name="Writer_Scan" xml:space="preserve"><value>Сканировать / определить тип</value></data>
+  <data name="Writer_Inspect" xml:space="preserve"><value>Проверить память и заводские ключи</value></data>
+  <data name="Writer_ScanFirst" xml:space="preserve"><value>Перед записью отсканируйте и подтвердите заготовку.</value></data>
+  <data name="Writer_InspectStarted" xml:space="preserve"><value>Начата проверка заготовки без записи.</value></data>
+  <data name="Writer_Found" xml:space="preserve"><value>Карта обнаружена</value></data>
+  <data name="Writer_NotFound" xml:space="preserve"><value>Карта не обнаружена. Поднесите ближе, переверните и повторите сканирование.</value></data>
+  <data name="Writer_GenerationUnknown" xml:space="preserve"><value>Обычная Classic либо Gen2/CUID/FUID: поколение не подтверждено. Чтение не доказывает возможность изменения UID. Запись UID по умолчанию отключена.</value></data>
+  <data name="Writer_MemoryResult" xml:space="preserve"><value>Прочитано блоков данных: {0}/{1}; секторов с обоими заводскими ключами: {2}/{3}.</value></data>
+  <data name="Writer_DataZero" xml:space="preserve"><value>Все проверенные пользовательские данные нулевые. Блок производителя и трейлеры исключены; это не гарантирует, что карта новая.</value></data>
+  <data name="Writer_DataPresent" xml:space="preserve"><value>Найдены ненулевые пользовательские данные. На карте есть данные.</value></data>
+  <data name="Writer_DataUnknown" xml:space="preserve"><value>Пустота не установлена: проверить всю пользовательскую память не удалось.</value></data>
+  <data name="Writer_Incompatible" xml:space="preserve"><value>Тип или объём обнаруженной заготовки не подходит для источника.</value></data>
+  <data name="Writer_Confirm" xml:space="preserve"><value>Подтверждаю запись в проверенную заготовку.</value></data>
+  <data name="Writer_LfFound" xml:space="preserve"><value>LF-идентификатор обнаружен. Это не устанавливает тип чипа, пароль и пустоту заготовки.</value></data>
+  <data name="Writer_LfBlank" xml:space="preserve"><value>На антенне пустая LF-заготовка. У неё может не быть читаемого идентификатора; разрешить запись без сверки ID.</value></data>
+  <data name="Writer_Gen4Password" xml:space="preserve"><value>Пароль Gen4 (4 байта; пусто = 00000000)</value></data>
+  <data name="Writer_Gen4Hint" xml:space="preserve"><value>Gen4 GTU/Ultimate: сначала проверяются конфигурация и объём. Блоки записываются и сверяются чтением; UID записывается последним.</value></data>
+  <data name="Writer_NoSource" xml:space="preserve"><value>В файле нет карт поддерживаемого для записи типа.</value></data>
+  <data name="Writer_Verified" xml:space="preserve"><value>Контрольное чтение: совпало блоков — {0}, ошибок — {1}.</value></data>
+  <data name="Writer_Verifying" xml:space="preserve"><value>Контрольное чтение записанных блоков.</value></data>
+  <data name="Writer_VerifyFail" xml:space="preserve"><value>Запись подтверждена устройством, но контрольное чтение не подтвердило блоки: {0}.</value></data>
+  <data name="Journal_ReadStarted" xml:space="preserve"><value>Начато чтение карты.</value></data>
+  <data name="Journal_ReadResult" xml:space="preserve"><value>Чтение карты: прочитано {0}/{1} блоков.</value></data>
+  <data name="Journal_NoTag" xml:space="preserve"><value>Проверка завершена: карта не обнаружена.</value></data>
+<data name="Cards_TestScanHf" xml:space="preserve"><value>Тест обнаружения HF</value></data>
+<data name="Cards_TestScanLf" xml:space="preserve"><value>Тест обнаружения LF</value></data>
+<data name="Cards_TestScanHint" xml:space="preserve"><value>Проверьте положение на антенне без добавления и сохранения карты. Для LF используется протокол, выбранный ниже.</value></data>
+<data name="Settings_AuthorsLicenses" xml:space="preserve"><value>Авторы и лицензии</value></data>
+<data name="Settings_LicensesHint" xml:space="preserve"><value>Происхождение проекта и включённые уведомления. У каждого компонента своя лицензия; GPL не заменяет условия сторонних библиотек.</value></data>
+<data name="Settings_ForkSource" xml:space="preserve"><value>Исходный код этого форка</value></data>
+<data name="Writer_Reset" xml:space="preserve"><value>Сбросить проверку</value></data>
+<data name="Writer_NoData" xml:space="preserve"><value>В источнике нет блоков данных для выбранного режима записи. Сначала прочитайте или импортируйте дамп.</value></data>
+  <data name="Plugins_Title" xml:space="preserve"><value>Lua-плагины</value></data>
+  <data name="Plugins_Tile" xml:space="preserve"><value>Импорт, редактирование и запуск сценариев работы с устройством.</value></data>
+  <data name="Plugins_Description" xml:space="preserve"><value>Перед запуском проверьте код: плагин может менять карты, слоты и настройки. Импорт сам по себе ничего не запускает. Остановка дожидается текущей операции; завершённые записи не отменяются.</value></data>
+  <data name="Plugins_New" xml:space="preserve"><value>Новый плагин</value></data>
+  <data name="Plugins_Name" xml:space="preserve"><value>Название</value></data>
+  <data name="Plugins_Summary" xml:space="preserve"><value>Описание</value></data>
+  <data name="Plugins_Code" xml:space="preserve"><value>Код Lua</value></data>
+  <data name="Plugins_Resources" xml:space="preserve"><value>Текстовые ресурсы (JSON)</value></data>
+  <data name="Plugins_ResourcesError" xml:space="preserve"><value>Ресурсы должны быть объектом JSON с текстовыми значениями.</value></data>
+  <data name="Plugins_Compress" xml:space="preserve"><value>Сжимать экспортируемый плагин</value></data>
+  <data name="Plugins_Run" xml:space="preserve"><value>Запустить плагин</value></data>
+  <data name="Plugins_Completed" xml:space="preserve"><value>Выполнение завершено.</value></data>
+  <data name="Plugins_Stopped" xml:space="preserve"><value>Выполнение остановлено.</value></data>
+  <data name="Plugins_InputInvalid" xml:space="preserve"><value>Проверьте введённое значение.</value></data>
+  <data name="Plugins_Yes" xml:space="preserve"><value>Да</value></data>
+  <data name="Plugins_Accept" xml:space="preserve"><value>Продолжить</value></data>
+  <data name="Search_Title" xml:space="preserve"><value>Поиск ключей и паролей</value></data>
+  <data name="Search_Tile" xml:space="preserve"><value>Словари, ограниченный перебор, прогресс и продолжение.</value></data>
+  <data name="Search_Hint" xml:space="preserve"><value>Проверки авторизации не записывают память карты. На антенне должна оставаться та же карта. Остановленный поиск можно продолжить в текущем сеансе приложения. Ключи не попадают в технический журнал.</value></data>
+  <data name="Search_EmHint" xml:space="preserve"><value>Для EM4x05 нужна прошивка ChameLab с проверкой пароля. Без записи можно проверить только защиту чтения READ LOGIN. Сброс пароля T55xx — отдельный инструмент, перезаписывающий метку.</value></data>
+  <data name="Search_EmFirmware" xml:space="preserve"><value>Обновите прошивку: проверка пароля EM4x05 без записи недоступна.</value></data>
+  <data name="Search_EmReadProtection" xml:space="preserve"><value>Пароль нельзя проверить чтением: защита READ LOGIN не подтверждена.</value></data>
+  <data name="Search_ResponseInvalid" xml:space="preserve"><value>Некорректный ответ устройства.</value></data>
+  <data name="Search_WrongCard" xml:space="preserve"><value>Обнаруженная карта не поддерживает выбранный способ авторизации.</value></data>
+  <data name="Search_AuthLimited" xml:space="preserve"><value>Поиск заблокирован: AUTHLIM включён или не читается. Неудачные попытки могут навсегда закрыть доступ к защищённой памяти.</value></data>
+  <data name="Search_KeySize" xml:space="preserve"><value>Длина ключа не соответствует выбранному типу карты.</value></data>
+  <data name="Search_Dictionary" xml:space="preserve"><value>Словарь</value></data>
+  <data name="Search_Range" xml:space="preserve"><value>Диапазон включительно (hex)</value></data>
+  <data name="Search_Block" xml:space="preserve"><value>Блок для авторизации</value></data>
+  <data name="Search_KeyType" xml:space="preserve"><value>Тип ключа</value></data>
+  <data name="Search_Defaults" xml:space="preserve"><value>Включить встроенные ключи Classic</value></data>
+  <data name="Search_First" xml:space="preserve"><value>Первый кандидат (hex)</value></data>
+  <data name="Search_Last" xml:space="preserve"><value>Последний кандидат (hex)</value></data>
+  <data name="Search_RangeHint" xml:space="preserve"><value>Кандидаты увеличиваются как числа big-endian. Полный перебор 48 или 128 бит практически невыполним; сужайте диапазон по известным байтам.</value></data>
+  <data name="Search_Budget" xml:space="preserve"><value>Максимум попыток за запуск</value></data>
+  <data name="Search_Inspect" xml:space="preserve"><value>Проверить карту перед поиском</value></data>
+  <data name="Search_Start" xml:space="preserve"><value>Начать / продолжить поиск</value></data>
+  <data name="Search_Reset" xml:space="preserve"><value>Сбросить прогресс поиска</value></data>
+  <data name="Search_Result" xml:space="preserve"><value>Подтверждённый ключ / пароль</value></data>
+  <data name="Search_ShowKey" xml:space="preserve"><value>Показать ключ</value></data>
+  <data name="Search_SaveKey" xml:space="preserve"><value>Сохранить результат в словарь</value></data>
+  <data name="Search_FoundDictionary" xml:space="preserve"><value>Подтверждённый ключ</value></data>
+  <data name="Search_KeySaved" xml:space="preserve"><value>Ключ сохранён в новый словарь.</value></data>
+  <data name="Search_Ready" xml:space="preserve"><value>Карта готова: {0}, ключ {1} бит.</value></data>
+  <data name="Search_Progress" xml:space="preserve"><value>{0:N0} / {1:N0} попыток · {2:F1}/с · {3:hh\:mm\:ss}</value></data>
+  <data name="Search_Found" xml:space="preserve"><value>Авторизация успешна. Результат показан ниже.</value></data>
+  <data name="Search_NotFound" xml:space="preserve"><value>В этом словаре или диапазоне совпадений нет.</value></data>
+  <data name="Search_BudgetReached" xml:space="preserve"><value>Достигнут лимит попыток за запуск. Продолжите с следующего кандидата.</value></data>
+  <data name="Search_Stopped" xml:space="preserve"><value>Поиск остановлен. Прогресс сохранён в текущем сеансе.</value></data>
 </root>

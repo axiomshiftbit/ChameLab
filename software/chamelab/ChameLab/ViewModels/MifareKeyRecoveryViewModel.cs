@@ -218,9 +218,16 @@ public sealed class MifareKeyRecoveryViewModel : ReactiveObject, IKeyRecoveryCon
         Refresh();
     }
 
+    public void AcceptTarget(MifareDump target)
+    {
+        Target = target;
+        ResizeSectors(target.SectorCount);
+        FinishWrite();
+    }
+
     public void SetGeneration(MagicGeneration generation)
     {
-        _usesKeys = generation != MagicGeneration.Gen1a;
+        _usesKeys = generation is MagicGeneration.Gen2 or MagicGeneration.Gen3;
         Reset();
     }
 

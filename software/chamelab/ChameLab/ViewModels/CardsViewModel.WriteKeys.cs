@@ -35,7 +35,8 @@ public sealed partial class CardsViewModel
     public bool ShowRecoveryTools => CanDump && (ShowDumpActions || IsDumpRunning);
     public bool ShowWriteProgress => false;
     public bool ShowMfkey32 => IsCardOpen || _cardPrng is not null;
-    public bool HasRequiredWriteKeys => !IsGen2Write || WriteRecovery.AllTargetKeysRecovered || _assumeDefaultWriteKeys;
+    public bool IsGen4Write => IsMifareWrite && SelectedGeneration == MagicGeneration.Gen4;
+    public bool HasRequiredWriteKeys => !(IsMifareWrite && SelectedGeneration is MagicGeneration.Gen2 or MagicGeneration.Gen3) || WriteRecovery.AllTargetKeysRecovered || _assumeDefaultWriteKeys;
     public string? WriteKeyHint => !HasRequiredWriteKeys && !WriteRecovery.AllPlannedSectorsWritten && !IsWriting
         ? Strings.Cards_RecoverAllKeysHint
         : null;
@@ -66,6 +67,7 @@ public sealed partial class CardsViewModel
 
     private void ClearWriteSession()
     {
+        ResetTargetInspection();
         _writeVersion++;
         _writeSession = null;
         _assumeDefaultWriteKeys = false;
@@ -88,7 +90,7 @@ public sealed partial class CardsViewModel
         WriteBlockStates = Array.Empty<MifareBlockState>();
         WriteProgressText = null;
         ClearMessages();
-        if (HasRequiredWriteKeys) await WriteAsync();
+        await InspectTargetAsync(true);
     }
 
     private bool IncludeWriteBlock0 => SelectedGeneration != MagicGeneration.Gen2 || WriteGen2Block0;

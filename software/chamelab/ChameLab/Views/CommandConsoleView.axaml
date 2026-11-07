@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ChameLab.ViewModels" xmlns:cli="using:ChameLab.Cli"
+             xmlns:loc="using:ChameLab.Localization"
+             x:Class="ChameLab.Views.CommandConsoleView" x:DataType="vm:CommandConsoleViewModel">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Spacing="12">
+      <TextBlock Classes="caption" Text="{x:Static loc:Strings.Console_Description}" />
+      <ComboBox ItemsSource="{Binding Commands}" SelectedItem="{Binding SelectedCommand}" HorizontalAlignment="Stretch" IsEnabled="{Binding !Working}">
+        <ComboBox.ItemTemplate><DataTemplate x:DataType="cli:CommandSpec"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" /></DataTemplate></ComboBox.ItemTemplate>
+      </ComboBox>
+      <Expander HorizontalAlignment="Stretch">
+        <Expander.Header><TextBlock Text="{x:Static loc:Strings.Console_Help}" TextWrapping="Wrap" /></Expander.Header>
+        <SelectableTextBlock Text="{Binding Help}" TextWrapping="Wrap" />
+      </Expander>
+      <TextBox Text="{Binding CommandText}" Classes="mono" TextWrapping="Wrap" AcceptsReturn="False" IsEnabled="{Binding !Working}" />
+      <WrapPanel Orientation="Horizontal">
+        <Button Command="{Binding RunCommand}" Content="{x:Static loc:Strings.Console_Run}" IsEnabled="{Binding !Working}" Margin="0,0,8,8" />
+        <Button Command="{Binding StopCommand}" Content="{x:Static loc:Strings.Console_Stop}" IsEnabled="{Binding Working}" Margin="0,0,8,8" />
+        <Button Command="{Binding ClearCommand}" Content="{x:Static loc:Strings.Console_Clear}" Margin="0,0,8,8" />
+      </WrapPanel>
+      <StackPanel IsVisible="{Binding WaitingForInput}" Spacing="8">
+        <TextBox Text="{Binding Response}" TextWrapping="Wrap" Classes="mono" />
+        <Button Command="{Binding SendInputCommand}" Content="{x:Static loc:Strings.Console_Respond}" />
+      </StackPanel>
+      <ScrollViewer Height="280" HorizontalScrollBarVisibility="Auto"><SelectableTextBlock Text="{Binding Output}" Classes="mono" /></ScrollViewer>
+      <Expander HorizontalAlignment="Stretch">
+        <Expander.Header><TextBlock Text="{x:Static loc:Strings.Console_Files}" TextWrapping="Wrap" /></Expander.Header>
+        <StackPanel Spacing="8" IsEnabled="{Binding !Working}">
+          <TextBlock Classes="caption" Text="{x:Static loc:Strings.Console_FileHint}" />
+          <ComboBox ItemsSource="{Binding Files}" SelectedItem="{Binding SelectedFile}" HorizontalAlignment="Stretch" />
+          <WrapPanel Orientation="Horizontal">
+            <Button Command="{Binding ImportCommand}" Content="{x:Static loc:Strings.Console_Import}" Margin="0,0,8,8" />
+            <Button Command="{Binding ExportCommand}" Content="{x:Static loc:Strings.Console_Export}" Margin="0,0,8,8" />
+          </WrapPanel>
+        </StackPanel>
+      </Expander>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

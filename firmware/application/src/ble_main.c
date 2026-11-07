@@ -186,7 +186,7 @@ static void on_bas_evt(ble_bas_t *p_bas, ble_bas_evt_t *p_evt) {
 static void nus_data_handler(ble_nus_evt_t *p_evt) {
     if (p_evt->type == BLE_NUS_EVT_RX_DATA) {
         NRF_LOG_DEBUG("Received data from BLE NUS.");
-        NRF_LOG_HEXDUMP_DEBUG(p_evt->params.rx_data.p_data, p_evt->params.rx_data.length);
+        NRF_LOG_DEBUG("BLE RX: %u bytes", p_evt->params.rx_data.length);
         data_frame_receive((uint8_t *)(p_evt->params.rx_data.p_data), p_evt->params.rx_data.length);
     }
 }
@@ -194,7 +194,7 @@ static void nus_data_handler(ble_nus_evt_t *p_evt) {
 
 void nus_data_response(uint8_t *p_data, uint16_t length) {
     NRF_LOG_INFO("BLE nus service response data length: %d", length);
-    NRF_LOG_HEXDUMP_DEBUG(p_data, length);
+    NRF_LOG_DEBUG("BLE TX: %u bytes", length);
 
     ret_code_t err_code;
     uint16_t remain = length;
@@ -473,10 +473,7 @@ static void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context) {
             break;
 
         case BLE_GAP_EVT_PASSKEY_DISPLAY: {
-            char passkey[BLE_GAP_PASSKEY_LEN + 1];
-            memcpy(passkey, p_ble_evt->evt.gap_evt.params.passkey_display.passkey, BLE_GAP_PASSKEY_LEN);
-            passkey[BLE_GAP_PASSKEY_LEN] = 0x00;
-            NRF_LOG_INFO("=== PASSKEY: %s =====",   nrf_log_push(passkey));
+            NRF_LOG_INFO("BLE pairing passkey requested");
         }
         break;
 

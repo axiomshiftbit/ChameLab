@@ -449,7 +449,7 @@ static void tag_emulation_migrate_slot_config_v0_to_v8(void) {
     uint8_t tmpbuf[sizeof(slotConfig)];
     memcpy(tmpbuf, (uint8_t *)&slotConfig, sizeof(tmpbuf));
     NRF_LOG_INFO("Migrating slotConfig v0...");
-    NRF_LOG_HEXDUMP_INFO(tmpbuf, sizeof(tmpbuf));
+    NRF_LOG_DEBUG("Migrating %u bytes of slot configuration", (unsigned)sizeof(tmpbuf));
     // Populate new slotConfig struct
     slotConfig.version = TAG_SLOT_CONFIG_CURRENT_VERSION;
     slotConfig.active_slot = tmpbuf[0];

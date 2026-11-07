@@ -1,0 +1,49 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ChameLab.ViewModels" xmlns:m="using:ChameLab.Models" xmlns:loc="using:ChameLab.Localization"
+             x:Class="ChameLab.Views.KeySearchView" x:DataType="vm:KeySearchViewModel">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Spacing="12">
+      <TextBlock Text="{x:Static loc:Strings.Search_Hint}" Classes="caption" TextWrapping="Wrap" />
+      <StackPanel Spacing="10" IsEnabled="{Binding !Working}">
+        <ComboBox ItemsSource="{Binding Kinds}" SelectedItem="{Binding Kind}" HorizontalAlignment="Stretch">
+          <ComboBox.ItemTemplate><DataTemplate x:DataType="vm:KeySearchOption"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" /></DataTemplate></ComboBox.ItemTemplate>
+        </ComboBox>
+        <TextBlock IsVisible="{Binding IsEm}" Text="{x:Static loc:Strings.Search_EmHint}" Classes="caption" TextWrapping="Wrap" />
+        <StackPanel IsVisible="{Binding IsClassic}" Spacing="6">
+          <TextBlock Text="{x:Static loc:Strings.Search_Block}" TextWrapping="Wrap" />
+          <NumericUpDown Value="{Binding Block}" Minimum="0" Maximum="255" />
+          <TextBlock Text="{x:Static loc:Strings.Search_KeyType}" TextWrapping="Wrap" />
+          <ComboBox ItemsSource="{Binding KeyTypes}" SelectedIndex="{Binding KeyTypeIndex}" HorizontalAlignment="Stretch" />
+        </StackPanel>
+        <ComboBox ItemsSource="{Binding Modes}" SelectedIndex="{Binding Mode}" HorizontalAlignment="Stretch" />
+        <StackPanel IsVisible="{Binding !IsRange}" Spacing="8">
+          <ComboBox ItemsSource="{Binding Dictionaries}" SelectedItem="{Binding Dictionary}" HorizontalAlignment="Stretch">
+            <ComboBox.ItemTemplate><DataTemplate x:DataType="m:KeyDictionary"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" /></DataTemplate></ComboBox.ItemTemplate>
+          </ComboBox>
+          <CheckBox IsChecked="{Binding IncludeDefaults}" IsVisible="{Binding IsClassic}"><TextBlock Text="{x:Static loc:Strings.Search_Defaults}" TextWrapping="Wrap" /></CheckBox>
+        </StackPanel>
+        <StackPanel IsVisible="{Binding IsRange}" Spacing="6">
+          <TextBlock Text="{x:Static loc:Strings.Search_First}" TextWrapping="Wrap" /><TextBox Text="{Binding First}" Classes="mono" />
+          <TextBlock Text="{x:Static loc:Strings.Search_Last}" TextWrapping="Wrap" /><TextBox Text="{Binding Last}" Classes="mono" />
+          <TextBlock Text="{x:Static loc:Strings.Search_RangeHint}" Classes="caption" TextWrapping="Wrap" />
+        </StackPanel>
+        <TextBlock Text="{x:Static loc:Strings.Search_Budget}" TextWrapping="Wrap" />
+        <NumericUpDown Value="{Binding AttemptBudget}" Minimum="1" Maximum="1000000" />
+        <WrapPanel>
+          <Button Command="{Binding InspectCommand}" Margin="0,0,8,8"><TextBlock Text="{x:Static loc:Strings.Search_Inspect}" TextWrapping="Wrap" /></Button>
+          <Button Command="{Binding StartCommand}" Classes="accent" Margin="0,0,8,8"><TextBlock Text="{x:Static loc:Strings.Search_Start}" TextWrapping="Wrap" /></Button>
+          <Button Command="{Binding ResetCommand}" Margin="0,0,8,8"><TextBlock Text="{x:Static loc:Strings.Search_Reset}" TextWrapping="Wrap" /></Button>
+        </WrapPanel>
+      </StackPanel>
+      <Button IsVisible="{Binding Working}" Command="{Binding StopCommand}" Content="{x:Static loc:Strings.Common_Stop}" />
+      <TextBlock Text="{Binding Target}" TextWrapping="Wrap" />
+      <ProgressBar Value="{Binding Percent}" Maximum="100" />
+      <TextBlock Text="{Binding Progress}" TextWrapping="Wrap" />
+      <TextBlock Text="{x:Static loc:Strings.Search_Result}" TextWrapping="Wrap" />
+      <TextBox Text="{Binding FoundKey, Mode=OneWay}" Classes="mono" IsReadOnly="True" PasswordChar="{Binding KeyMask}" />
+      <CheckBox IsChecked="{Binding ShowKey}"><TextBlock Text="{x:Static loc:Strings.Search_ShowKey}" TextWrapping="Wrap" /></CheckBox>
+      <Button Command="{Binding SaveKeyCommand}"><TextBlock Text="{x:Static loc:Strings.Search_SaveKey}" TextWrapping="Wrap" /></Button>
+      <TextBlock Text="{Binding Error}" Classes="caption warning" TextWrapping="Wrap" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

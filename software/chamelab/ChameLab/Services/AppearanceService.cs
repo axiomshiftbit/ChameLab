@@ -9,7 +9,7 @@ using Avalonia.Styling;
 
 namespace ChameLab.Services;
 
-/// <summary>One choosable Actipro accent color ramp, with a swatch for the picker.</summary>
+/// <summary>One choosable accent color, with a swatch for the picker.</summary>
 public sealed record AccentOption(string Name, IBrush Swatch);
 
 /// <summary>
@@ -23,7 +23,7 @@ public static class AppearanceService
     private const string ThemeSetting = "theme";
     public const string DefaultAccent = "Emerald";
 
-    /// <summary>Every Actipro hue, with its mid (500) shade as the swatch color.</summary>
+    /// <summary>Application accents with stable names so saved preferences remain usable.</summary>
     public static IReadOnlyList<AccentOption> Accents => field ??= BuildAccents();
 
     private static IReadOnlyList<AccentOption> BuildAccents()

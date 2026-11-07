@@ -740,7 +740,7 @@ static void nfc_tag_seos_state_handler(uint8_t *data, uint16_t szBytes) {
     }
 
     NRF_LOG_DEBUG("Seos: Responding with %d bytes, SW=%02X%02X.", m_tcl_session_state.m_resp_len, apdu_status[0], apdu_status[1]);
-    NRF_LOG_HEXDUMP_DEBUG(m_tcl_session_state.m_resp_buf, m_tcl_session_state.m_resp_len);
+    NRF_LOG_DEBUG("SEOS response: %u bytes", m_tcl_session_state.m_resp_len);
 
     // Add APDU status code to end of response
     m_tcl_session_state.m_resp_buf[m_tcl_session_state.m_resp_len++] = apdu_status[0];

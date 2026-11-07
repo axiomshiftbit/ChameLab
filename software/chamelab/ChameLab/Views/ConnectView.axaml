@@ -15,7 +15,7 @@
   <Grid x:Name="Page" Classes="page" MaxWidth="540" VerticalAlignment="Center" RowDefinitions="Auto,Auto,Auto">
 
       <!-- Hero: device above the title, or beside it on short windows. -->
-      <Grid x:Name="Hero" Grid.Row="0" ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto"
+      <Grid x:Name="Hero" Grid.Row="0" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto"
             HorizontalAlignment="Center" Margin="0,8,0,4">
         <Image x:Name="HeroImage" Grid.ColumnSpan="2" Source="/Assets/chameleon-ultra.png" Height="120"
                HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -26,7 +26,7 @@
         </Image>
         <StackPanel x:Name="HeroText" Grid.Row="1" Grid.ColumnSpan="2" Spacing="8" Margin="0,16,0,0"
                     VerticalAlignment="Center">
-          <TextBlock x:Name="HeroTitle" Text="{x:Static loc:Strings.Connect_ConnectYourChameleon}" Classes="h1" HorizontalAlignment="Center" />
+          <TextBlock x:Name="HeroTitle" Text="{x:Static loc:Strings.Connect_ConnectYourChameleon}" Classes="h1" HorizontalAlignment="Center" TextAlignment="Center" />
           <TextBlock x:Name="HeroCaption" Classes="caption" HorizontalAlignment="Center" TextAlignment="Center"
                      MaxWidth="380" TextWrapping="Wrap"
                      Text="{Binding IntroHint}" />
@@ -87,7 +87,7 @@
               <PathIcon Data="{Binding PrimaryKind, Converter={x:Static conv:IconGeometryConverter.Instance}}"
                         Width="28" Height="28" Opacity="0.5"
                         HorizontalAlignment="Center" />
-              <TextBlock Text="{x:Static loc:Strings.Connect_NoDevicesDetected}" FontWeight="SemiBold" HorizontalAlignment="Center" />
+              <TextBlock Text="{x:Static loc:Strings.Connect_NoDevicesDetected}" TextWrapping="Wrap" TextAlignment="Center" FontWeight="SemiBold" HorizontalAlignment="Center" />
               <TextBlock Classes="caption" TextAlignment="Center" MaxWidth="320"
                          Text="{Binding EmptyHint}" TextWrapping="Wrap" />
             </StackPanel>
@@ -115,8 +115,15 @@
         </Grid>
       </Border>
 
+      <StackPanel Grid.Row="2" Spacing="10">
+      <Expander IsVisible="{Binding CanManualSerial}" Header="{x:Static loc:Strings.Connect_ManualSerial}" HorizontalAlignment="Stretch">
+        <StackPanel Spacing="8">
+          <TextBox Text="{Binding ManualSerialPort}" PlaceholderText="COM3 / /dev/ttyACM0" />
+          <Button Command="{Binding ConnectSerialCommand}" Content="{x:Static loc:Strings.Connect_Connect}" />
+        </StackPanel>
+      </Expander>
       <!-- Manual TCP endpoint, tucked away as an advanced option. -->
-      <Expander Grid.Row="2" HorizontalAlignment="Stretch" CornerRadius="14">
+      <Expander HorizontalAlignment="Stretch" CornerRadius="14">
         <Expander.Header>
           <StackPanel Orientation="Horizontal" Spacing="10">
             <PathIcon Data="{StaticResource Icon.tcp}" Width="16" Height="16" />
@@ -133,6 +140,7 @@
           </Grid>
         </StackPanel>
       </Expander>
+      </StackPanel>
   </Grid>
   </ScrollViewer>
 </UserControl>

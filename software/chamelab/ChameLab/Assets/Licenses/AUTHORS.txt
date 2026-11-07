@@ -1,0 +1,30 @@
+# Авторы и происхождение ChameLab
+
+Этот форк не присваивает авторство исходных проектов. Авторские права на вклад
+принадлежат его авторам; история Git и уведомления в отдельных файлах сохраняются.
+Имена и лицензии зависимостей приведены в приложении: «Настройки → Авторы и лицензии».
+
+| Проект / авторы | Вклад и источник | Условия |
+| --- | --- | --- |
+| ChameleonUltra — RfidResearchGroup и участники проекта | [Устройство, прошивка, протокол и официальный CLI](https://github.com/RfidResearchGroup/ChameleonUltra). База для прошивки и совместимого набора команд. | GNU GPL v3; отдельные компоненты SDK имеют собственные уведомления. |
+| ChameLab — m0n5ter и участники проекта | [Непосредственный исходный форк](https://github.com/m0n5ter/ChameLab): клиент на .NET/Avalonia, платформенные транспорты, интерфейс и расширения прошивки. | GNU GPL v3. |
+| ChameLab — axiomshiftbit и участники этого форка | [Текущий форк](https://github.com/axiomshiftbit/ChameLab): последующие исправления, перенос функций, отдельная запись, диагностика, журнал и проверки. | GNU GPL v3. |
+| ChameleonUltraGUI — GameTec-live и участники проекта | [Эталонный Flutter-клиент](https://github.com/GameTec-live/ChameleonUltraGUI): совместимость форматов карт/словарей/расширений, логика инструментов, протокол Gen4. Перенос отдельных функций, а не авторство всего .NET-клиента. | GNU GPL v3. |
+| Crapto1Sharp — kgame / kgamecarter | [Управляемые Crypto1/crapto1 и восстановление ключей](https://github.com/kgamecarter/Crapto1Sharp), база `ee5f3ce`. Подробнее: `software/chamelab/ChameLab.Core/Crypto/README.md`. | GNU GPL v3. |
+| Proxmark3 — RfidResearchGroup, piwi, Aram Verstegen и остальные авторы | [Hardnested и таблицы](https://github.com/RfidResearchGroup/proxmark3), база `1b71dfbbd4c156c34c02cfdd9140470d97d1336c`. Полные сохранённые уведомления: `software/chamelab/ChameLab.Core/Crypto/Hardnested/NOTICE.md`. | Исходные части GPL-2.0-or-later и MIT; управляемая адаптация GPL-3.0-or-later. |
+| crapto1 — bla и последующие участники | Исходные Crypto1/crapto1 в прошивке; уведомления сохранены в `firmware/application/src/rfid/mf1_crapto1.c` и соседних файлах. | GPL-2.0-or-later. |
+| Nordic Semiconductor и авторы компонентов nRF5 SDK | SDK, драйверы и библиотеки для Nordic nRF52; `firmware/nrf52_sdk/documentation/licenses.txt`, `modules/nrfx/LICENSE` и уведомления исходных файлов. | Собственные условия компонентов; корневая GPL не заменяет их. |
+| Microsoft, AvaloniaUI, авторы Material Design Icons и остальные поставщики | Шрифты, значки и библиотеки приложения; полный список для конкретных версий включается в сборку. | См. встроенные лицензии и уведомления. |
+
+Полный список участников каждого исходного проекта доступен по его истории Git
+и странице Contributors. Для этого репозитория можно использовать `git shortlog -sn --all`;
+для отдельного файла — `git log --follow --format=%an -- путь/к/файлу`.
+Не следует заменять уведомления исходных авторов одним именем владельца форка.
+
+Список лицензий Flutter-приложения не копируется механически: `chinese_font_library`,
+`FlipperNestedRecovery` и `minlzma` не входят в .NET-приложение. Здесь применяются
+управляемый hardnested и собственный набор библиотек, перечисленный в сборке.
+Actipro Software LLC предоставляет тему и базовые элементы управления.
+Это отдельный компонент под Actipro EULA, а не GPL; его полный текст включён
+в уведомления приложения. Бесплатность базовых компонентов не меняет их лицензию. Товарные знаки и логотипы остаются собственностью правообладателей;
+упоминание проекта не означает его одобрение данного форка.

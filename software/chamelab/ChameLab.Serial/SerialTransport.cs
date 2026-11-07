@@ -76,7 +76,7 @@ public sealed class SerialTransport(string portName) : ITransport
 /// Enumerates serial ports and returns only those that belong to a Chameleon
 /// (USB VID 0x6868); unrelated COM ports are not offered at all.
 /// </summary>
-public sealed class SerialScanner : ITransportScanner
+public sealed class SerialScanner : ITransportScanner, IManualSerialScanner
 {
     private const string ChameleonVidHex = "6868";
 
@@ -98,6 +98,14 @@ public sealed class SerialScanner : ITransportScanner
         }
         result.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));
         return Task.FromResult<IReadOnlyList<TransportCandidate>>(result);
+    }
+
+    public TransportCandidate ManualCandidate(string port)
+    {
+        port = port.Trim();
+        if (!PortNames().Contains(port, StringComparer.OrdinalIgnoreCase))
+            throw new ArgumentException(Strings.Connect_SerialUnavailable);
+        return new TransportCandidate(TransportKind.Serial, port, PortLabel(port), "USB serial");
     }
 
     private static string PortLabel(string portName) =>

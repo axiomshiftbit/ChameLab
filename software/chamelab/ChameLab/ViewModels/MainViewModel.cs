@@ -29,15 +29,17 @@ public sealed class MainViewModel : ViewModelBase
         Chameleon = new ChameleonViewModel(device, cards, Firmware);
         Slots = new SlotsViewModel(device, cards);
         Cards = new CardsViewModel(device, cards, dictionaries);
+        Writer = new WriterViewModel(device, cards, dictionaries);
+        Journal = new JournalViewModel(device.Journal);
         Dictionaries = new DictionariesViewModel(dictionaries, cards);
         Tools = new ToolsViewModel(device);
         AppUpdate = new AppUpdateViewModel();
         Settings = new SettingsViewModel(cards, dictionaries, AppUpdate);
 
         // Chameleon takes the place of Connect once a device is attached.
-        _connectedPages = new PageViewModelBase[] { Chameleon, Slots, Cards, Dictionaries, Tools, Settings };
+        _connectedPages = new PageViewModelBase[] { Chameleon, Slots, Cards, Writer, Dictionaries, Tools, Journal, Settings };
         // Without a device only the app-side pages make sense, behind Connect to attach one.
-        _disconnectedPages = new PageViewModelBase[] { _connect, Cards, Dictionaries, Tools, Settings };
+        _disconnectedPages = new PageViewModelBase[] { _connect, Cards, Writer, Dictionaries, Tools, Journal, Settings };
         NavPages = new ObservableCollection<PageViewModelBase>(_disconnectedPages);
 
         _currentPage = _connect;
@@ -78,6 +80,8 @@ public sealed class MainViewModel : ViewModelBase
     public ChameleonViewModel Chameleon { get; }
     public SlotsViewModel Slots { get; }
     public CardsViewModel Cards { get; }
+    public WriterViewModel Writer { get; }
+    public JournalViewModel Journal { get; }
     public DictionariesViewModel Dictionaries { get; }
     /// <summary>Tools: HF and LF sniffing. Captures also load from files, so it is listed without a device too.</summary>
     public ToolsViewModel Tools { get; }
@@ -278,18 +282,24 @@ public sealed class MainViewModel : ViewModelBase
     /// <summary>The navigation pane's Add card: opens Cards (from any page) and starts a new card there.</summary>
     public ICommand AddCardCommand { get; }
 
+    private readonly System.Threading.SemaphoreSlim _navigation = new(1, 1);
     private async Task NavigateAsync(PageViewModelBase page)
     {
         if (page is null) return;
-        var leaving = CurrentPage;
-        CurrentPage = page;
-        if (IsCompact) IsPaneOpen = false;
-        if (!ReferenceEquals(leaving, page))
+        await _navigation.WaitAsync();
+        try
         {
-            leaving.ClearMessages();
-            await leaving.OnDeactivatedAsync();
+            var leaving = CurrentPage;
+            if (!ReferenceEquals(leaving, page))
+            {
+                await leaving.OnDeactivatedAsync();
+                leaving.ClearMessages();
+            }
+            CurrentPage = page;
+            if (IsCompact) IsPaneOpen = false;
+            await page.OnActivatedAsync();
         }
-        await page.OnActivatedAsync();
+        finally { _navigation.Release(); }
     }
 
     private async Task OpenCardAsync(string id)

@@ -32,7 +32,7 @@ public readonly record struct FirmwareUpdateProgress(FirmwareUpdateStep Step, do
 public sealed partial class FirmwareUpdateService(DeviceService device, IReadOnlyList<IDfuLocator> locators)
 {
     /// <summary>Where releases (with <c>ultra-dfu-app.zip</c> / <c>lite-dfu-app.zip</c>) are published.</summary>
-    public const string Repository = "m0n5ter/ChameLab";
+    public const string Repository = "axiomshiftbit/ChameLab";
 
     private static readonly TimeSpan BootloaderTimeout = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan ReconnectTimeout = TimeSpan.FromSeconds(40);

@@ -25,7 +25,7 @@ public sealed partial class ToolsViewModel
 
     private void InitHf(IObservable<bool> idle)
     {
-        var canCapture = this.WhenAnyValue(x => x.IsBusy, x => x.IsHfSupported,
+        var canCapture = this.WhenAnyValue(x => x.IsBusy, x => x.IsCaptureSupported,
             (busy, supported) => !busy && supported != false);
         var hasCapture = this.WhenAnyValue(x => x.IsBusy, x => x.HfHasCapture, (busy, has) => !busy && has);
         HfCaptureCommand = ReactiveCommand.CreateFromTask(HfCaptureAsync, canCapture);
@@ -45,12 +45,30 @@ public sealed partial class ToolsViewModel
         {
             this.RaiseAndSetIfChanged(ref field, value);
             this.RaisePropertyChanged(nameof(IsHfUnsupported));
+            this.RaisePropertyChanged(nameof(IsCaptureSupported));
         }
     }
 
-    public bool IsHfUnsupported => IsHfSupported == false;
+    public bool? IsAuthSupported
+    {
+        get;
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref field, value);
+            this.RaisePropertyChanged(nameof(IsHfUnsupported));
+            this.RaisePropertyChanged(nameof(IsCaptureSupported));
+        }
+    }
+
+    public bool? IsCaptureSupported => IsAuthentication ? IsAuthSupported : IsHfSupported;
+    public bool IsHfUnsupported => IsCaptureSupported == false;
 
     public IReadOnlyList<int> HfDurations { get; } = [3, 5, 10, 20, 30];
+    public int AuthBlock { get; set; }
+    public string AuthKey { get; set; } = "FFFFFFFFFFFF";
+    public MfKeyType AuthKeyType { get; set; } = (MfKeyType)0x60;
+    public IReadOnlyList<MfKeyType> AuthKeyTypes => [(MfKeyType)0x60, (MfKeyType)0x61];
+    public string AuthStatus { get; private set => this.RaiseAndSetIfChanged(ref field, value); } = "";
 
     /// <summary>How long to listen, in seconds; the firmware takes up to 30.</summary>
     public int HfSeconds
@@ -97,19 +115,32 @@ public sealed partial class ToolsViewModel
     {
         var client = _device.Client ?? throw new InvalidOperationException(Strings.Tools_ConnectToCapture);
         var mode = await client.GetDeviceModeAsync();
+        var authentication = IsAuthentication;
         byte[] buffer;
         try
         {
             // The firmware listens through the running emulator: it has to be answering as a card.
-            if (mode != DeviceMode.Tag) await client.SetDeviceModeAsync(DeviceMode.Tag);
-            buffer = await client.Hf14aSniffAsync(HfSeconds * 1000);
+            var captureMode = authentication ? DeviceMode.Reader : DeviceMode.Tag;
+            if (mode != captureMode) await client.SetDeviceModeAsync(captureMode);
+            if (authentication)
+            {
+                var capabilities = await client.GetCapabilitiesAsync();
+                if (capabilities.Count > 0 && !capabilities.Contains((ushort)Command.Hf14aAuthTrace))
+                    throw new NotSupportedException(Strings.Tool_unsupported_firmware);
+                var response = await client.Connection.SendAsync(Command.Hf14aAuthTrace,
+                    DeviceTools.AuthTracePayload(AuthBlock, AuthKeyType, DeviceToolsViewModel.ParseHex(AuthKey, 6), HfSeconds * 1000),
+                    timeoutMs: HfSeconds * 1000 + 3000);
+                buffer = response.Data;
+                AuthStatus = $"STATUS 0x{response.RawStatus:X4}";
+            }
+            else buffer = await client.Hf14aSniffAsync(HfSeconds * 1000);
         }
         finally
         {
-            if (mode != DeviceMode.Tag)
+            if (mode != (authentication ? DeviceMode.Reader : DeviceMode.Tag))
                 try { await client.SetDeviceModeAsync(mode); } catch { /* the capture's outcome matters more */ }
         }
-        var frames = HfSniff.ParseChameleon(buffer);
+        var frames = HfSniff.ParseChameleon(buffer, includesParity: !authentication);
         if (frames.Count == 0)
         {
             ScanFeedback.Missed();

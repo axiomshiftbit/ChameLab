@@ -25,7 +25,22 @@ public sealed class DictionaryLibrary
 
     public IReadOnlyList<KeyDictionary> Dictionaries => _dicts;
     public KnownCardKeys KnownKeys { get; }
+    public FolderLibrary FolderTree => field ??= new FolderLibrary(_store, "dictionaryFolderTree");
+
     public string? LoadError { get; private set; }
+
+    public void ReplaceFolders(IEnumerable<SavedFolder> folders)
+    {
+        if (LoadError is { } error) throw new InvalidOperationException(error);
+        FolderTree.Replace(folders);
+        var paths = FolderTree.Paths;
+        foreach (var dictionary in _dicts.Where(d => d.FolderId is not null))
+        {
+            dictionary.Folder = paths.GetValueOrDefault(dictionary.FolderId!) ?? "";
+            if (!paths.ContainsKey(dictionary.FolderId!)) dictionary.FolderId = null;
+        }
+        Save();
+    }
 
     public event Action? Changed;
 
@@ -105,12 +120,12 @@ public sealed class DictionaryLibrary
         if (_dicts.RemoveAll(d => d.Id == dict.Id) > 0) Save();
     }
 
-    /// <summary>All keys from every dictionary, de-duplicated, for a dump pass.</summary>
-    public IReadOnlyList<byte[]> AllKeys()
+    /// <summary>Only keys of the requested byte length; Classic callers default to six bytes.</summary>
+    public IReadOnlyList<byte[]> AllKeys(int keySize = 6)
     {
         var seen = new HashSet<string>();
         var keys = new List<byte[]>();
-        foreach (var k in _dicts.SelectMany(d => d.Keys))
+        foreach (var k in _dicts.Where(d => d.KeySize == keySize).SelectMany(d => d.Keys).Where(k => k.Length == keySize))
             if (seen.Add(Convert.ToHexString(k))) keys.Add(k);
         return keys;
     }

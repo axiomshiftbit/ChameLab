@@ -49,6 +49,7 @@ public sealed class CardSave
 
     /// <summary>The folder the card is filed in; empty for none. ChameLab only (the Flutter app ignores it).</summary>
     public string Folder { get; set; } = string.Empty;
+    public string? FolderId { get; set; }
 
     public TagSenseType Sense => Tag.SenseType();
 
@@ -88,6 +89,7 @@ public sealed class CardSave
         if (Extra.UnknownKeyB.Count > 0) extra["unknownKeyB"] = ToSectors(Extra.UnknownKeyB);
         o["extra"] = extra;
         if (Folder.Length > 0) o["folder"] = Folder;
+        if (FolderId is not null) o["folderId"] = FolderId;
         return o;
     }
 
@@ -107,6 +109,7 @@ public sealed class CardSave
             Tag = ParseTag(o["tag"]),
             Color = NormalizeColor((string?)o["color"]),
             Folder = NormalizeFolder((string?)o["folder"]),
+            FolderId = (string?)o["folderId"],
         };
         // Older versions saved the ATQA of cards entered by hand high byte first.
         card.Atqa = CardTags.FixSwappedAtqa(card.Tag, card.Atqa);

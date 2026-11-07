@@ -1034,8 +1034,7 @@ static void handle_pwd_auth_command(uint8_t *p_data) {
     if (m_tag_information->config.detection_enable && m_auth_log.count < MF0_NTAG_AUTH_LOG_MAX) {
         memcpy(m_auth_log.logs[m_auth_log.count].pwd, &p_data[1], 4);
         m_auth_log.count++;
-        NRF_LOG_INFO("NTAG password: %02x%02x%02x%02x",
-                     p_data[1], p_data[2], p_data[3], p_data[4]);
+        NRF_LOG_INFO("NTAG authentication captured; count=%u", m_auth_log.count);
     }
 
     if (pwd != supplied_pwd) {

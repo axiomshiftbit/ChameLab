@@ -19,6 +19,7 @@ namespace ChameLab.ViewModels;
 public abstract class PageViewModelBase : ViewModelBase
 {
     private readonly Func<string> _title;
+    private int _running;
 
     /// <param name="title">Reads the title, so it follows a change of UI language.</param>
     protected PageViewModelBase(Func<string> title, string icon)
@@ -126,7 +127,7 @@ public abstract class PageViewModelBase : ViewModelBase
 
     private async Task RunAsync(Func<Task> work, string? successMessage, Action<string> report)
     {
-        if (IsBusy) return;
+        if (System.Threading.Interlocked.CompareExchange(ref _running, 1, 0) != 0) return;
         Avalonia.Threading.Dispatcher.UIThread.Post(() => IsBusy = true);
         ClearError();
         try
@@ -142,6 +143,7 @@ public abstract class PageViewModelBase : ViewModelBase
         finally
         {
             Avalonia.Threading.Dispatcher.UIThread.Post(() => IsBusy = false);
+            System.Threading.Interlocked.Exchange(ref _running, 0);
         }
     }
 }

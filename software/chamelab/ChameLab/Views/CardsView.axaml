@@ -1,11 +1,12 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
              xmlns:loc="using:ChameLab.Localization"
              xmlns:vm="using:ChameLab.ViewModels"
+             xmlns:views="using:ChameLab.Views"
              xmlns:conv="using:ChameLab.Converters"
              xmlns:b="using:ChameLab.Behaviors"
              xmlns:c="using:ChameLab.Controls"
-             xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
              x:Class="ChameLab.Views.CardsView"
              x:DataType="vm:CardsViewModel">
 
@@ -50,6 +51,7 @@
       <Setter Property="Height" Value="16" />
     </Style>
 
+    <Style Selector="Button.tile.source TextBlock"><Setter Property="TextWrapping" Value="Wrap" /><Setter Property="TextTrimming" Value="None" /></Style>
     <Style Selector="Border.swatch">
       <Setter Property="Width" Value="26" />
       <Setter Property="Height" Value="26" />
@@ -82,7 +84,7 @@
       <Setter Property="CornerRadius" Value="8" />
     </Style>
     <Style Selector="Button.colorpick:pointerover > Border">
-      <Setter Property="BorderBrush" Value="{actipro:ThemeResource DefaultForegroundBrushSecondary}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DefaultForegroundBrushSecondary}" />
       <Setter Property="BorderThickness" Value="2" />
     </Style>
     <!-- Header name: reads as a title, turns into a field on hover / focus. -->
@@ -110,7 +112,7 @@
       <Setter Property="BorderBrush" Value="{actipro:ThemeResource Container1BorderBrush}" />
     </Style>
     <Style Selector="TextBox.titlebox:focus-within">
-      <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
     </Style>
     <!-- Frequency filter beside the combos: shorter than they are, then stretched to their height,
          so it never makes the row (and the combos) taller. -->
@@ -143,7 +145,7 @@
       <Setter Property="IsHitTestVisible" Value="False" />
       <Setter Property="CornerRadius" Value="12" />
       <Setter Property="BorderThickness" Value="3" />
-      <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
     </Style>
     <Style Selector="ListBox.cards ListBoxItem.dragging Border.dragframe">
       <Setter Property="IsVisible" Value="True" />
@@ -192,7 +194,7 @@
         </StackPanel>
         <!-- The open folder's Rename and Delete; short of room Delete drops its label first, then Rename.
              New folder only in Cards: folders are one level. -->
-        <c:ActionRow>
+        <WrapPanel ItemSpacing="8" LineSpacing="8">
           <Button Command="{Binding RenameCurrentFolderCommand}" ToolTip.Tip="{x:Static loc:Strings.Common_RenameFolder}"
                   IsVisible="{Binding IsInFolder}">
             <StackPanel Orientation="Horizontal" Spacing="6">
@@ -233,7 +235,7 @@
               <TextBlock Text="{x:Static loc:Strings.Common_AddCard}" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
-        </c:ActionRow>
+        </WrapPanel>
         </c:TitleRow>
       </Grid>
 
@@ -425,7 +427,7 @@
 
           <!-- One line; when it gets tight, Delete, Folder and Duplicate drop their labels first, then Export,
                then Assign / Write (tooltips name them). -->
-          <c:ActionRow IsVisible="{Binding !IsWriteOpen}">
+          <WrapPanel ItemSpacing="8" LineSpacing="8" IsVisible="{Binding !IsWriteOpen}">
             <Button Command="{Binding DuplicateCommand}" IsVisible="{Binding IsCardOpen}"
                     ToolTip.Tip="{x:Static loc:Strings.Cards_SaveACopyOfThisCard}">
               <StackPanel Orientation="Horizontal" Spacing="6">
@@ -527,7 +529,7 @@
                 <TextBlock Text="{x:Static loc:Strings.Common_Delete}" VerticalAlignment="Center" />
               </StackPanel>
             </Button>
-          </c:ActionRow>
+          </WrapPanel>
         </StackPanel>
       </Border>
 
@@ -565,6 +567,17 @@
                 </Button>
               </Grid>
 
+              <Border Classes="inset">
+                <StackPanel Spacing="8">
+                  <TextBlock Text="{x:Static loc:Strings.Cards_TestScanHint}" TextWrapping="Wrap" />
+                  <WrapPanel ItemSpacing="8" LineSpacing="8">
+                    <Button Command="{Binding DetectCommand}"><TextBlock Text="{x:Static loc:Strings.Cards_TestScanHf}" TextWrapping="Wrap" /></Button>
+                    <Button Command="{Binding TestScanLfCommand}"><TextBlock Text="{x:Static loc:Strings.Cards_TestScanLf}" TextWrapping="Wrap" /></Button>
+                  </WrapPanel>
+                  <TextBlock Text="{Binding TargetSummary}" TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+
               <UniformGrid Columns="2" ColumnSpacing="8" RowSpacing="8">
                 <Button Classes="tile source" Command="{Binding ScanHfCommand}" IsVisible="{Binding IsConnected}"
                         ToolTip.Tip="{x:Static loc:Strings.Cards_ScanAnISO14443ATagThe}">
@@ -573,8 +586,8 @@
                       <PathIcon Data="{StaticResource Icon.scan}" />
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                      <TextBlock Text="{x:Static loc:Strings.Cards_ScanHF}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                      <TextBlock Text="{x:Static loc:Strings.Cards_1356MHz}" Classes="caption" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Text="{x:Static loc:Strings.Cards_ScanHF}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                      <TextBlock Text="{x:Static loc:Strings.Cards_1356MHz}" Classes="caption" TextWrapping="Wrap" />
                     </StackPanel>
                   </Grid>
                 </Button>
@@ -585,8 +598,8 @@
                       <PathIcon Data="{StaticResource Icon.scan}" />
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                      <TextBlock Text="{x:Static loc:Strings.Cards_ScanLF}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                      <TextBlock Text="{x:Static loc:Strings.Common_125KHz}" Classes="caption" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Text="{x:Static loc:Strings.Cards_ScanLF}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                      <TextBlock Text="{x:Static loc:Strings.Common_125KHz}" Classes="caption" TextWrapping="Wrap" />
                     </StackPanel>
                   </Grid>
                 </Button>
@@ -597,8 +610,8 @@
                       <PathIcon Data="{StaticResource Icon.import}" />
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                      <TextBlock Text="{x:Static loc:Strings.Cards_ImportFile}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                      <TextBlock Text="{x:Static loc:Strings.Cards_JSONNfcBinEml}" Classes="caption" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Text="{x:Static loc:Strings.Cards_ImportFile}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                      <TextBlock Text="{x:Static loc:Strings.Cards_JSONNfcBinEml}" Classes="caption" TextWrapping="Wrap" />
                     </StackPanel>
                   </Grid>
                 </Button>
@@ -609,15 +622,15 @@
                       <PathIcon Data="{StaticResource Icon.edit}" />
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                      <TextBlock Text="{x:Static loc:Strings.Cards_EnterManually}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                      <TextBlock Text="{x:Static loc:Strings.Cards_TypeAndUIDByHand}" Classes="caption" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Text="{x:Static loc:Strings.Cards_EnterManually}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                      <TextBlock Text="{x:Static loc:Strings.Cards_TypeAndUIDByHand}" Classes="caption" TextWrapping="Wrap" />
                     </StackPanel>
                   </Grid>
                 </Button>
               </UniformGrid>
 
               <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding ScanMissText}"
-                         Foreground="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}"
+                         Foreground="{DynamicResource ControlForegroundBrushOutlineDanger}"
                          IsVisible="{Binding ScanMissText, Converter={x:Static ObjectConverters.IsNotNull}}" />
 
               <TextBlock Classes="caption" TextWrapping="Wrap" IsVisible="{Binding !IsConnected}"
@@ -688,179 +701,7 @@
                            b:BringIntoViewOnShow.IsEnabled="True" IsVisible="{Binding ProgressText, Converter={x:Static ObjectConverters.IsNotNull}}" />
               </StackPanel>
 
-              <!-- Write to a physical tag (replaces the editor; the list is locked) -->
-              <StackPanel Spacing="12" b:BringIntoViewOnShow.IsEnabled="True" IsVisible="{Binding IsWriteOpen}">
-                <TextBlock Text="{Binding WriteKind}" FontWeight="SemiBold" />
-
-                <!-- MIFARE Classic: pick the magic generation, or let the device detect it -->
-                <StackPanel Spacing="6" IsVisible="{Binding IsMifareWrite}">
-                  <TextBlock Text="{x:Static loc:Strings.Cards_MagicGenerationHeader}" Classes="overline" />
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                    <ComboBox Grid.Column="0" HorizontalAlignment="Stretch" IsEnabled="{Binding CanChangeWriteOptions}"
-                              ItemsSource="{Binding MagicGenerations}"
-                              SelectedItem="{Binding SelectedGeneration}">
-                      <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                          <TextBlock Text="{Binding Converter={x:Static conv:EnumLabelConverter.Instance}}" />
-                        </DataTemplate>
-                      </ComboBox.ItemTemplate>
-                    </ComboBox>
-                    <Button Grid.Column="1" Command="{Binding DetectCommand}" IsEnabled="{Binding CanChangeWriteOptions}"
-                            ToolTip.Tip="{x:Static loc:Strings.Cards_ProbeTheCardOnTheReader}">
-                      <StackPanel Orientation="Horizontal" Spacing="6">
-                        <PathIcon Data="{StaticResource Icon.scan}" />
-                        <TextBlock Text="{x:Static loc:Strings.Cards_Detect}" VerticalAlignment="Center" />
-                      </StackPanel>
-                    </Button>
-                  </Grid>
-                  <CheckBox Content="{x:Static loc:Strings.Cards_WriteBlock0UID}" IsChecked="{Binding WriteGen2Block0}"
-                            IsVisible="{Binding IsGen2Write}" IsEnabled="{Binding CanChangeWriteOptions}"
-                            ToolTip.Tip="{x:Static loc:Strings.Cards_WriteTheSourceDumpsManufacturerBlock}" />
-                </StackPanel>
-
-                <!-- Ultralight / NTAG: optional password of the target card -->
-                <StackPanel Spacing="4" IsVisible="{Binding IsUltralightWrite}">
-                  <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                    <TextBlock Text="{x:Static loc:Strings.Cards_CurrentCardPassword}" Classes="caption" VerticalAlignment="Center" />
-                    <c:HexBox Grid.Column="1" Text="{Binding WritePassword}" ByteLengths="4"
-                              IsEnabled="{Binding !IsBusy}" PlaceholderText="{x:Static loc:Strings.Cards_Optional}"
-                              ToolTip.Tip="{x:Static loc:Strings.Cards_PWD4BytesOfTheTarget}" />
-                  </Grid>
-                  <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding WritePasswordError}"
-                             Foreground="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}"
-                             IsVisible="{Binding WritePasswordError, Converter={x:Static ObjectConverters.IsNotNull}}" />
-                </StackPanel>
-
-                <!-- Ultralight EV1 / NTAG21x: password settings for the target, starting from this card's -->
-                <StackPanel Spacing="10" IsVisible="{Binding CanWriteProtection}" IsEnabled="{Binding !IsBusy}">
-                  <!-- Laid out like a slot's LED color choice: label, then a compact segmented switch. -->
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                    <TextBlock Text="{x:Static loc:Strings.Cards_PasswordSettings}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                    <Border Grid.Column="1" Classes="segmented compact">
-                      <StackPanel Orientation="Horizontal">
-                        <RadioButton Classes="segment" IsChecked="{Binding KeepProtection}"
-                                     ToolTip.Tip="{x:Static loc:Strings.Cards_LeaveTheTargetCardsPasswordPACK}">
-                          <TextBlock Text="{x:Static loc:Strings.Cards_Keep}" FontWeight="SemiBold" />
-                        </RadioButton>
-                        <RadioButton Classes="segment" IsChecked="{Binding RewriteProtection}"
-                                     ToolTip.Tip="{x:Static loc:Strings.Cards_AfterThePagesWriteTheSettings}">
-                          <TextBlock Text="{x:Static loc:Strings.Cards_WriteNew}" FontWeight="SemiBold" />
-                        </RadioButton>
-                      </StackPanel>
-                    </Border>
-                  </Grid>
-                  <Border Classes="inset" IsVisible="{Binding RewriteProtection}">
-                    <c:ProtectionSettingsPanel DataContext="{Binding WriteProtection}" />
-                  </Border>
-                </StackPanel>
-
-                <!-- EM410x: clone onto a T55xx (default) or an EM4205 / EM4305 -->
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" IsVisible="{Binding CanWriteEm4305}" IsEnabled="{Binding !IsBusy}">
-                  <TextBlock Text="{x:Static loc:Strings.Cards_LfChip}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                  <Border Grid.Column="1" Classes="segmented compact">
-                    <StackPanel Orientation="Horizontal">
-                      <RadioButton Classes="segment" IsChecked="{Binding WriteToT55xx}">
-                        <TextBlock Text="T55xx" FontWeight="SemiBold" />
-                      </RadioButton>
-                      <RadioButton Classes="segment" IsChecked="{Binding WriteToEm4305}">
-                        <TextBlock Text="EM4305" FontWeight="SemiBold" />
-                      </RadioButton>
-                    </StackPanel>
-                  </Border>
-                </Grid>
-
-                <!-- T55xx: current password (to unlock a locked tag) and the new password it's locked with.
-                     EM4305: only the current password, sent with LOGIN when the tag is write-protected. -->
-                <StackPanel Spacing="4" IsVisible="{Binding IsLfWrite}">
-                  <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" RowDefinitions="Auto,Auto" RowSpacing="6">
-                    <TextBlock Grid.Row="0" Text="{x:Static loc:Strings.Cards_CurrentPassword}" Classes="caption" VerticalAlignment="Center" />
-                    <c:HexBox Grid.Row="0" Grid.Column="1" Text="{Binding WriteLfPassword}" ByteLengths="4"
-                              IsEnabled="{Binding !IsBusy}" PlaceholderText="{x:Static loc:Strings.Cards_Optional}"
-                              ToolTip.Tip="{Binding WriteLfPasswordTip}" />
-                    <TextBlock Grid.Row="1" Text="{x:Static loc:Strings.Cards_NewPassword}" Classes="caption" VerticalAlignment="Center"
-                               IsVisible="{Binding IsT55xxWrite}" />
-                    <c:HexBox Grid.Row="1" Grid.Column="1" Text="{Binding WriteLfNewKey}" ByteLengths="4"
-                              IsEnabled="{Binding !IsBusy}" PlaceholderText="{x:Static loc:Strings.Cards_KeepCurrent}"
-                              IsVisible="{Binding IsT55xxWrite}"
-                              ToolTip.Tip="{x:Static loc:Strings.Cards_Password4BytesTheTagIs}" />
-                  </Grid>
-                  <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding WriteLfPasswordError}"
-                             Foreground="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}"
-                             IsVisible="{Binding WriteLfPasswordError, Converter={x:Static ObjectConverters.IsNotNull}}" />
-                  <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding WriteLfNewKeyError}"
-                             Foreground="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}"
-                             IsVisible="{Binding WriteLfNewKeyError, Converter={x:Static ObjectConverters.IsNotNull}}" />
-                </StackPanel>
-
-                <Border Classes="inset">
-                  <StackPanel Spacing="8">
-                    <TextBlock Text="{Binding WriteInstructions}" TextWrapping="Wrap" />
-                    <TextBlock Classes="warning" Text="{Binding WriteWarning}" TextWrapping="Wrap"
-                               IsVisible="{Binding WriteWarning, Converter={x:Static ObjectConverters.IsNotNull}}" />
-                  </StackPanel>
-                </Border>
-                <TextBlock Classes="caption" IsVisible="{Binding !IsConnected}"
-                           Text="{x:Static loc:Strings.Cards_ConnectAChameleonToWriteCards}" />
-                <TextBlock Classes="caption" Text="{Binding ProgressText}"
-                           b:BringIntoViewOnShow.IsEnabled="True" IsVisible="{Binding ProgressText, Converter={x:Static ObjectConverters.IsNotNull}}" />
-
-                <StackPanel IsVisible="{Binding ShowWriteSectors}">
-                  <c:KeyRecoveryPanel DataContext="{Binding WriteRecovery}" />
-                </StackPanel>
-                <TextBlock Classes="caption" Text="{Binding WriteKeyHint}" TextWrapping="Wrap"
-                           IsVisible="{Binding WriteKeyHint, Converter={x:Static ObjectConverters.IsNotNull}}" />
-
-                <!-- Block strip: one cell per block / page, as for a dump; kept after the write. -->
-                <StackPanel Spacing="4" b:BringIntoViewOnShow.IsEnabled="True" IsVisible="{Binding HasWriteBlocks}">
-                  <c:BlockStrip Classes="write" States="{Binding WriteBlockStates}" Unit="{Binding WriteUnit}" IsWrite="True"
-                                HorizontalAlignment="Stretch" />
-                  <WrapPanel ItemSpacing="14" LineSpacing="4">
-                    <StackPanel Orientation="Horizontal" Spacing="5">
-                      <Border Classes="blockcell blocklegend read" Margin="0" />
-                      <TextBlock Text="{x:Static loc:Strings.Common_Written}" Classes="caption" />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="5">
-                      <Border Classes="blockcell blocklegend searching" Margin="0" />
-                      <TextBlock Text="{x:Static loc:Strings.Common_Writing}" Classes="caption" />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="5">
-                      <Border Classes="blockcell blocklegend writeerror" Margin="0" />
-                      <TextBlock Text="{x:Static loc:Strings.Common_Error}" Classes="caption" />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="5">
-                      <Border Classes="blockcell blocklegend" Margin="0" />
-                      <TextBlock Text="{x:Static loc:Strings.Common_Pending}" Classes="caption" />
-                    </StackPanel>
-                  </WrapPanel>
-                </StackPanel>
-
-                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-                  <TextBlock Classes="caption" Text="{Binding WriteProgressText}"
-                             VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
-                             IsVisible="{Binding IsWriting}" />
-                  <!-- While a write runs, Cancel stops it and the writer stays open to show the result;
-                       otherwise the button is Close. -->
-                  <Button Grid.Column="1" Content="{Binding CancelWriteLabel}" Command="{Binding CancelWriteCommand}"
-                          Classes.danger="{Binding IsWriting}"
-                          ToolTip.Tip="{Binding CancelWriteTip}" />
-                  <Button Grid.Column="2" Classes="brandblue" Command="{Binding WriteNowCommand}"
-                          IsVisible="{Binding !IsWriteSuccessful}"
-                          IsEnabled="{Binding IsConnected}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                      <PathIcon Data="{StaticResource Icon.upload}" />
-                      <TextBlock Text="{x:Static loc:Strings.Cards_Write}" VerticalAlignment="Center" />
-                    </StackPanel>
-                  </Button>
-                  <Button Grid.Column="2" Classes="brandblue" Command="{Binding WriteAnotherCommand}"
-                          IsVisible="{Binding IsWriteSuccessful}"
-                          ToolTip.Tip="{x:Static loc:Strings.Cards_WriteTheSameCardToAnother}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                      <PathIcon Data="{StaticResource Icon.upload}" />
-                      <TextBlock Text="{x:Static loc:Strings.Cards_WriteAnother}" VerticalAlignment="Center" />
-                    </StackPanel>
-                  </Button>
-                </Grid>
-              </StackPanel>
+              <views:CardWriterView IsVisible="{Binding IsWriteOpen}" />
             </StackPanel>
           </Border>
 
@@ -1000,7 +841,7 @@
                        One TextBlock so the 11px heading and the 12px summary share a baseline. -->
                   <TextBlock Classes="caption" TextWrapping="NoWrap" VerticalAlignment="Center">
                     <Run Text="{x:Static loc:Strings.Cards_MemoryHeader}" FontSize="11" FontWeight="SemiBold" LetterSpacing="0.6"
-                         Foreground="{actipro:ThemeResource DefaultForegroundBrushTertiary}" />
+                         Foreground="{DynamicResource DefaultForegroundBrushTertiary}" />
                     <Run Text=" " />
                     <Run Text="{Binding Form?.DataSummary}" />
                   </TextBlock>
@@ -1030,7 +871,7 @@
                   </TextBlock>
                 </Grid>
                 <TextBlock Classes="caption" Text="{Binding Form?.MemoryWarning}" TextWrapping="Wrap"
-                           Foreground="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}"
+                           Foreground="{DynamicResource ControlForegroundBrushOutlineDanger}"
                            IsVisible="{Binding Form?.MemoryWarning, Converter={x:Static ObjectConverters.IsNotNull}, FallbackValue=False}" />
                 <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding DumpHint}"
                            IsVisible="{Binding ShowDumpHint}" />
@@ -1057,7 +898,7 @@
                 </c:KeyRecoveryPanel>
 
                 <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding DumpPasswordError}"
-                           Foreground="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}">
+                           Foreground="{DynamicResource ControlForegroundBrushOutlineDanger}">
                   <TextBlock.IsVisible>
                     <MultiBinding Converter="{x:Static BoolConverters.And}">
                       <Binding Path="ShowDumpPassword" />
@@ -1162,7 +1003,7 @@
                                Classes.overcapacity="{Binding IsOverCapacity}" />
                   </Grid>
                   <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding Error}" Margin="4,0"
-                             Foreground="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}"
+                             Foreground="{DynamicResource ControlForegroundBrushOutlineDanger}"
                              IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
 
                   <!-- Dragged into place by any spot of a tile that isn't an input. -->
@@ -1259,7 +1100,7 @@
                               </StackPanel>
 
                               <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding Error}"
-                                         Foreground="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}"
+                                         Foreground="{DynamicResource ControlForegroundBrushOutlineDanger}"
                                          IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
                             </StackPanel>
                           </Grid>
@@ -1269,7 +1110,7 @@
                   </ListBox>
 
                   <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding EditError}" Margin="4,0"
-                             Foreground="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}"
+                             Foreground="{DynamicResource ControlForegroundBrushOutlineDanger}"
                              IsVisible="{Binding EditError, Converter={x:Static ObjectConverters.IsNotNull}}" />
 
                   <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12" IsVisible="{Binding CanEdit}">
@@ -1412,7 +1253,7 @@
           <TextBlock Text="{Binding LeaveText}" VerticalAlignment="Center"
                      FontWeight="SemiBold" TextWrapping="Wrap" />
           <!-- Short of room, Cancel gives up its label first, then Discard; Save keeps it longest. -->
-          <c:ActionRow>
+          <WrapPanel ItemSpacing="8" LineSpacing="8">
             <Button Command="{Binding StayCommand}" b:DialogKeys.IsCancel="True"
                     ToolTip.Tip="{x:Static loc:Strings.Cards_KeepEditingThisCard}">
               <StackPanel Orientation="Horizontal" Spacing="6">
@@ -1434,7 +1275,7 @@
                 <TextBlock Text="{x:Static loc:Strings.Common_Save}" VerticalAlignment="Center" />
               </StackPanel>
             </Button>
-          </c:ActionRow>
+          </WrapPanel>
         </c:ActionBar>
       </Border>
       <!-- Saved a card that is loaded in slots: optionally push the new version to the device. -->

@@ -1,4 +1,4 @@
-﻿using Android.App;
+using Android.App;
 using Android.Runtime;
 using Avalonia;
 using Avalonia.Android;
@@ -18,8 +18,13 @@ namespace ChameLab.Android
 
         protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
         {
+
+#if CHAMELAB_UI_TESTS
+            AppServices.Register([], store: new MemoryKeyValueStore());
+#else
             AppServices.Register(new ITransportScanner[] { new UsbCdcScanner(new AndroidUsbCdcHost()), new BleScanner() }, dfu: new IDfuLocator[] { new BleDfuLocator() },
                 feedback: new AndroidFeedbackPlayer(), hardnested: new ManagedHardnestedEngine());
+#endif
             return base.CustomizeAppBuilder(builder)
             .WithInterFont()
             .UseReactiveUI(_ => { });

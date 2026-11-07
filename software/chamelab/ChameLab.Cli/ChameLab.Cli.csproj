@@ -13,7 +13,7 @@
     <ProjectReference Include="../ChameLab.Core/ChameLab.Core.csproj" />
     <ProjectReference Include="../ChameLab.Serial/ChameLab.Serial.csproj" />
     <ProjectReference Include="../ChameLab.Cli.Plot/ChameLab.Cli.Plot.csproj" />
-    <EmbeddedResource Include="CommandCatalog.json;EnumCatalog.json;DesfireKeys.json" />
+    <ProjectReference Include="../ChameLab.Commands/ChameLab.Commands.csproj" />
     <InternalsVisibleTo Include="ChameLab.Cli.Tests" />
   </ItemGroup>
 </Project>

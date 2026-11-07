@@ -6566,5 +6566,29 @@
     "reader": true,
     "device": true,
     "scopedSlot": false
+  },
+  {
+    "name": "lf em 4x05 auth",
+    "description": "Verify one EM4x05 password without writing; requires READ LOGIN protection and ChameLab firmware.",
+    "options": [
+      {
+        "names": [
+          "--pwd"
+        ],
+        "dest": "pwd",
+        "required": true,
+        "action": "_StoreAction",
+        "nargs": null,
+        "type": "str",
+        "default": null,
+        "const": null,
+        "choices": null,
+        "help": "EM4305 login password (8 hex characters)"
+      }
+    ],
+    "groups": [],
+    "reader": true,
+    "device": true,
+    "scopedSlot": false
   }
 ]

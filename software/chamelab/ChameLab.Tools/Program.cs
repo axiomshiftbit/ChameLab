@@ -22,6 +22,8 @@ internal static class Program
                 case ["benchmark", var name, .. var rest]: await BenchmarkTools.Managed(name, rest); break;
                 case ["pr-review", var mode]: await PrReviewCycle.FromEnvironment(mode); break;
                 case ["read-mfc4k", .. var rest]: await Mfc4kReader.Run(rest); break;
+                case ["android-ui", var apk, var output]: await AndroidUi.RunAsync(apk, output); break;
+                case ["generate-notices"]: await DependencyNotices.GenerateAsync(); break;
                 case ["check-languages"]: await CheckLanguages(); break;
                 case ["announce-release", var tag]: await ReleaseAnnouncer.Run(tag, false); break;
                 case ["announce-release", var tag, "--dry-run"]: await ReleaseAnnouncer.Run(tag, true); break;

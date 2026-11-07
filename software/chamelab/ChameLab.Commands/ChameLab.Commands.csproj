@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>ChameLab.Cli</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MoonSharp" />
+    <ProjectReference Include="../ChameLab.Core/ChameLab.Core.csproj" />
+    <EmbeddedResource Include="CommandCatalog.json;EnumCatalog.json;DesfireKeys.json" />
+    <InternalsVisibleTo Include="ChameLab.Cli.Tests" />
+  </ItemGroup>
+</Project>
