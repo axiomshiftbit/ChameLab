@@ -41,6 +41,7 @@ public sealed class ChameleonConnection(ITransport transport) : IAsyncDisposable
 
     /// <summary>The link dropped or was disposed: every further command fails at once.</summary>
     public bool IsClosed => _closed;
+    public bool HasPendingRequests => !_pending.IsEmpty;
 
     /// <summary>Raised (on a background thread) when the link drops unexpectedly.</summary>
     public event Action<Exception?>? Disconnected;

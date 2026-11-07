@@ -5,6 +5,7 @@ using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
@@ -25,6 +26,117 @@ namespace ChameLab.UiTests;
 
 public class DeviceRefreshTests
 {
+    [AvaloniaTheory]
+    [InlineData("firmware")]
+    [InlineData("backup")]
+    public async Task OpeningDeviceOperationCancelsAnAlreadyRunningResumeProbe(string operation)
+    {
+        var transport = new DeviceTransport();
+        var device = new DeviceService([new Scanner(transport)]);
+        var store = new MemoryKeyValueStore();
+        var model = new MainViewModel(device, new CardLibrary(store), new DictionaryLibrary(store),
+            new FirmwareUpdateService(device, [], recovery: new(store)), new(device, store));
+        try
+        {
+            model.SelectedNavItem = model.Cards;
+            await device.ConnectAsync(new(TransportKind.Ble, "synthetic", "Test device"));
+            Dispatcher.UIThread.RunJobs();
+            var client = device.Client;
+            transport.HoldVersion = true;
+            await model.SetForegroundAsync(false);
+            var resume = model.SetForegroundAsync(true);
+            await transport.VersionHeld.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            var open = operation == "firmware" ? model.Firmware.OpenRecoveryCommand : model.Backups.OpenCommand;
+            await ((ReactiveCommand<RxVoid, RxVoid>)open).Execute();
+            await resume.WaitAsync(TimeSpan.FromSeconds(1));
+            Assert.Same(client, device.Client);
+            Assert.Equal(ConnectionState.Connected, device.State);
+        }
+        finally { model.Connect.StopWatching(); await device.DisconnectAsync(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ForegroundRecoveryPreservesCardEditsAndHonorsManualDisconnect(bool disconnect)
+    {
+        var transport = new DeviceTransport();
+        var device = new DeviceService([new Scanner(transport)]);
+        var store = new MemoryKeyValueStore();
+        var model = new MainViewModel(device, new CardLibrary(store), new DictionaryLibrary(store), new FirmwareUpdateService(device, []));
+        try
+        {
+            model.SelectedNavItem = model.Cards;
+            model.Cards.AddCommand.Execute(null);
+            model.Cards.ManualCommand.Execute(null);
+            var form = model.Cards.Form!;
+            form.Name = "Unsaved synthetic card";
+            await device.ConnectAsync(new(TransportKind.Ble, "synthetic", "Test device"));
+            Dispatcher.UIThread.RunJobs();
+            var client = device.Client;
+            var reads = transport.Requests.Count(r => r.Command == Command.GetAppVersion);
+            await model.SetForegroundAsync(false);
+            if (disconnect) await ((ReactiveCommand<RxVoid, RxVoid>)model.DisconnectCommand).Execute();
+            await model.SetForegroundAsync(true);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Same(model.Cards, model.CurrentPage);
+            Assert.Same(form, model.Cards.Form);
+            Assert.Equal("Unsaved synthetic card", form.Name);
+            Assert.Equal(reads + (disconnect ? 0 : 1), transport.Requests.Count(r => r.Command == Command.GetAppVersion));
+            if (disconnect) Assert.Null(device.Client);
+            else Assert.Same(client, device.Client);
+        }
+        finally { model.Connect.StopWatching(); await device.DisconnectAsync(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(320, 480, 1.0)]
+    [InlineData(320, 480, 1.5)]
+    [InlineData(360, 560, 1.0)]
+    [InlineData(430, 640, 1.5)]
+    public async Task ScannedCardLeavesRoomToReadAndKeepsSaveButtonsInsidePhone(int width, int height, double scale)
+    {
+        LocalizationService.Apply("ru"); LocalizationService.UseOnThisThread();
+        var device = new DeviceService([new Scanner(new DeviceTransport())]);
+        await device.ConnectAsync(new(TransportKind.Ble, "synthetic", "Test device"));
+        var store = new MemoryKeyValueStore();
+        var model = new CardsViewModel(device, new CardLibrary(store), new DictionaryLibrary(store));
+        var view = new CardsView { DataContext = model };
+        var root = new Border { Child = view, Classes = { "compact" } };
+        // Available page height after the application's navigation/status header.
+        var window = new Window { Width = width, Height = height, Content = root };
+        try
+        {
+            await model.OnActivatedAsync(); Dispatcher.UIThread.RunJobs();
+            model.AddCommand.Execute(null);
+            await ((ReactiveCommand<RxVoid, RxVoid>)model.ScanHfCommand).Execute();
+            LocalizationService.UseOnThisThread();
+            Dispatcher.UIThread.RunJobs(); window.Show();
+            Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
+            LayoutScenarios.ScaleText(root, scale); window.UpdateLayout();
+            Assert.True(model.NeedsDump);
+            Assert.Equal(string.Format(Strings.Cards_Generation, Strings.Cards_GenerationUnknown), model.ScanGeneration);
+            Assert.Contains(view.GetVisualDescendants().OfType<TextBlock>(), b => b.Text == Strings.Cards_CardDetailsHeader);
+            Assert.Contains(view.GetVisualDescendants().OfType<TextBlock>(), b => b.Text == Strings.Cards_SaveUidOnly);
+            var scroll = view.FindControl<ScrollViewer>("PaneScroll")!;
+            Assert.True(scroll.Viewport.Height >= height * .65,
+                $"Only {scroll.Viewport.Height} of {height} pixels remain for card details.");
+            var discard = view.GetVisualDescendants().OfType<Button>().Single(b => b.Command == model.CancelAddCommand);
+            var save = view.GetVisualDescendants().OfType<Button>().Single(b => b.Command == model.SaveCommand && b.IsEffectivelyVisible);
+            var discardRect = new Rect(discard.TranslatePoint(default, root)!.Value, discard.Bounds.Size);
+            var saveRect = new Rect(save.TranslatePoint(default, root)!.Value, save.Bounds.Size);
+            Assert.True(new Rect(root.Bounds.Size).Contains(discardRect), $"Discard outside page: {discardRect}");
+            Assert.True(new Rect(root.Bounds.Size).Contains(saveRect), $"Save outside page: {saveRect}");
+            Assert.False(discardRect.Intersects(saveRect));
+            Assert.Empty(LayoutScenarios.FindOverflow(root));
+            scroll.ScrollToEnd(); window.UpdateLayout();
+            Assert.True(scroll.Offset.Y > 0);
+            Assert.Equal(saveRect, new Rect(save.TranslatePoint(default, root)!.Value, save.Bounds.Size));
+            Assert.Equal(discardRect, new Rect(discard.TranslatePoint(default, root)!.Value, discard.Bounds.Size));
+        }
+        finally { window.Close(); await device.DisconnectAsync(); }
+    }
+
     [AvaloniaFact]
     public async Task ReportedMissingHfCommandsDisableScanButUnknownFirmwareDoesNot()
     {
@@ -144,6 +256,7 @@ public class DeviceRefreshTests
             Dispatcher.UIThread.RunJobs();
             Assert.NotNull(model.Form);
             Assert.Contains(generation switch { 1 => "Gen1a", 4 => "Gen4", _ => Strings.Cards_GenerationUnknown }, model.ScanGeneration);
+            Assert.DoesNotContain("\n", model.ScanGeneration);
             Assert.DoesNotContain(transport.Requests, r => r.Command == Command.Mf1WriteOneBlock);
             Assert.DoesNotContain(transport.Requests.Where(r => r.Command == Command.Hf14aRaw && r.Data.Length > 5),
                 r => r.Data[5] is 0xA0 or 0xA2 or 0x90 || r.Data[5] == 0xCF && r.Data[10] != 0xC6);
@@ -182,6 +295,8 @@ public class DeviceRefreshTests
         public DeviceMode Mode { get; set; }
         public int Generation { get; init; }
         public Command[] SupportedCommands { get; init; } = [];
+        public bool HoldVersion;
+        public TaskCompletionSource VersionHeld { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public Queue<byte[]> BatterySamples { get; } = new();
         public byte[] DefaultBatterySample { get; init; } = [0x0F, 0xA0, 80, 4];
         public TransportKind Kind => TransportKind.Ble;
@@ -193,6 +308,11 @@ public class DeviceRefreshTests
             foreach (var request in _parser.Push(data))
             {
                 Requests.Add(request);
+                if (request.Command == Command.GetAppVersion && HoldVersion)
+                {
+                    VersionHeld.TrySetResult();
+                    continue;
+                }
                 var status = Status.Success;
                 byte[] payload = request.Command switch
                 {

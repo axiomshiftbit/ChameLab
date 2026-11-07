@@ -39,6 +39,18 @@ public class MainActivity : AvaloniaMainActivity
 #endif
     }
 
+    protected override void OnStart()
+    {
+        base.OnStart();
+        if (Avalonia.Application.Current is App app) _ = app.SetForegroundAsync(true);
+    }
+
+    protected override void OnStop()
+    {
+        if (Avalonia.Application.Current is App app) _ = app.SetForegroundAsync(false);
+        base.OnStop();
+    }
+
     protected override void OnDestroy()
     {
         // Only drop the hook if a newer activity hasn't already set its own.

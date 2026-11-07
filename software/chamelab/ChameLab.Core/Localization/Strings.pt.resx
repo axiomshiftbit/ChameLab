@@ -3710,7 +3710,7 @@ Bytes iguais: {1}; diferentes: {2}; desconhecidos: {3}.</value>
   <data name="Hex_MatchAt" xml:space="preserve"><value>Encontrado em 0x{0}.</value></data>
   <data name="Hex_AllMemory" xml:space="preserve"><value>Mostrar toda a memória</value></data>
   <data name="Cards_Generation" xml:space="preserve"><value>Generation: {0}</value><comment>English fallback for newly added features.</comment></data>
-  <data name="Cards_GenerationUnknown" xml:space="preserve"><value>Not confirmed (ordinary card, Gen2/CUID/FUID or protected Gen4)</value><comment>English fallback for newly added features.</comment></data>
+  <data name="Cards_GenerationUnknown" xml:space="preserve"><value>Não determinada</value><comment>English fallback for newly added features.</comment></data>
   <data name="Dfu_InvalidPackage" xml:space="preserve">
     <value>The DFU package has invalid or incompatible metadata, size or structure.</value>
   </data>

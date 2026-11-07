@@ -385,10 +385,11 @@
     </Grid>
 
     <!-- ==================== Add / edit pane ==================== -->
-    <Grid Classes="detailpane" RowDefinitions="Auto,*,Auto">
-      <!-- ===================== Card header + actions (saved or new card; stays in view) ===================== -->
-      <!-- Disabled under the lightbox so Tab can't reach it. -->
-      <Border Grid.Row="0" Classes="card panehead" IsVisible="{Binding ShowCardHeader}"
+    <Grid Classes="detailpane" RowDefinitions="*,Auto">
+      <!-- The header and details share one scroll area, leaving room on short phone screens. -->
+      <ScrollViewer x:Name="PaneScroll" Grid.Row="0" IsEnabled="{Binding !IsAsking}">
+        <StackPanel Classes="panestack">
+      <Border Classes="card" IsVisible="{Binding ShowCardHeader}"
               IsEnabled="{Binding !IsAsking}">
         <StackPanel Spacing="14">
           <Grid ColumnDefinitions="Auto,Auto,*">
@@ -420,8 +421,6 @@
               <TextBox Classes="titlebox" Text="{Binding Form?.Name}" MaxLength="64" PlaceholderText="{x:Static loc:Strings.Cards_CardName}" />
               <TextBlock Text="{Binding FormSource}" Classes="caption" TextWrapping="Wrap"
                          IsVisible="{Binding IsEditingNew}" />
-              <TextBlock Text="{Binding ScanGeneration}" Classes="caption" TextWrapping="Wrap"
-                         IsVisible="{Binding ScanGeneration, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
               <TextBlock Text="{Binding Selected?.Summary}" Classes="caption" TextWrapping="Wrap"
                          IsVisible="{Binding IsCardOpen}" />
             </StackPanel>
@@ -534,9 +533,6 @@
           </WrapPanel>
         </StackPanel>
       </Border>
-
-      <ScrollViewer x:Name="PaneScroll" Grid.Row="1" IsEnabled="{Binding !IsAsking}">
-        <StackPanel Classes="panestack">
 
           <!-- Nothing open (desktop only) -->
           <Border Classes="card" IsVisible="{Binding !HasPane}">
@@ -791,6 +787,9 @@
                 </StackPanel>
               </c:FlowGrid>
 
+              <TextBlock Text="{Binding ScanGeneration}" Classes="caption" TextWrapping="Wrap"
+                         IsVisible="{Binding ScanGeneration, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
               <!-- Pyramid: build the 128-bit frame from a 26-bit facility code and card number. -->
               <c:FlowGrid MinItemWidth="140" ColumnSpacing="10" RowSpacing="10"
                           IsVisible="{Binding Form?.IsPyramid, TargetNullValue=False}">
@@ -845,6 +844,11 @@
               </DataTemplate>
             </c:DeferredContent.ContentTemplate>
           </c:DeferredContent>
+
+          <Border Classes="inset" IsVisible="{Binding NeedsDump}">
+            <TextBlock Classes="caption" TextWrapping="Wrap"
+                       Text="{x:Static loc:Strings.Cards_DumpTheCardFirstToSave}" />
+          </Border>
 
           <!-- Memory dump / continuation for scanned, saved, imported and manual cards. -->
           <c:DeferredContent IsActive="{Binding ShowMemoryEditor}">
@@ -1272,11 +1276,11 @@
       </ScrollViewer>
 
       <!-- Lightbox: dims and blocks the editor while a question waits for an answer. -->
-      <Border Grid.Row="0" Grid.RowSpan="2" Classes="lightbox" Classes.on="{Binding IsAsking}" CornerRadius="12" />
+      <Border Grid.Row="0" Classes="lightbox" Classes.on="{Binding IsAsking}" CornerRadius="12" />
 
       <!-- ===================== Save bar (stays in view) ===================== -->
       <!-- Adding: offered as soon as there is a new card; Discard drops it and unlocks the list. -->
-      <Border Grid.Row="2" Classes="savebar">
+      <Border Grid.Row="1" Classes="savebar">
         <Border.IsVisible>
           <MultiBinding Converter="{x:Static BoolConverters.And}">
             <Binding Path="IsEditingNew" />
@@ -1288,21 +1292,19 @@
             <PathIcon Data="{StaticResource Icon.error}" />
             <TextBlock Text="{Binding SaveError}" />
           </DockPanel>
-          <c:ActionBar>
-            <TextBlock Classes="caption" VerticalAlignment="Center" TextWrapping="Wrap"
-                       Text="{x:Static loc:Strings.Cards_DumpTheCardFirstToSave}" IsVisible="{Binding NeedsDump}" />
-            <Button Content="{x:Static loc:Strings.Common_Discard}" Command="{Binding CancelAddCommand}" />
-            <Button Classes.accent="{Binding !NeedsDump}" Command="{Binding SaveCommand}">
-              <StackPanel Orientation="Horizontal" Spacing="6">
-                <PathIcon Data="{StaticResource Icon.save}" />
-                <TextBlock Text="{Binding AddSaveLabel}" VerticalAlignment="Center" />
-              </StackPanel>
+          <c:FlowGrid ColumnSpacing="8" RowSpacing="8">
+            <Button Command="{Binding CancelAddCommand}" HorizontalAlignment="Stretch" MinHeight="44">
+              <TextBlock Text="{x:Static loc:Strings.Common_Discard}" TextWrapping="Wrap" TextAlignment="Center" />
             </Button>
-          </c:ActionBar>
+            <Button Classes.accent="{Binding !NeedsDump}" Command="{Binding SaveCommand}"
+                    HorizontalAlignment="Stretch" MinHeight="44">
+              <TextBlock Text="{Binding AddSaveLabel}" TextWrapping="Wrap" TextAlignment="Center" />
+            </Button>
+          </c:FlowGrid>
         </StackPanel>
       </Border>
       <!-- Saved card: appears only once something changed. -->
-      <Border Grid.Row="2" Classes="savebar">
+      <Border Grid.Row="1" Classes="savebar">
         <Border.IsVisible>
           <MultiBinding Converter="{x:Static BoolConverters.And}">
             <Binding Path="IsCardDirty" />
@@ -1315,20 +1317,25 @@
             <PathIcon Data="{StaticResource Icon.error}" />
             <TextBlock Text="{Binding SaveError}" />
           </DockPanel>
-          <c:ActionBar>
-            <TextBlock Text="{x:Static loc:Strings.Common_UnsavedChanges}" VerticalAlignment="Center" FontWeight="SemiBold" />
-            <Button Content="{x:Static loc:Strings.Common_Discard}" Command="{Binding DiscardCommand}" />
-            <Button Classes="accent" Command="{Binding SaveCommand}">
-              <StackPanel Orientation="Horizontal" Spacing="6">
-                <PathIcon Data="{StaticResource Icon.save}" />
-                <TextBlock Text="{x:Static loc:Strings.Common_Save}" VerticalAlignment="Center" />
-              </StackPanel>
+          <TextBlock Text="{x:Static loc:Strings.Common_UnsavedChanges}" TextWrapping="Wrap"
+                     FontWeight="SemiBold" Margin="0,0,0,8" />
+          <c:FlowGrid ColumnSpacing="8" RowSpacing="8">
+            <Button Command="{Binding DiscardCommand}" HorizontalAlignment="Stretch" MinHeight="44">
+              <TextBlock Text="{x:Static loc:Strings.Common_Discard}" TextWrapping="Wrap" TextAlignment="Center" />
             </Button>
-          </c:ActionBar>
+            <Button Classes="accent" Command="{Binding SaveCommand}" HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch" MinHeight="44">
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                <PathIcon Data="{StaticResource Icon.save}" />
+                <TextBlock Grid.Column="1" Text="{x:Static loc:Strings.Common_Save}" VerticalAlignment="Center"
+                           TextWrapping="Wrap" TextAlignment="Center" />
+              </Grid>
+            </Button>
+          </c:FlowGrid>
         </StackPanel>
       </Border>
       <!-- Switching card, closing or adding with unsaved work: save, drop it, or stay. -->
-      <Border Grid.Row="0" Grid.RowSpan="3" Classes="savebar dialog" IsVisible="{Binding IsConfirmingLeave}">
+      <Border Grid.Row="0" Grid.RowSpan="2" Classes="savebar dialog" IsVisible="{Binding IsConfirmingLeave}">
         <c:ActionBar>
           <TextBlock Text="{Binding LeaveText}" VerticalAlignment="Center"
                      FontWeight="SemiBold" TextWrapping="Wrap" />
@@ -1359,7 +1366,7 @@
         </c:ActionBar>
       </Border>
       <!-- Saved a card that is loaded in slots: optionally push the new version to the device. -->
-      <Border Grid.Row="0" Grid.RowSpan="3" Classes="savebar dialog">
+      <Border Grid.Row="0" Grid.RowSpan="2" Classes="savebar dialog">
         <Border.IsVisible>
           <MultiBinding Converter="{x:Static BoolConverters.And}">
             <Binding Path="IsAskingSlotUpdate" />
@@ -1376,7 +1383,7 @@
         </c:ActionBar>
       </Border>
       <!-- Delete: asked like the other questions, and wins over the save bar while open. -->
-      <Border Grid.Row="0" Grid.RowSpan="3" Classes="savebar dialog">
+      <Border Grid.Row="0" Grid.RowSpan="2" Classes="savebar dialog">
         <Border.IsVisible>
           <MultiBinding Converter="{x:Static BoolConverters.And}">
             <Binding Path="IsConfirmingDelete" />

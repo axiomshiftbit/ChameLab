@@ -24,7 +24,7 @@ namespace ChameLab.UiTesting;
 // Compiled only into UI test projects/builds. All libraries are synthetic and in memory.
 public static class LayoutScenarios
 {
-    public static readonly string[] Pages = ["connect", "connect-found", "notice", "error", "settings", "device", "slots", "cards", "cards-library", "card-classic", "card-access", "card-compare", "card-hex", "card-ultralight", "card-lf", "dictionaries", "dictionary-download", "dictionary-editor", "dictionary-known", "tools", "hf", "lf", "auth", "ValueBlocks", "T55Password", "T55Block", "Gen4", "RawHf", "RawDevice", "console", "plugins", "key-search", "writer", "writer-classic", "writer-ultralight", "writer-lf", "cards-add", "journal"];
+    public static readonly string[] Pages = ["connect", "connect-found", "notice", "error", "settings", "device", "slots", "cards", "cards-library", "card-classic", "card-access", "card-compare", "card-hex", "card-ultralight", "card-lf", "dictionaries", "dictionary-download", "dictionary-editor", "dictionary-known", "tools", "hf", "lf", "auth", "ValueBlocks", "T55Password", "T55Block", "Gen4", "RawHf", "RawDevice", "console", "plugins", "key-search", "writer", "writer-classic", "writer-ultralight", "writer-lf", "cards-add", "cards-uid-only", "journal"];
 
     public static Border Create(string page, string language)
     {
@@ -48,7 +48,7 @@ public static class LayoutScenarios
             "slots" => new SlotsView { DataContext = new SlotsViewModel(device, cards) },
             "journal" => new JournalView { DataContext = new JournalViewModel(device.Journal) },
             "writer" or "writer-classic" or "writer-ultralight" or "writer-lf" => WriterScenario(page, device, cards, dictionaries),
-            "cards-add" => AddScenario(device, cards, dictionaries),
+            "cards-add" or "cards-uid-only" => AddScenario(page, device, cards, dictionaries),
             "cards" => new CardsView { DataContext = new CardsViewModel(device, cards, dictionaries) },
             "cards-library" or "card-classic" or "card-access" or "card-compare" or "card-hex" or "card-ultralight" or "card-lf" => SavedCardScenario(page, device, cards, dictionaries),
             "dictionaries" => new DictionariesView { DataContext = new DictionariesViewModel(dictionaries, cards) },
@@ -111,10 +111,16 @@ public static class LayoutScenarios
         public ITransport Create(TransportCandidate candidate) => throw new InvalidOperationException("UI fixture cannot connect.");
     }
 
-    private static Control AddScenario(DeviceService device, CardLibrary cards, DictionaryLibrary dictionaries)
+    private static Control AddScenario(string page, DeviceService device, CardLibrary cards, DictionaryLibrary dictionaries)
     {
         var vm = new CardsViewModel(device, cards, dictionaries);
         vm.AddCommand.Execute(null);
+        if (page == "cards-uid-only")
+        {
+            vm.ManualCommand.Execute(null);
+            vm.Form!.Uid = "01020304";
+            vm.Form.ClearMemory();
+        }
         return new CardsView { DataContext = vm };
     }
     private static Control SavedCardScenario(string page, DeviceService device, CardLibrary cards, DictionaryLibrary dictionaries)
@@ -205,6 +211,10 @@ public static class LayoutScenarios
     public static List<string> FindOverflow(Control root)
     {
         var errors = new List<string>();
+        if (root.GetVisualDescendants().OfType<CardsView>().FirstOrDefault() is { DataContext: CardsViewModel { ShowEditor: true } } cards
+            && cards.FindControl<ScrollViewer>("PaneScroll") is { } details
+            && details.Viewport.Height < root.Bounds.Height * .55)
+            errors.Add($"Card details viewport is too small: {details.Viewport.Height:F0} / {root.Bounds.Height:F0}.");
         foreach (var editor in root.GetVisualDescendants().OfType<HexEditor>().Where(e => e.IsEffectivelyVisible))
             if (editor.GetVisualAncestors().OfType<ScrollViewer>().FirstOrDefault() is { } scroll
                 && scroll.Viewport.Height < Math.Min(16, editor.DesiredSize.Height))

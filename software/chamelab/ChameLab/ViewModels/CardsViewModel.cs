@@ -1613,15 +1613,15 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
             catch (ChameleonException) { /* keep the guess */ }
         }
 
-        string? generation = null;
-        if (tags.Count == 1 && CardFormats.GuessHfType(tags[0].Sak, tags[0].Atqa).IsMifareClassic())
+        WriteTargetInspection? generation = null;
+        var classic = tags.Count == 1 && CardFormats.GuessHfType(tags[0].Sak, tags[0].Atqa).IsMifareClassic();
+        if (classic)
         {
-            generation = Strings.Cards_GenerationUnknown + "\n" + Strings.Cards_GenerationNotProven;
             try
             {
                 var inspection = await client.InspectWriteTargetAsync(checkMemory: false);
                 if (inspection is not null && inspection.Tag.Uid.AsSpan().SequenceEqual(tags[0].Uid))
-                    generation = inspection.GenerationSummary + "\n" + inspection.GenerationExplanation;
+                    generation = inspection;
             }
             catch (ChameleonException) { /* optional detection must not discard a successful scan */ }
             catch (FormatException) { /* unsupported read-configuration reply */ }
@@ -1630,6 +1630,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
 
         await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
         {
+            LocalizationService.UseOnThisThread();
             ResetAddState();
             if (tags.Count == 0)
             {
@@ -1644,7 +1645,8 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
             Form = new CardEditorViewModel(card, sameFrequency: true);
             SetScanMatches(card);
             FormSource = string.Format(Strings.Cards_SourceTypeUid, card.Tag.DisplayName(), t.UidHex);
-            ScanGeneration = generation is null ? null : string.Format(Strings.Cards_Generation, generation);
+            ScanGeneration = classic ? string.Format(Strings.Cards_Generation,
+                generation?.GenerationSummary ?? Strings.Cards_GenerationUnknown) : null;
         });
 
         Notify(Loc.Plural(Strings.Plural_FoundHfTags, tags.Count));

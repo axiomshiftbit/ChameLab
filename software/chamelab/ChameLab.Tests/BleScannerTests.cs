@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using ChameLab.Mobile;
 using ChameLab.Transport;
 using Plugin.BLE.Abstractions.Contracts;
+using Plugin.BLE.Abstractions;
 using Plugin.BLE.Abstractions.EventArgs;
 using Xunit;
 
@@ -13,6 +14,32 @@ namespace ChameLab.Tests;
 
 public class BleScannerTests
 {
+    [Fact]
+    public async Task FindsConnectedChameleonWithoutAdvertisementsButNotOfflineBonds()
+    {
+        var adapter = Proxy.Create<IAdapter>();
+        var ble = Proxy.Create<IBluetoothLE>();
+        ble.Values["Adapter"] = adapter.Object;
+        ble.Values["IsAvailable"] = ble.Values["IsOn"] = true;
+        IDevice Device(string name, DeviceState state)
+        {
+            var d = Proxy.Create<IDevice>();
+            d.Values["Id"] = Guid.NewGuid(); d.Values["Name"] = name; d.Values["State"] = state;
+            return d.Object;
+        }
+        var connected = Device("Chameleon Ultra", DeviceState.Connected);
+        var system = Device("Chameleon Lite", DeviceState.Limited);
+        var offline = Device("Chameleon Offline", DeviceState.Disconnected);
+        var unrelated = Device("Headphones", DeviceState.Limited);
+        adapter.Values["ConnectedDevices"] = new IDevice[] { connected };
+        adapter.Values["SystemDevices"] = new IDevice[] { connected, system, offline, unrelated };
+        adapter.Call = _ => Task.CompletedTask; // the already-connected devices never advertise
+        var found = await new BleScanner(ble.Object).ScanAsync().WaitAsync(TimeSpan.FromSeconds(15));
+        Assert.Equal(2, found.Count);
+        Assert.Contains(found, c => c.Id == connected.Id.ToString());
+        Assert.Contains(found, c => c.Id == system.Id.ToString());
+    }
+
     [Fact]
     public async Task WatchRecoversAfterScanFailureAndAcceptsLaterAdvertisement()
     {
@@ -114,6 +141,8 @@ public class BleScannerTests
                 return Values.TryGetValue(name[4..], out var value) ? value :
                     method.ReturnType.IsValueType ? Activator.CreateInstance(method.ReturnType) : null;
             if (name.StartsWith("set_")) { Values[name[4..]] = args[0]; return null; }
+            if (name == "GetSystemConnectedOrPairedDevices")
+                return Values.TryGetValue("SystemDevices", out var devices) ? devices : Array.Empty<IDevice>();
             if (name == "StartScanningForDevicesAsync") return Call!(args);
             if (name == "StopScanningForDevicesAsync") return Task.CompletedTask;
             throw new NotSupportedException(name);

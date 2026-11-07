@@ -9,6 +9,11 @@ namespace ChameLab;
 
 public partial class App : Application
 {
+    private MainViewModel? _mainViewModel;
+
+    public System.Threading.Tasks.Task SetForegroundAsync(bool foreground) =>
+        _mainViewModel?.SetForegroundAsync(foreground) ?? System.Threading.Tasks.Task.CompletedTask;
+
     public override void Initialize()
     {
         // Before any XAML loads, so every view reads its strings in the chosen language.
@@ -27,7 +32,7 @@ public partial class App : Application
             testSingle.MainView = new UiTesting.UiTestHost();
 #else
         AppearanceService.ApplySaved();
-        var vm = new MainViewModel(AppServices.Device, AppServices.Cards, AppServices.Dictionaries, AppServices.Firmware);
+        var vm = _mainViewModel = new MainViewModel(AppServices.Device, AppServices.Cards, AppServices.Dictionaries, AppServices.Firmware);
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {

@@ -3,7 +3,9 @@ using System.Linq;
 using System.Windows.Input;
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading;
 using System.Threading.Tasks;
+using ChameLab.Transport;
 using ChameLab.Services;
 using ReactiveUI;
 using ChameLab.Localization;
@@ -16,6 +18,9 @@ public sealed class MainViewModel : ViewModelBase
     private readonly ConnectViewModel _connect;
     private PageViewModelBase _currentPage;
     private DateTime _exitHintShownAt;
+    private bool _foreground = true;
+    private TransportCandidate? _resumeCandidate;
+    private CancellationTokenSource? _resume;
 
     /// <summary>How long a second Back press still counts as confirming the exit.</summary>
     private static readonly TimeSpan ExitConfirmWindow = TimeSpan.FromSeconds(2);
@@ -70,12 +75,22 @@ public sealed class MainViewModel : ViewModelBase
         _ = AppUpdate.CheckInBackgroundAsync();
         Firmware.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(FirmwareUpdateViewModel.IsDialogOpen)) UpdateWatching();
+            if (e.PropertyName == nameof(FirmwareUpdateViewModel.IsDialogOpen))
+            {
+                if (Firmware.IsDialogOpen) _resume?.Cancel();
+                UpdateWatching();
+            }
         };
         Backups.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(DeviceBackupViewModel.IsOpen)) UpdateWatching();
+            if (e.PropertyName == nameof(DeviceBackupViewModel.IsWorking) && Backups.IsWorking) _resume?.Cancel();
         };
+        foreach (var page in _connectedPages)
+            page.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(PageViewModelBase.IsBusy) && page.IsBusy) _resume?.Cancel();
+            };
     }
 
     public ConnectViewModel Connect => _connect;
@@ -123,7 +138,7 @@ public sealed class MainViewModel : ViewModelBase
     {
         // A firmware install looks for the bootloader itself: a Connect page scan running beside
         // it would cut its BLE scan short, so watching resumes only once the install is over.
-        if (ReferenceEquals(_currentPage, _connect) && _device.State == ConnectionState.Disconnected && !Firmware.IsDialogOpen && !Backups.IsOpen)
+        if (_foreground && _resume is null && ReferenceEquals(_currentPage, _connect) && _device.State == ConnectionState.Disconnected && !Firmware.IsDialogOpen && !Backups.IsOpen)
             _connect.StartWatching();
         else
             _connect.StopWatching();
@@ -325,14 +340,66 @@ public sealed class MainViewModel : ViewModelBase
         if (Cards.AddCommand.CanExecute(null)) Cards.AddCommand.Execute(null);
     }
 
-    private Task DisconnectAsync() => _device.DisconnectAsync();
+    private Task DisconnectAsync()
+    {
+        _resumeCandidate = null;
+        _resume?.Cancel();
+        return _device.DisconnectAsync();
+    }
+
+    public async Task SetForegroundAsync(bool foreground)
+    {
+        if (_foreground == foreground) return;
+        _foreground = foreground;
+        if (!foreground)
+        {
+            _resume?.Cancel();
+            _resumeCandidate = _device.Candidate?.Kind == TransportKind.Ble &&
+                (_device.State == ConnectionState.Connected || _resume is not null) ? _device.Candidate : null;
+            UpdateWatching();
+            await Chameleon.OnDeactivatedAsync();
+            return;
+        }
+
+        var candidate = _resumeCandidate;
+        _resumeCandidate = null;
+        // Firmware/backup and card operations own the connection until they finish.
+        if (candidate is null || Firmware.IsDialogOpen || Backups.IsWorking)
+        {
+            UpdateWatching();
+            return;
+        }
+        using var resume = new CancellationTokenSource();
+        _resume = resume;
+        UpdateWatching();
+        try
+        {
+            // A suspended status read may finish or time out just after OnStart. Give it
+            // time to settle; skipping recovery immediately would lose this resume entirely.
+            for (var i = 0; _connectedPages.Any(p => p.IsBusy) || _device.Client?.Connection.HasPendingRequests == true; i++)
+            {
+                if (i == 50) return;
+                await Task.Delay(100, resume.Token);
+            }
+            await _device.ResumeBleAsync(candidate, resume.Token);
+            if (!resume.IsCancellationRequested && _foreground && ReferenceEquals(CurrentPage, Chameleon))
+                await Chameleon.OnActivatedAsync();
+        }
+        catch (OperationCanceledException) when (resume.IsCancellationRequested) { }
+        catch (Exception ex) { _device.Journal.Add("ERROR", $"Bluetooth resume: {ex.GetType().Name}"); }
+        finally
+        {
+            if (ReferenceEquals(_resume, resume)) _resume = null;
+            UpdateWatching();
+        }
+    }
 
     /// <summary>Drops the device connection as the app closes; a failure only gets logged.</summary>
     public async Task ReleaseDeviceAsync()
     {
         try
         {
-            await _device.DisconnectAsync();
+            await DisconnectAsync();
         }
         catch (Exception ex)
         {

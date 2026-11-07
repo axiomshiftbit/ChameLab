@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
@@ -38,15 +39,17 @@ public sealed class BleTransport : ITransport
     private readonly IAdapter _adapter;
     private readonly Guid deviceId;
     private readonly string displayName;
+    private readonly Action<IDevice> _releaseNative;
 
     public BleTransport(Guid deviceId, string displayName)
         : this(deviceId, displayName, CrossBluetoothLE.Current.Adapter) { }
 
-    internal BleTransport(Guid deviceId, string displayName, IAdapter adapter)
+    internal BleTransport(Guid deviceId, string displayName, IAdapter adapter, Action<IDevice>? releaseNative = null)
     {
         this.deviceId = deviceId;
         this.displayName = displayName;
         _adapter = adapter;
+        _releaseNative = releaseNative ?? ReleaseNative;
     }
 
     private IDevice? _device;
@@ -67,27 +70,34 @@ public sealed class BleTransport : ITransport
     {
         // StopWatching cancels the window, but native scan cleanup is asynchronous.
         await BleScanner.WaitForScanAsync(ct);
-        // Android's default transport may pick BR/EDR for a device it has not cached as LE.
+        using var opening = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        opening.CancelAfter(TimeSpan.FromSeconds(20));
+        ct = opening.Token;
+        // A cached GATT may still look connected after Android suspended the activity.
+        // Close only this device's old session before opening a fresh one.
+        foreach (var stale in _adapter.ConnectedDevices ?? Array.Empty<IDevice>())
+            if (stale.Id == deviceId) await CloseDeviceAsync(stale);
         _device = await _adapter.ConnectToKnownDeviceAsync(deviceId,
             new ConnectParameters(autoConnect: false, forceBleTransport: true), ct);
 
         // Larger MTU greatly improves throughput; ignore if unsupported.
         try
         {
-            var mtu = await _device.RequestMtuAsync(247, ct);
+            var mtu = await _device.RequestMtuAsync(247, ct).WaitAsync(ct);
             if (mtu > 3) _mtuPayload = mtu - 3; // minus ATT header
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
         catch { /* best effort */ }
 
         // Android starts on a slow, power-saving interval; commands are request/response round trips.
         try { _device.UpdateConnectionInterval(ConnectionInterval.High); }
         catch { /* not supported on this platform */ }
 
-        var service = await _device.GetServiceAsync(NordicUart.Service, ct)
+        var service = await _device.GetServiceAsync(NordicUart.Service, ct).WaitAsync(ct)
             ?? throw new InvalidOperationException(Strings.Ble_NoUart);
-        _rx = await service.GetCharacteristicAsync(NordicUart.Rx, ct)
+        _rx = await service.GetCharacteristicAsync(NordicUart.Rx, ct).WaitAsync(ct)
             ?? throw new InvalidOperationException(Strings.Ble_NoRx);
-        _tx = await service.GetCharacteristicAsync(NordicUart.Tx, ct)
+        _tx = await service.GetCharacteristicAsync(NordicUart.Tx, ct).WaitAsync(ct)
             ?? throw new InvalidOperationException(Strings.Ble_NoTx);
 
         // Acknowledged writes: a write command the device rejects (e.g. BLE pairing is enabled and
@@ -96,7 +106,7 @@ public sealed class BleTransport : ITransport
         _rx.WriteType = CharacteristicWriteType.WithResponse;
 
         _tx.ValueUpdated += OnTxValueUpdated;
-        await _tx.StartUpdatesAsync(ct);
+        await _tx.StartUpdatesAsync(ct).WaitAsync(ct);
 
         _adapter.DeviceDisconnected += OnDeviceDisconnected;
         _adapter.DeviceConnectionLost += OnDeviceConnectionLost;
@@ -114,7 +124,7 @@ public sealed class BleTransport : ITransport
 
     private void HandleDrop(IDevice? device)
     {
-        if (device?.Id == deviceId)
+        if (ReferenceEquals(device, _device))
             _incoming.Writer.TryComplete();
     }
 
@@ -126,7 +136,13 @@ public sealed class BleTransport : ITransport
         {
             var len = Math.Min(_mtuPayload, data.Length - offset);
             var chunk = data.Slice(offset, len).ToArray();
-            await _rx.WriteAsync(chunk, ct);
+            var status = await _rx.WriteAsync(chunk, ct).WaitAsync(ct);
+            if (status != 0)
+            {
+                var error = new IOException($"Bluetooth write failed ({status})");
+                _incoming.Writer.TryComplete(error);
+                throw error;
+            }
             offset += len;
         }
     }
@@ -171,13 +187,37 @@ public sealed class BleTransport : ITransport
             // Closing the link stops notifications too. A separate CCCD write can wait
             // behind a stalled GATT operation and prevent Disconnect from ever starting.
         }
-        if (_device is not null)
-        {
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-            try { await _adapter.DisconnectDeviceAsync(_device, timeout.Token).WaitAsync(timeout.Token); } catch { /* ignore */ }
-        }
+        var device = _device;
         _tx = _rx = null;
         _device = null;
+        if (device is not null) await CloseDeviceAsync(device);
+    }
+
+    private async Task CloseDeviceAsync(IDevice device)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        try { await _adapter.DisconnectDeviceAsync(device, timeout.Token).WaitAsync(timeout.Token); }
+        catch { /* the native disconnect callback may never arrive */ }
+        finally { _releaseNative(device); }
+    }
+
+    private void ReleaseNative(IDevice device)
+    {
+#if ANDROID
+        // Plugin.BLE normally closes GATT from its disconnect callback. A missing callback
+        // must not leave an Android connection behind after our two-second timeout.
+        if (device is global::Plugin.BLE.Android.Device native)
+        {
+            try { native.CloseGatt(); } catch { /* Bluetooth may already be off */ }
+            if (_adapter is global::Plugin.BLE.Android.Adapter adapter)
+            {
+                foreach (var entry in adapter.ConnectedDeviceRegistry)
+                    if (ReferenceEquals(entry.Value, device))
+                        adapter.ConnectedDeviceRegistry.TryRemove(entry);
+                adapter.HandleDisconnectedDevice(false, device);
+            }
+        }
+#endif
     }
 }
 
@@ -350,6 +390,18 @@ public sealed class BleScanner : ITransportScanner, ITransportWatcher
         if (!_ble.IsAvailable || !_ble.IsOn)
             return Array.Empty<TransportCandidate>();
 
+        // Connected peripherals need not advertise. Android reports a system-connected
+        // device as Limited when this app has no usable GATT; paired-but-offline devices
+        // are Disconnected and must not be presented as present.
+        foreach (var d in (_adapter.ConnectedDevices ?? Array.Empty<IDevice>())
+                     .Concat(_adapter.GetSystemConnectedOrPairedDevices() ?? Array.Empty<IDevice>()))
+        {
+            if (d.State is not (DeviceState.Connected or DeviceState.Limited) || !IsChameleon(d)) continue;
+            var candidate = Candidate(d, "Bluetooth LE");
+            found[d.Id] = candidate;
+            Seen(candidate, d.Id);
+        }
+
         // ScanCore is shared process-wide. A cancelled watch can still be cleaning up when
         // a new watch starts; rate limiting and native cleanup must finish before the next start.
         var delay = _nextScan - ScanClock.Elapsed;
@@ -360,11 +412,7 @@ public sealed class BleScanner : ITransportScanner, ITransportWatcher
         {
             var d = e.Device;
             if (d is null || !IsChameleon(d)) return;
-            var candidate = new TransportCandidate(
-                TransportKind.Ble,
-                d.Id.ToString(),
-                string.IsNullOrWhiteSpace(d.Name) ? "Chameleon (BLE)" : d.Name!,
-                $"BLE · RSSI {d.Rssi}");
+            var candidate = Candidate(d, $"BLE · RSSI {d.Rssi}");
             found[d.Id] = candidate;
             Seen(candidate, d.Id);
         }
@@ -394,7 +442,11 @@ public sealed class BleScanner : ITransportScanner, ITransportWatcher
     }
 
     public ITransport Create(TransportCandidate candidate) =>
-        new BleTransport(Guid.Parse(candidate.Id), candidate.DisplayName);
+        new BleTransport(Guid.Parse(candidate.Id), candidate.DisplayName, _adapter);
+
+    private static TransportCandidate Candidate(IDevice d, string detail) => new(
+        TransportKind.Ble, d.Id.ToString(),
+        string.IsNullOrWhiteSpace(d.Name) ? "Chameleon (BLE)" : d.Name!, detail);
 
     private static bool IsChameleon(IDevice d)
     {
