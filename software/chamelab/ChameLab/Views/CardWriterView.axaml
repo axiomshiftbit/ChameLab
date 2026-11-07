@@ -51,9 +51,9 @@
                 <StackPanel Spacing="4" IsVisible="{Binding IsUltralightWrite}">
                   <StackPanel Spacing="6">
                     <TextBlock Text="{x:Static loc:Strings.Cards_CurrentCardPassword}" Classes="caption" VerticalAlignment="Center" />
-                    <c:HexBox Grid.Column="1" Text="{Binding WritePassword}" ByteLengths="4"
+                    <c:HexBox Grid.Column="1" Text="{Binding WritePassword}" ByteLengths="{Binding WritePasswordLengths}"
                               IsEnabled="{Binding !IsBusy}" PlaceholderText="{x:Static loc:Strings.Cards_Optional}"
-                              ToolTip.Tip="{x:Static loc:Strings.Cards_PWD4BytesOfTheTarget}" />
+                              ToolTip.Tip="{Binding WritePasswordTip}" />
                   </StackPanel>
                   <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding WritePasswordError}"
                              Foreground="{DynamicResource ControlForegroundBrushOutlineDanger}"

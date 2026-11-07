@@ -1928,7 +1928,7 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
     /// Returns the pages the card refused. Per-page states go to <paramref name="pages"/>
     /// (first a Pending tick covering every page of the card, so a listener can size itself).
     /// </summary>
-    /// <param name="pwd">Optional 4-byte PWD of the target card when its pages are write-protected.</param>
+    /// <param name="pwd">Optional 4-byte PWD, or 16-byte Ultralight C key in cipher order.</param>
     /// <param name="protection">
     /// Password settings to put on the target card after the user pages: PWD and PACK first, then
     /// PROT / AUTHLIM and AUTH0 last, so the card is never protected by a password not yet set.
@@ -1948,8 +1948,11 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
         Func<byte[], byte[]?>? knownPassword = null, Action<byte[], byte[]>? passwordConfirmed = null)
     {
         if (pwd is { Length: 0 }) pwd = null;
-        if (pwd is { Length: not 4 })
-            throw new ArgumentException(Strings.Device_PasswordLength);
+        var isUlc = card.Tag == TagSpecificType.Mf0Icu2;
+        if (pwd is not null && pwd.Length != (isUlc ? 16 : 4))
+            throw new ArgumentException(Strings.Device_UlKeyLength);
+        if (isUlc && protection is not null)
+            throw new ArgumentException(string.Format(Strings.Device_NoPasswordToSet, card.Tag.DisplayName()));
         if (protection is not null && (protection.Pwd.Length != 4 || protection.Pack.Length != 2))
             throw new ArgumentException(Strings.Device_NewPasswordLength);
 
@@ -1987,8 +1990,18 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
 
             // The card's remembered password stands in for a refused one, or for none given.
             var uid = tags[0].Uid;
-            var remembered = knownPassword?.Invoke(uid) is { Length: 4 } known ? known : null;
-            if (pwd is not null && !await UltralightPwdAuthAsync(pwd, ct))
+            var remembered = knownPassword?.Invoke(uid);
+            if (remembered?.Length != (isUlc ? 16 : 4)) remembered = null;
+            if (isUlc)
+            {
+                pwd ??= remembered;
+                if (pwd is not null)
+                {
+                    await FieldOffAsync(ct);
+                    await conn.SendExpectAsync(Command.Mf0UlcAuth, Status.HfTagOk, pwd, timeoutMs: 4000, ct: ct);
+                }
+            }
+            else if (pwd is not null && !await UltralightPwdAuthAsync(pwd, ct))
             {
                 if (remembered is null || remembered.AsSpan().SequenceEqual(pwd) || !await UltralightPwdAuthAsync(remembered, ct))
                     throw new ChameleonException(remembered is null
@@ -2006,13 +2019,32 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
                 ct.ThrowIfCancellationRequested();
                 var page = targets[i];
                 pages?.Report(new MifareBlockProgress(page, 1, MifareBlockState.Reading));
-                var ok = await UltralightWritePageAsync(page, card.Data[page], live, pwd, ct);
-                live = ok;
-                if (ok)
+                bool ok;
+                if (pwd is { Length: 16 })
                 {
-                    var readback = await UltralightReadAsync(page, live, pwd, ct);
-                    ok = readback is { Length: 16 } && readback.AsSpan(0, 4).SequenceEqual(card.Data[page]);
-                    live = readback is { Length: 16 };
+                    // Each firmware operation selects and authenticates the ULC itself.
+                    // Read back through the same authenticated path; ACK alone is not success.
+                    var writtenPage = await conn.SendAsync(Command.Mf0UlcWrite,
+                        [..pwd, (byte)page, ..card.Data[page]], timeoutMs: 4000, ct: ct);
+                    ok = writtenPage.Status == Status.HfTagOk;
+                    if (ok)
+                    {
+                        var readback = await conn.SendAsync(Command.Mf0UlcRead,
+                            [..pwd, (byte)page, 1], timeoutMs: 4000, ct: ct);
+                        ok = readback.Status == Status.HfTagOk && readback.Data.AsSpan().SequenceEqual(card.Data[page]);
+                    }
+                    live = false;
+                }
+                else
+                {
+                    ok = await UltralightWritePageAsync(page, card.Data[page], live, pwd, ct);
+                    live = ok;
+                    if (ok)
+                    {
+                        var readback = await UltralightReadAsync(page, live, pwd, ct);
+                        ok = readback is { Length: 16 } && readback.AsSpan(0, 4).SequenceEqual(card.Data[page]);
+                        live = readback is { Length: 16 };
+                    }
                 }
                 conn.Journal?.Add(ok ? "INFO" : "ERROR", $"Ultralight page={page}: {(ok ? "VERIFIED" : "NOT VERIFIED")}");
                 if (ok) written++; else failed.Add(page);

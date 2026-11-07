@@ -2472,7 +2472,11 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
     /// <summary>The writer targets an LF (T55xx) tag, so the unlock password applies.</summary>
     public bool IsLfWrite => ActionTag is { } t && t.SenseType() == TagSenseType.Lf && t.CanWriteToTag();
 
-    /// <summary>Optional 4-byte PWD of the target Ultralight EV1 / NTAG card when its pages are write-protected.</summary>
+    public string WritePasswordLengths => ActionTag == TagSpecificType.Mf0Icu2 ? "16" : "4";
+    public string WritePasswordTip => ActionTag == TagSpecificType.Mf0Icu2
+        ? Strings.Cards_3DesKey : Strings.Cards_PWD4BytesOfTheTarget;
+
+    /// <summary>Optional PWD or Ultralight C 3DES key of the target card.</summary>
     public string? WritePassword
     {
         get => _writePassword;
@@ -2487,8 +2491,8 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
     public string? WritePasswordError =>
         !IsUltralightWrite || string.IsNullOrWhiteSpace(_writePassword) ? null
         : !Hex.TryParse(_writePassword, out var key) ? Strings.Common_NotHex
-        : key.Length == 4 ? null
-        : Strings.Common_Password4Bytes;
+        : key.Length == (ActionTag == TagSpecificType.Mf0Icu2 ? 16 : 4) ? null
+        : Strings.Device_UlKeyLength;
 
     /// <summary>Password settings (Ultralight EV1 / NTAG21x) can be put on the target card.</summary>
     public bool CanWriteProtection => IsUltralightWrite && _writeProtection is not null;
@@ -2697,6 +2701,8 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         this.RaisePropertyChanged(nameof(WriteUnit));
         this.RaisePropertyChanged(nameof(WritePasswordError));
         this.RaisePropertyChanged(nameof(CanWriteProtection));
+        this.RaisePropertyChanged(nameof(WritePasswordLengths));
+        this.RaisePropertyChanged(nameof(WritePasswordTip));
         this.RaisePropertyChanged(nameof(WriteLfPasswordError));
         this.RaisePropertyChanged(nameof(WriteLfNewKeyError));
         this.RaisePropertyChanged(nameof(WriteKind));

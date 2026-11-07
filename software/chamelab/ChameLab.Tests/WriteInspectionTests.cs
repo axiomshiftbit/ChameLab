@@ -151,6 +151,62 @@ public class WriteInspectionTests
         Assert.Contains("protection: " + (ignoreConfigWrite ? "NOT VERIFIED" : "VERIFIED"), connection.Journal.Export());
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task UltralightCWriterAuthenticatesVerifiesAndLeavesConfigurationUntouched(bool ignoreWrite, bool rejectKey)
+    {
+        var memory = new Dictionary<byte, byte[]>();
+        var transport = new CardTransport { Response = request => request.Command switch
+        {
+            Command.Hf14aScan => (Status.HfTagOk, new byte[] {4,1,2,3,4,4,0,0,0}),
+            Command.Mf0UlcAuth => (rejectKey ? Status.MfErrAuth : Status.HfTagOk, Array.Empty<byte>()),
+            Command.Mf0UlcWrite => Write(request.Data),
+            Command.Mf0UlcRead => (Status.HfTagOk, memory.GetValueOrDefault(request.Data[16], new byte[4])),
+            _ => null,
+        }};
+        (Status, byte[]) Write(byte[] payload)
+        {
+            Assert.Equal(21, payload.Length);
+            if (!ignoreWrite) memory[payload[16]] = payload[17..21];
+            return (Status.HfTagOk, []);
+        }
+        await using var connection = new ChameleonConnection(transport); await connection.OpenAsync();
+        var card = new CardSave { Tag = TagSpecificType.Mf0Icu2,
+            Data = Enumerable.Range(0, 48).Select(page => Enumerable.Repeat((byte)(page + 1), 4).ToArray()).ToList() };
+        var client = new ChameleonClient(connection);
+        if (rejectKey)
+        {
+            await Assert.ThrowsAsync<ChameleonException>(() => client.WriteUltralightUserPagesAsync(card, new byte[16]));
+            Assert.DoesNotContain(transport.Requests, request => request.Command == Command.Mf0UlcWrite);
+        }
+        else
+        {
+            var failed = await client.WriteUltralightUserPagesAsync(card, new byte[16]);
+            Assert.Equal(ignoreWrite ? 36 : 0, failed.Count);
+            var writes = transport.Requests.Where(request => request.Command == Command.Mf0UlcWrite).ToArray();
+            Assert.Equal(36, writes.Length);
+            Assert.All(writes, request => Assert.InRange(request.Data[16], 4, 39));
+            Assert.Equal(36, transport.Requests.Count(request => request.Command == Command.Mf0UlcRead));
+        }
+        Assert.DoesNotContain(transport.Requests, request => request.Command == Command.Hf14aRaw
+            && request.Data.Length > 5 && request.Data[5] == 0x1B);
+    }
+
+    [Fact]
+    public async Task UltralightCRejectsNtagPasswordAndProtectionBeforeRfCommands()
+    {
+        var transport = new CardTransport();
+        await using var connection = new ChameleonConnection(transport); await connection.OpenAsync();
+        var client = new ChameleonClient(connection);
+        var card = new CardSave { Tag = TagSpecificType.Mf0Icu2 };
+        await Assert.ThrowsAsync<ArgumentException>(() => client.WriteUltralightUserPagesAsync(card, new byte[4]));
+        await Assert.ThrowsAsync<ArgumentException>(() => client.WriteUltralightUserPagesAsync(card,
+            new byte[16], protection: new UltralightProtection(4, true, 0, new byte[4], new byte[2])));
+        Assert.Empty(transport.Requests);
+    }
+
     private sealed class CardTransport : ITransport
     {
         private readonly Channel<byte[]> _replies = Channel.CreateUnbounded<byte[]>();
