@@ -59,20 +59,26 @@ public sealed class UiTestHost : ContentControl
                 foreach (var language in request.Languages)
                 foreach (var page in LayoutScenarios.Pages)
                 {
-                    File.WriteAllText(Path.Combine(OutputDirectory, "progress.json"), JsonSerializer.Serialize(new
+                    void Progress(string stage) => File.WriteAllText(Path.Combine(OutputDirectory, "progress.json"), JsonSerializer.Serialize(new
                     {
-                        Page = page, Language = language, Theme = theme.ToString(), Completed = cases.Count,
+                        Page = page, Language = language, Theme = theme.ToString(), Stage = stage, Completed = cases.Count,
                         ManagedBytes = GC.GetTotalMemory(false), WorkingSetBytes = Environment.WorkingSet,
                         RetainedScenes = scenes.Count(s => s.IsAlive)
                     }));
+                    Progress("creating");
                     Application.Current!.RequestedThemeVariant = theme;
                     var scene = LayoutScenarios.Create(page, language);
                     scenes.Add(new WeakReference(scene));
                     scene.Background = TopLevel.GetTopLevel(this)?.Background
                         ?? (theme == ThemeVariant.Light ? Brushes.White : new SolidColorBrush(Color.FromRgb(32, 32, 32)));
                     Content = scene;
-                    await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+                    Progress("waiting-for-layout");
+                    // An animated control can keep Background work pending on a slow
+                    // software-rendered emulator. Yield at normal priority, then give
+                    // rendering a frame and explicitly settle layout below.
+                    await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Normal);
                     await Task.Delay(40);
+                    Progress("checking-layout");
                     UpdateLayout();
                     // Expand advanced settings as well as their default collapsed state.
                     foreach (var expander in scene.GetVisualDescendants().OfType<Expander>().ToArray()) expander.IsExpanded = true;
@@ -84,6 +90,7 @@ public sealed class UiTestHost : ContentControl
                     cases.Add(new(page, language, theme.ToString(), scene.Bounds.Width, scene.Bounds.Height, request.FontScale, errors.ToArray()));
                     if (language == "ru" || errors.Count > 0)
                     {
+                        Progress("saving-image");
                         var stem = $"{page}-{language}-{theme}-{scene.Bounds.Width:0}x{scene.Bounds.Height:0}";
                         SaveImage(scene, Path.Combine(OutputDirectory, stem + ".png"));
                         var scroll = scene.GetVisualDescendants().OfType<ScrollViewer>().FirstOrDefault(s => s.IsEffectivelyVisible && s.Extent.Height > s.Viewport.Height);
@@ -95,9 +102,11 @@ public sealed class UiTestHost : ContentControl
                             SaveImage(scene, Path.Combine(OutputDirectory, stem + "-bottom.png"));
                         }
                     }
+                    Progress("deactivating");
                     if (scene.Child?.DataContext is ViewModels.PageViewModelBase vm) await vm.OnDeactivatedAsync();
                     Content = null;
-                    await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+                    Progress("detaching");
+                    await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Normal);
                     // Each scenario constructs an isolated page/model graph. Release these
                     // fixtures regularly: native render resources can otherwise exhaust a
                     // small emulator before Mono sees enough managed allocations to collect.

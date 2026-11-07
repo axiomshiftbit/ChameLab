@@ -5,16 +5,27 @@ on:
     branches: [dev]
   pull_request:
   workflow_dispatch:
+    inputs:
+      android-only:
+        description: Run only Android build and UI checks
+        type: boolean
+        default: false
+      android-api:
+        description: Android API to test (manual runs)
+        type: choice
+        options: ['all', '24', '29', '33', '35', '36']
+        default: all
 
 permissions:
   contents: read
 
 concurrency:
-  group: ui-quality-${{ github.ref }}
+  group: ui-quality-${{ github.ref }}-${{ inputs.android-only && inputs.android-api || 'full' }}
   cancel-in-progress: true
 
 jobs:
   tests:
+    if: ${{ !inputs.android-only }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -86,7 +97,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        api: [24, 29, 33, 35, 36]
+        api: ${{ fromJSON(inputs.android-only && inputs.android-api != 'all' && format('[{0}]', inputs.android-api) || '[24,29,33,35,36]') }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -119,6 +130,7 @@ jobs:
           retention-days: 14
 
   windows-ui:
+    if: ${{ !inputs.android-only }}
     runs-on: windows-2025
     timeout-minutes: 25
     steps:
@@ -146,11 +158,13 @@ jobs:
           retention-days: 14
 
   firmware:
+    if: ${{ !inputs.android-only }}
     uses: ./.github/workflows/build_firmware.yml
     with:
       publish-builder: false
 
   release-builds:
+    if: ${{ !inputs.android-only }}
     uses: ./.github/workflows/build_gui.yml
     with:
       build-ios: false
