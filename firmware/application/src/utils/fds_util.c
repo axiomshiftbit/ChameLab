@@ -13,7 +13,7 @@ static struct {
     uint32_t record_id; // record id, used for sync delete
     uint16_t id;        // file id
     uint16_t key;       // file key
-    bool success;       // task is success
+    volatile bool success; // changed by the asynchronous flash completion callback
     bool waiting;       // task waiting done.
     bool ignore_pm;     // ignore peer manager records, defaults to true, set to false by fds_wipe
 } fds_operation_info;
@@ -115,6 +115,8 @@ static ret_code_t fds_write_record_nogc(uint16_t id, uint16_t key, uint16_t data
  * Write record
  */
 bool fds_write_sync(uint16_t id, uint16_t key, uint16_t length, void *buffer) {
+    // Nothing was queued: do not leave the wrapper permanently marked busy.
+    if (length == 0) return true;
     // Make only one task running
     APP_ERROR_CHECK_BOOL(!fds_operation_info.waiting);
     // write result
@@ -125,9 +127,6 @@ bool fds_write_sync(uint16_t id, uint16_t key, uint16_t length, void *buffer) {
     fds_operation_info.success = false;
     fds_operation_info.waiting = true;
     // compute needed words
-    if (length == 0) {
-        return ret;
-    }
     uint16_t data_length_words = ((length - 1) / 4) + 1;
 
     // CCall the write implementation function without automatic GC
@@ -199,14 +198,13 @@ static bool is_peer_manager_record(uint16_t id_or_key) {
  */
 static void fds_evt_handler(fds_evt_t const *p_evt) {
     // Skip peermanager event
-    if (fds_operation_info.ignore_pm && (
-                is_peer_manager_record(p_evt->write.record_key)
-                || is_peer_manager_record(p_evt->write.file_id)
-                || is_peer_manager_record(p_evt->del.record_key)
-                || is_peer_manager_record(p_evt->del.file_id)
-            )
-       ) {
-        return;
+    if (fds_operation_info.ignore_pm) {
+        // INIT and GC do not populate the record union. Looking at its stale fields
+        // could discard GC completion and leave the synchronous caller spinning forever.
+        if ((p_evt->id == FDS_EVT_WRITE || p_evt->id == FDS_EVT_UPDATE) &&
+                (is_peer_manager_record(p_evt->write.record_key) || is_peer_manager_record(p_evt->write.file_id))) return;
+        if ((p_evt->id == FDS_EVT_DEL_RECORD || p_evt->id == FDS_EVT_DEL_FILE) &&
+                (is_peer_manager_record(p_evt->del.record_key) || is_peer_manager_record(p_evt->del.file_id))) return;
     }
 
     // To process fds event
@@ -321,10 +319,12 @@ static bool fds_next_record_delete_sync() {
 
 bool fds_wipe(void) {
     NRF_LOG_INFO("Full fds wipe requested");
+    bool ignore_pm = fds_operation_info.ignore_pm;
     fds_operation_info.ignore_pm = false;  // wipe should also delete peer manager files.
     while (fds_next_record_delete_sync()) {
         bsp_wdt_feed();
     }
     fds_gc_sync();
+    fds_operation_info.ignore_pm = ignore_pm;
     return true;
 }

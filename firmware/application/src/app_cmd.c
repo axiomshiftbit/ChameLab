@@ -919,8 +919,9 @@ static data_frame_tx_t *cmd_processor_hidprox_write_to_t55xx(uint16_t cmd, uint1
 }
 
 static data_frame_tx_t *cmd_processor_hidprox_scan(uint16_t cmd, uint16_t status, uint16_t length, uint8_t *data) {
+    if (length > 1) return data_frame_make(cmd, STATUS_PAR_ERR, 0, NULL);
     uint8_t card_data[16] = {0x00};
-    status = scan_hidprox(card_data, data[0]);
+    status = scan_hidprox(card_data, length == 1 ? data[0] : 0);
     if (status != STATUS_LF_TAG_OK) {
         return data_frame_make(cmd, status, 0, NULL);
     }
@@ -928,8 +929,9 @@ static data_frame_tx_t *cmd_processor_hidprox_scan(uint16_t cmd, uint16_t status
 }
 
 static data_frame_tx_t *cmd_processor_ioprox_scan(uint16_t cmd, uint16_t status, uint16_t length, uint8_t *data) {
+    if (length > 1) return data_frame_make(cmd, STATUS_PAR_ERR, 0, NULL);
     uint8_t card_data[16] = {0};
-    uint8_t hint = (data != NULL) ? data[0] : 0;
+    uint8_t hint = length == 1 ? data[0] : 0;
     status = scan_ioprox(card_data, hint);
     if (status != STATUS_LF_TAG_OK) {
         return data_frame_make(cmd, status, 0, NULL);

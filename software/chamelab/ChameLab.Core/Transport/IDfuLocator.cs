@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using ChameLab.Protocol;
+using ChameLab.Models;
 
 namespace ChameLab.Transport;
 
@@ -17,7 +18,7 @@ public interface IDfuLocator
     /// Called before the device restarts, while it is still connected (if it is at all),
     /// to remember what tells its bootloader apart from other devices.
     /// </summary>
-    IDfuTarget Prepare(TransportCandidate? device);
+    IDfuTarget Prepare(TransportCandidate device, DeviceInfo info);
 }
 
 /// <summary>One device's bootloader, to be found and opened after the restart.</summary>

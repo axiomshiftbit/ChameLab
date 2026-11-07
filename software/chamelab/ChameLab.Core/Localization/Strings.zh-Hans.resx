@@ -1170,6 +1170,9 @@
   <data name="Chameleon_TheDeviceScansExternalCardsAnd" xml:space="preserve">
     <value>设备扫描外部卡片和标签。</value>
   </data>
+  <data name="Chameleon_BatteryNotMeasured" xml:space="preserve">
+    <value>Battery measurement is not ready yet</value>
+  </data>
   <data name="Chameleon_ThisModelHasNoBatteryGauge" xml:space="preserve">
     <value>此型号没有电量计。</value>
   </data>
@@ -2587,7 +2590,7 @@
     <value>检查更新</value>
   </data>
   <data name="Settings_CrossPlatformClientForTheChameleon" xml:space="preserve">
-    <value>基于 Avalonia 构建的 Chameleon Ultra 跨平台客户端。设备、固件和协议文档：github.com/RfidResearchGroup/ChameleonUltra</value>
+    <value>基于 Avalonia 构建的 Chameleon Ultra 跨平台客户端。设备、固件和协议文档：github.com/axiomshiftbit/ChameLab</value>
   </data>
   <data name="Settings_Download" xml:space="preserve">
     <value>下载</value>
@@ -3708,4 +3711,34 @@
   <data name="Hex_AllMemory" xml:space="preserve"><value>显示全部内存</value></data>
   <data name="Cards_Generation" xml:space="preserve"><value>Generation: {0}</value><comment>English fallback for newly added features.</comment></data>
   <data name="Cards_GenerationUnknown" xml:space="preserve"><value>Not confirmed (ordinary card, Gen2/CUID/FUID or protected Gen4)</value><comment>English fallback for newly added features.</comment></data>
+  <data name="Dfu_InvalidPackage" xml:space="preserve">
+    <value>The DFU package has invalid or incompatible metadata, size or structure.</value>
+  </data>
+  <data name="Dfu_HashMismatch" xml:space="preserve">
+    <value>Firmware SHA-256 does not match the init packet. The device has not been updated.</value>
+  </data>
+  <data name="Dfu_WrongModel" xml:space="preserve">
+    <value>This firmware is for a different Chameleon model.</value>
+  </data>
+  <data name="Dfu_InvalidResponse" xml:space="preserve">
+    <value>The bootloader returned invalid DFU parameters.</value>
+  </data>
+  <data name="Firmware_CheckingPackage" xml:space="preserve">
+    <value>Checking package integrity and compatibility…</value>
+  </data>
+  <data name="Firmware_DownloadCorrupted" xml:space="preserve">
+    <value>The download size or SHA-256 checksum does not match the release. Download the package again.</value>
+  </data>
+  <data name="Firmware_WrongDevice" xml:space="preserve">
+    <value>The selected device could not be identified safely. Reconnect it and retry.</value>
+  </data>
+  <data name="Firmware_VersionNotConfirmed" xml:space="preserve">
+    <value>The device returned, but the expected firmware version was not confirmed.</value>
+  </data>
+  <data name="Firmware_RecoveryHint" xml:space="preserve">
+    <value>If the update was interrupted, keep the device powered and retry the same application package. If necessary, start its bootloader with the device button. The update does not replace the bootloader.</value>
+  </data>
+  <data name="Firmware_ChargeBeforeUpdate" xml:space="preserve">
+    <value>Before updating over Bluetooth, charge Chameleon to at least 20% and wait for a battery measurement.</value>
+  </data>
 </root>

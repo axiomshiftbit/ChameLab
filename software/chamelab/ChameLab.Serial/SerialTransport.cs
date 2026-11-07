@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.IO.Ports;
+using System.Diagnostics;
+using System.Xml.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using ChameLab.Protocol;
+using ChameLab.Models;
 using ChameLab.Transport;
 using ChameLab.Localization;
 
@@ -167,34 +170,71 @@ public sealed class SerialDfuLocator : IDfuLocator
 {
     public TransportKind Kind => TransportKind.Serial;
 
-    public IDfuTarget Prepare(TransportCandidate? device) => new Target(SerialScanner.PortNames());
-
-    private sealed class Target(IReadOnlyCollection<string> before) : IDfuTarget
+    public IDfuTarget Prepare(TransportCandidate device, DeviceInfo info)
     {
-        public async Task<IDfuChannel?> TryOpenAsync(CancellationToken ct) =>
-            FindBootloader() is { } port ? await SerialDfuChannel.OpenAsync(new SerialTransport(port), ct) : null;
+        if (info.Address.Length != 12 || !info.Address.All(Uri.IsHexDigit))
+            throw new InvalidOperationException(Strings.Firmware_WrongDevice);
+        return new Target(SerialScanner.PortNames(), info.Address);
+    }
+
+    private sealed class Target(IReadOnlyCollection<string> before, string serial) : IDfuTarget
+    {
+        public async Task<IDfuChannel?> TryOpenAsync(CancellationToken ct)
+        {
+            var port = await Task.Run(FindBootloader, ct);
+            ct.ThrowIfCancellationRequested();
+            return port is null ? null : await SerialDfuChannel.OpenAsync(new SerialTransport(port), ct);
+        }
 
         private string? FindBootloader()
         {
+            var candidates = new List<string>();
             foreach (var name in SerialScanner.PortNames())
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    if (WindowsSerialVid.PortMatchesUsbId(name, "VID_1915&PID_521F")) return name;
+                    if (WindowsSerialVid.PortMatchesUsbId(name, "VID_1915&PID_521F", serial)) candidates.Add(name);
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
                     if (string.Equals(SerialScanner.LinuxUsbId(name, "idVendor"), "1915", StringComparison.OrdinalIgnoreCase) &&
-                        string.Equals(SerialScanner.LinuxUsbId(name, "idProduct"), "521f", StringComparison.OrdinalIgnoreCase))
-                        return name;
+                        string.Equals(SerialScanner.LinuxUsbId(name, "idProduct"), "521f", StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(SerialScanner.LinuxUsbId(name, "serial"), serial, StringComparison.OrdinalIgnoreCase))
+                        candidates.Add(name);
                 }
-                // macOS: no cheap USB id lookup; the bootloader is the modem port that wasn't there before.
-                else if (name.StartsWith("/dev/cu.usbmodem", StringComparison.Ordinal) && !before.Contains(name))
+                else if (name.StartsWith("/dev/cu.usbmodem", StringComparison.Ordinal) && !before.Contains(name) &&
+                         MacUsbSerial.Matches(name, serial))
                 {
-                    return name;
+                    candidates.Add(name);
                 }
             }
-            return null;
+            if (candidates.Count > 1) throw new InvalidOperationException(Strings.Firmware_WrongDevice);
+            return candidates.SingleOrDefault();
         }
+    }
+}
+
+internal static class MacUsbSerial
+{
+    public static bool Matches(string port, string serial)
+    {
+        var start = new ProcessStartInfo("/usr/sbin/ioreg")
+        { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
+        foreach (var argument in new[] { "-a", "-r", "-c", "IOUSBHostDevice" }) start.ArgumentList.Add(argument);
+        using var process = Process.Start(start) ?? throw new IOException(Strings.Firmware_WrongDevice);
+        var output = process.StandardOutput.ReadToEndAsync();
+        var errors = process.StandardError.ReadToEndAsync();
+        if (!process.WaitForExit(3000)) { process.Kill(); throw new TimeoutException(Strings.Firmware_WrongDevice); }
+        return process.ExitCode == 0 && MatchesRegistry(output.GetAwaiter().GetResult(), port, serial);
+    }
+
+    internal static bool MatchesRegistry(string xml, string port, string serial)
+    {
+        static string? Value(XElement dictionary, string name) =>
+            dictionary.Elements("key").FirstOrDefault(k => k.Value == name)?.ElementsAfterSelf().FirstOrDefault()?.Value;
+        var registry = XDocument.Parse(xml);
+        return registry.Descendants("dict").Any(d =>
+            string.Equals(Value(d, "USB Serial Number"), serial, StringComparison.OrdinalIgnoreCase) &&
+            d.Descendants("dict").Any(child => Value(child, "IOCalloutDevice") == port));
     }
 }

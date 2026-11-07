@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using ChameLab.Protocol;
+using ChameLab.Models;
 using ChameLab.Transport;
 using Plugin.BLE;
 using Plugin.BLE.Abstractions;
@@ -28,14 +29,19 @@ internal static class SecureDfuService
 /// Finds the Chameleon's bootloader over BLE. After <c>ENTER_BOOTLOADER</c> it advertises
 /// the Secure DFU service as "CU-xxxx" / "CL-xxxx" from the application's address + 1, and
 /// puts the application's address in its manufacturer data; either pins down the right
-/// device where addresses are visible (Android).
+/// device using the firmware address even when the OS hides addresses (iOS).
 /// </summary>
 public sealed class BleDfuLocator : IDfuLocator
 {
     public TransportKind Kind => TransportKind.Ble;
 
-    public IDfuTarget Prepare(TransportCandidate? device) =>
-        new Target(device is not null && Guid.TryParse(device.Id, out var id) ? Address(id) : null);
+    public IDfuTarget Prepare(TransportCandidate device, DeviceInfo info)
+    {
+        // The firmware reports its BLE address even on iOS, where peripheral ids are opaque.
+        if (info.Address.Length != 12 || !info.Address.All(Uri.IsHexDigit))
+            throw new InvalidOperationException(Strings.Firmware_WrongDevice);
+        return new Target(Convert.FromHexString(info.Address));
+    }
 
     /// <summary>
     /// Plugin.BLE on Android builds ids as <c>00000000-0000-0000-0000-{MAC}</c>, most significant
@@ -47,7 +53,7 @@ public sealed class BleDfuLocator : IDfuLocator
         return hex.StartsWith("00000000000000000000", StringComparison.Ordinal) ? Convert.FromHexString(hex[^12..]) : null;
     }
 
-    private sealed class Target(byte[]? app) : IDfuTarget
+    private sealed class Target(byte[] app) : IDfuTarget
     {
         // One scan for the whole wait: Android ignores an app's scans after five starts in 30 seconds.
         private static readonly TimeSpan ScanWindow = TimeSpan.FromSeconds(12);
@@ -61,15 +67,13 @@ public sealed class BleDfuLocator : IDfuLocator
             // The adapter runs one scan at a time (a Rescan on the Connect page, say).
             while (adapter.IsScanning) await Task.Delay(250, ct);
 
-            var found = new Dictionary<Guid, IDevice>();
             IDevice? ours = null;
             using var window = CancellationTokenSource.CreateLinkedTokenSource(ct);
             void OnDiscovered(object? sender, DeviceEventArgs e)
             {
                 if (e.Device is not { } d || !IsBootloader(d)) return;
-                found[d.Id] = d;
-                // This device's bootloader (or, where addresses are hidden, the first one seen): connect right away.
-                if (app is null || IsBootloaderOf(d, app))
+                // Never fall back to the nearest/first unrelated DFU peripheral.
+                if (IsBootloaderOf(d, app))
                 {
                     ours ??= d;
                     window.Cancel();
@@ -84,18 +88,17 @@ public sealed class BleDfuLocator : IDfuLocator
                     new ScanFilterOptions { ServiceUuids = new[] { SecureDfuService.Service } },
                     deviceFilter: IsBootloader,
                     allowDuplicatesKey: false,
-                    cancellationToken: window.Token);
+                    cancellationToken: window.Token).WaitAsync(window.Token);
             }
             catch (OperationCanceledException) when (!ct.IsCancellationRequested) { /* found, or the window elapsed */ }
             finally
             {
-                try { await adapter.StopScanningForDevicesAsync(); } catch { /* ignore */ }
+                try { await adapter.StopScanningForDevicesAsync().WaitAsync(TimeSpan.FromSeconds(2)); } catch { /* ignore */ }
                 adapter.DeviceDiscovered -= OnDiscovered;
             }
 
-            // Not recognized by address: there is rarely more than one bootloader around, take the nearest.
-            var device = ours ?? found.Values.OrderByDescending(d => d.Rssi).FirstOrDefault();
-            return device is null ? null : await BleDfuChannel.OpenAsync(adapter, device, ct);
+            ct.ThrowIfCancellationRequested();
+            return ours is null ? null : await BleDfuChannel.OpenAsync(adapter, ours, ct);
         }
 
         private static bool IsBootloader(IDevice d) =>
@@ -104,22 +107,25 @@ public sealed class BleDfuLocator : IDfuLocator
                 r.Type is AdvertisementRecordType.UuidsComplete16Bit or AdvertisementRecordType.UuidsIncomplete16Bit &&
                 r.Data.Length >= 2 && r.Data[0] == 0x59 && r.Data[1] == 0xFE);
 
-        /// <summary>
-        /// The bootloader takes the application's address + 1 (least significant byte, no carry), and
-        /// advertises the application's address after company id 0xFFFF, most significant byte first.
-        /// </summary>
-        private static bool IsBootloaderOf(IDevice d, byte[] app)
-        {
-            var own = Address(d.Id);
-            if (own is not null && own.AsSpan(0, 5).SequenceEqual(app.AsSpan(0, 5)) && own[5] == (byte)(app[5] + 1)) return true;
-            return Records(d).Any(r =>
-                r.Type == AdvertisementRecordType.ManufacturerSpecificData &&
-                r.Data.Length >= 8 && r.Data[0] == 0xFF && r.Data[1] == 0xFF && r.Data.AsSpan(2, 6).SequenceEqual(app));
-        }
-
-        private static IEnumerable<AdvertisementRecord> Records(IDevice d) =>
-            d.AdvertisementRecords ?? (IEnumerable<AdvertisementRecord>)Array.Empty<AdvertisementRecord>();
     }
+
+    /// <summary>
+    /// The bootloader takes the application's address + 1 (least significant byte, no carry), and
+    /// advertises the application's address after company id 0xFFFF, most significant byte first.
+    /// </summary>
+    internal static bool IsBootloaderOf(IDevice d, byte[] app)
+    {
+        var own = Address(d.Id);
+        if (app.Length != 6) return false;
+        if (own is not null && own.AsSpan(0, 5).SequenceEqual(app.AsSpan(0, 5)) && own[5] == (byte)(app[5] + 1)) return true;
+        return Records(d).Any(r =>
+            r.Type == AdvertisementRecordType.ManufacturerSpecificData &&
+            r.Data.Length >= 8 && r.Data[0] == 0xFF && r.Data[1] == 0xFF && r.Data.AsSpan(2, 6).SequenceEqual(app));
+    }
+
+    private static IEnumerable<AdvertisementRecord> Records(IDevice d) =>
+        d.AdvertisementRecords ?? (IEnumerable<AdvertisementRecord>)Array.Empty<AdvertisementRecord>();
+
 }
 
 /// <summary>Secure DFU over BLE: requests on the control point, image data on the packet characteristic.</summary>
@@ -129,6 +135,7 @@ public sealed class BleDfuChannel : IDfuChannel
 
     private readonly IAdapter _adapter;
     private readonly IDevice _device;
+    private bool _disposed;
     private ICharacteristic _control = null!;
     private ICharacteristic _packet = null!;
     private readonly Channel<byte[]> _responses = Channel.CreateUnbounded<byte[]>();
@@ -150,28 +157,29 @@ public sealed class BleDfuChannel : IDfuChannel
         try
         {
             // LE explicitly: Android's default transport may try classic Bluetooth on a device it just met (GATT error 133).
-            await adapter.ConnectToDeviceAsync(device, new ConnectParameters(autoConnect: false, forceBleTransport: true), ct);
+            await adapter.ConnectToDeviceAsync(device, new ConnectParameters(autoConnect: false, forceBleTransport: true), ct).WaitAsync(ResponseTimeout, ct);
             adapter.DeviceDisconnected += channel.OnDisconnected;
             adapter.DeviceConnectionLost += channel.OnConnectionLost;
 
             try
             {
-                var mtu = await device.RequestMtuAsync(247, ct);
+                var mtu = await device.RequestMtuAsync(247, ct).WaitAsync(ResponseTimeout, ct);
                 if (mtu > 23) channel.MaxDataSize = mtu - 3; // minus the ATT header
             }
+            catch (OperationCanceledException) { throw; }
             catch { /* stay at the default 23-byte MTU */ }
 
-            var service = await device.GetServiceAsync(SecureDfuService.Service, ct)
+            var service = await device.GetServiceAsync(SecureDfuService.Service, ct).WaitAsync(ResponseTimeout, ct)
                 ?? throw new InvalidOperationException(Strings.Dfu_NoService);
-            channel._control = await service.GetCharacteristicAsync(SecureDfuService.ControlPoint, ct)
+            channel._control = await service.GetCharacteristicAsync(SecureDfuService.ControlPoint, ct).WaitAsync(ResponseTimeout, ct)
                 ?? throw new InvalidOperationException(Strings.Dfu_NoControlPoint);
-            channel._packet = await service.GetCharacteristicAsync(SecureDfuService.Packet, ct)
+            channel._packet = await service.GetCharacteristicAsync(SecureDfuService.Packet, ct).WaitAsync(ResponseTimeout, ct)
                 ?? throw new InvalidOperationException(Strings.Dfu_NoPacketChar);
             channel._control.WriteType = CharacteristicWriteType.WithResponse;
             channel._packet.WriteType = CharacteristicWriteType.WithoutResponse;
 
             channel._control.ValueUpdated += channel.OnControlValue;
-            await channel._control.StartUpdatesAsync(ct);
+            await channel._control.StartUpdatesAsync(ct).WaitAsync(ResponseTimeout, ct);
             return channel;
         }
         catch
@@ -199,7 +207,7 @@ public sealed class BleDfuChannel : IDfuChannel
     {
         try
         {
-            await _control.WriteAsync(request, ct);
+            await _control.WriteAsync(request, ct).WaitAsync(ResponseTimeout, ct);
         }
         catch when (_responses.Reader.Completion.IsCompleted)
         {
@@ -230,7 +238,7 @@ public sealed class BleDfuChannel : IDfuChannel
     {
         try
         {
-            await _packet.WriteAsync(data, ct);
+            await _packet.WriteAsync(data, ct).WaitAsync(ResponseTimeout, ct);
         }
         catch when (_responses.Reader.Completion.IsCompleted)
         {
@@ -240,14 +248,18 @@ public sealed class BleDfuChannel : IDfuChannel
 
     public async ValueTask DisposeAsync()
     {
+        if (_disposed) return;
+        _disposed = true;
+        _responses.Writer.TryComplete();
         _adapter.DeviceDisconnected -= OnDisconnected;
         _adapter.DeviceConnectionLost -= OnConnectionLost;
         if (_control is not null)
         {
             _control.ValueUpdated -= OnControlValue;
-            try { await _control.StopUpdatesAsync(); } catch { /* the bootloader may have reset already */ }
         }
-        try { await _adapter.DisconnectDeviceAsync(_device); } catch { /* ignore */ }
-        _responses.Writer.TryComplete();
+        // Closing GATT removes notifications too; waiting for a CCCD write can hang after reset.
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        try { await _adapter.DisconnectDeviceAsync(_device, timeout.Token).WaitAsync(timeout.Token); }
+        catch { /* the bootloader may have reset already */ }
     }
 }

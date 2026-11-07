@@ -38,7 +38,7 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
     private byte[]? _pendingFile;
     // Kept for Retry: a failed flash leaves the device waiting in its bootloader.
     private DfuPackage? _package;
-    private IDfuTarget? _target;
+    private FirmwareUpdateTarget? _target;
     // How the device was connected when the dialog opened; it is gone while the bootloader runs.
     private bool _overBle;
 
@@ -236,7 +236,7 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
         catch (Exception ex) { Error = ex.Message; Dialog = FirmwareDialog.Failed; return; }
         if (picked is not { } file) return;
 
-        try { _package = DfuPackage.Parse(file.Data); }
+        try { _package = await Task.Run(() => DfuPackage.Parse(file.Data)); _package.RequireModel(_device.DeviceInfo!.Model); }
         catch (Exception ex)
         {
             _package = null;
@@ -269,7 +269,8 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
                 SetStep(Strings.Firmware_Downloading, 0);
                 var zip = _pendingFile ?? await _service.DownloadAsync(_pendingRelease!,
                     new Progress<double>(f => SetStep(Strings.Firmware_Downloading, f)));
-                _package = DfuPackage.Parse(zip);
+                SetStep(Strings.Firmware_CheckingPackage);
+                _package = await Task.Run(() => DfuPackage.Parse(zip));
             }
             // Prepared before the restart, so a retry still knows which bootloader is this device's.
             _target ??= _service.PrepareTarget();
@@ -278,12 +279,13 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
             {
                 switch (p.Step)
                 {
+                    case FirmwareUpdateStep.Checking: SetStep(Strings.Firmware_CheckingPackage); break;
                     case FirmwareUpdateStep.Restarting: SetStep(Strings.Firmware_Restarting); break;
                     case FirmwareUpdateStep.WaitingForBootloader: SetStep(Strings.Firmware_WaitingBootloader); break;
                     case FirmwareUpdateStep.Flashing: SetStep(string.Format(Strings.Firmware_Flashing, p.Fraction), p.Fraction); break;
                     case FirmwareUpdateStep.Reconnecting: SetStep(Strings.Firmware_WaitingRestart); break;
                 }
-            }));
+            }), expectedVersion: _pendingRelease?.Version);
 
             _package = null;
             _target = null;
@@ -296,7 +298,7 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
         catch (Exception ex)
         {
             InstallTitle = Strings.Firmware_Failed;
-            Error = ex.Message;
+            Error = ex.Message + (_target is not null && _device.Client is null ? "\n\n" + Strings.Firmware_RecoveryHint : "");
             Dialog = FirmwareDialog.Failed;
         }
     }

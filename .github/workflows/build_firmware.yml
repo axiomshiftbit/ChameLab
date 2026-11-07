@@ -59,6 +59,12 @@ jobs:
             firmware/tests/test_ble_radio_policy.c firmware/application/src/utils/ble_radio_policy.c \
             -o "$RUNNER_TEMP/test-ble-radio-policy"
           "$RUNNER_TEMP/test-ble-radio-policy"
+      - name: Test flash completion and stalled Bluetooth replies
+        run: |
+          python3 firmware/tests/test_lf_scan_bounds.py
+          python3 firmware/tests/test_flash_layout.py
+          python3 firmware/tests/test_fds_completion.py
+          python3 firmware/tests/test_ble_reply.py
       - name: Work out the firmware version
         id: version
         # firmware/VERSION is bumped only when the firmware changes; commits to firmware/ after
@@ -195,6 +201,11 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           docker run --rm -v ${PWD}:/workdir -e CURRENT_DEVICE_TYPE=${{ matrix.device_type }} "${{ needs.build_fw_builder.outputs.image_ref }}" firmware/build.sh
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+      - name: Verify application package before publishing artifacts
+        run: dotnet run --project software/chamelab/ChameLab.Tools -c Release -- verify-firmware firmware/objects/${{ matrix.device_type }}-dfu-app.zip ${{ matrix.device_type }}
       - name: Upload built binaries
         uses: actions/upload-artifact@v7
         with:

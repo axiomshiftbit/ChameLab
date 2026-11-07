@@ -47,11 +47,11 @@ internal static class ReleaseAnnouncer
     {
         var english = Section("CHANGELOG.md", tag) ?? throw new ArgumentException("CHANGELOG.md has no section for " + tag);
         var russian = Section("CHANGELOG.ru.md", tag);
-        var repo = Environment.GetEnvironmentVariable("GITHUB_REPOSITORY") ?? "m0n5ter/ChameLab";
+        var repo = Environment.GetEnvironmentVariable("GITHUB_REPOSITORY") ?? "axiomshiftbit/ChameLab";
         // The posts carry the summary and link to the full changelog
-        const string site = "https://m0n5ter.github.io/ChameLab/download/";
-        var enChangelog = $"https://github.com/{repo}/blob/main/CHANGELOG.md";
-        var ruChangelog = $"https://github.com/{repo}/blob/main/CHANGELOG.ru.md";
+        var site = $"https://github.com/{repo}/releases/tag/{Uri.EscapeDataString(tag)}";
+        var enChangelog = $"https://github.com/{repo}/blob/{Uri.EscapeDataString(tag)}/CHANGELOG.md";
+        var ruChangelog = $"https://github.com/{repo}/blob/{Uri.EscapeDataString(tag)}/CHANGELOG.ru.md";
         var enTitle = $"ChameLab {tag} is out" + (english.Firmware is { } fw ? " · firmware " + fw : "");
         var ruTitle = $"Вышел ChameLab {tag}" + (english.Firmware is { } rf ? " · прошивка " + rf : "");
         var ruLinks = $"Скачать: {site}\nПолный список изменений: {ruChangelog}";

@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows.Input;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ChameLab.Models;
 using ChameLab.Protocol;
@@ -20,6 +21,7 @@ public sealed class ChameleonViewModel : PageViewModelBase
     private readonly CardLibrary _cards;
     private bool _suppressModeWrite;
     private Values _saved;
+    private CancellationTokenSource? _batteryRefresh;
 
     public ChameleonViewModel(DeviceService device, CardLibrary cards, FirmwareUpdateViewModel firmware) : base(() => Strings.Nav_Chameleon, "dashboard")
     {
@@ -58,6 +60,8 @@ public sealed class ChameleonViewModel : PageViewModelBase
         _device.StateChanged += s => Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
             if (s == ConnectionState.Connected) return;
+            CancelBatteryRefresh();
+            Battery = null;
             SupportsBle = false;
             SupportsLongPressThreshold = false;
             // Edits meant for that device are dropped; the next connection loads fresh values.
@@ -124,8 +128,17 @@ public sealed class ChameleonViewModel : PageViewModelBase
     public BatteryInfo? Battery
     {
         get;
-        private set => this.RaiseAndSetIfChanged(ref field, value);
+        private set
+        {
+            if (field == value) return;
+            this.RaiseAndSetIfChanged(ref field, value);
+            this.RaisePropertyChanged(nameof(HasBatteryMeasurement));
+            this.RaisePropertyChanged(nameof(IsBatteryPending));
+        }
     }
+
+    public bool HasBatteryMeasurement => Battery is { Millivolts: > 0 };
+    public bool IsBatteryPending => Battery is { Millivolts: 0 };
 
     public bool ReaderMode
     {
@@ -240,13 +253,20 @@ public sealed class ChameleonViewModel : PageViewModelBase
         var client = _device.Client;
         if (client is null) return;
 
+        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            if (!ReferenceEquals(client, _device.Client)) return;
+            CancelBatteryRefresh();
+            Battery ??= new BatteryInfo(0, 0);
+            var refresh = _batteryRefresh = new CancellationTokenSource();
+            _ = RefreshBatteryAsync(client, refresh);
+        });
+
         // The handshake already read immutable identity/firmware fields. Only the mode
         // can change while this connection is alive (including from another page).
         var info = _device.DeviceInfo is { } identity
             ? identity with { Mode = await client.GetDeviceModeAsync() }
             : await client.GetDeviceInfoAsync();
-        BatteryInfo? bat = null;
-        try { bat = await client.GetBatteryInfoAsync(); } catch { /* lite has no gauge */ }
 
         var active = 1;
         SlotInfo[] slots = [];
@@ -266,7 +286,6 @@ public sealed class ChameleonViewModel : PageViewModelBase
         {
             if (!ReferenceEquals(client, _device.Client)) return;
             Info = info;
-            Battery = bat;
             if (Slots.Count == slots.Length && Slots.Select(s => s.Index).SequenceEqual(slots.Select(s => s.Index)))
             {
                 for (var i = 0; i < slots.Length; i++) Slots[i].Update(slots[i]);
@@ -284,6 +303,51 @@ public sealed class ChameleonViewModel : PageViewModelBase
 
         if (!IsDirty) await LoadSettingsAsync(client, preserveEdits: true);
     });
+
+    public override Task OnDeactivatedAsync()
+    {
+        CancelBatteryRefresh();
+        return Task.CompletedTask;
+    }
+
+    private void CancelBatteryRefresh()
+    {
+        _batteryRefresh?.Cancel();
+        _batteryRefresh = null;
+    }
+
+    private async Task RefreshBatteryAsync(ChameleonClient client, CancellationTokenSource refresh)
+    {
+        var ct = refresh.Token;
+        try
+        {
+            // The firmware's first ADC measurement arrives about five seconds after
+            // waking. Retry only this small query, without delaying the rest of the page.
+            for (var attempt = 0; attempt <= 6; attempt++)
+            {
+                var battery = await client.GetBatteryInfoAsync(ct);
+                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    if (!ct.IsCancellationRequested && ReferenceEquals(client, _device.Client)) Battery = battery;
+                });
+                if (battery.Millivolts > 0 || attempt == 6) break;
+                await Task.Delay(TimeSpan.FromSeconds(1), ct);
+            }
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
+        catch
+        {
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (!ct.IsCancellationRequested && ReferenceEquals(client, _device.Client)) Battery = null;
+            });
+        }
+        finally
+        {
+            if (ReferenceEquals(_batteryRefresh, refresh)) _batteryRefresh = null;
+            refresh.Dispose();
+        }
+    }
 
     private Task ToggleModeAsync() => RunAsync(async () =>
     {

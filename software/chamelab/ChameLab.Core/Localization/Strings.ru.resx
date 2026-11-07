@@ -624,6 +624,9 @@
   <data name="Chameleon_TheDeviceScansExternalCardsAnd" xml:space="preserve">
     <value>Устройство сканирует внешние карты и метки.</value>
   </data>
+  <data name="Chameleon_BatteryNotMeasured" xml:space="preserve">
+    <value>Заряд ещё не измерен</value>
+  </data>
   <data name="Chameleon_ThisModelHasNoBatteryGauge" xml:space="preserve">
     <value>У этой модели нет датчика заряда.</value>
   </data>
@@ -946,7 +949,7 @@
     <value>Проверить обновления</value>
   </data>
   <data name="Settings_CrossPlatformClientForTheChameleon" xml:space="preserve">
-    <value>Кроссплатформенный клиент для Chameleon Ultra на Avalonia. Документация по устройству, прошивке и протоколу: github.com/RfidResearchGroup/ChameleonUltra</value>
+    <value>Кроссплатформенный клиент для Chameleon Ultra на Avalonia. Документация по устройству, прошивке и протоколу: github.com/axiomshiftbit/ChameLab</value>
   </data>
   <data name="Settings_Download" xml:space="preserve">
     <value>Загрузить</value>
@@ -3708,4 +3711,34 @@
   <data name="Hex_AllMemory" xml:space="preserve"><value>Показать всю память</value></data>
   <data name="Cards_Generation" xml:space="preserve"><value>Поколение: {0}</value></data>
   <data name="Cards_GenerationUnknown" xml:space="preserve"><value>Не подтверждено (обычная карта, Gen2/CUID/FUID или защищённая Gen4)</value></data>
+  <data name="Dfu_InvalidPackage" xml:space="preserve">
+    <value>Пакет DFU имеет неверные или несовместимые метаданные, размер или структуру.</value>
+  </data>
+  <data name="Dfu_HashMismatch" xml:space="preserve">
+    <value>SHA-256 прошивки не совпадает с пакетом инициализации. Обновление не выполнено.</value>
+  </data>
+  <data name="Dfu_WrongModel" xml:space="preserve">
+    <value>Эта прошивка предназначена для другой модели Chameleon.</value>
+  </data>
+  <data name="Dfu_InvalidResponse" xml:space="preserve">
+    <value>Загрузчик вернул некорректные параметры DFU.</value>
+  </data>
+  <data name="Firmware_CheckingPackage" xml:space="preserve">
+    <value>Проверка целостности и совместимости пакета…</value>
+  </data>
+  <data name="Firmware_DownloadCorrupted" xml:space="preserve">
+    <value>Размер или контрольная сумма SHA-256 файла не совпадают с релизом. Скачайте пакет повторно.</value>
+  </data>
+  <data name="Firmware_WrongDevice" xml:space="preserve">
+    <value>Не удалось однозначно определить выбранное устройство. Подключите его снова и повторите попытку.</value>
+  </data>
+  <data name="Firmware_VersionNotConfirmed" xml:space="preserve">
+    <value>Устройство подключилось, но ожидаемая версия прошивки не подтверждена.</value>
+  </data>
+  <data name="Firmware_RecoveryHint" xml:space="preserve">
+    <value>Если обновление прервалось, оставьте устройство включённым и повторите установку того же пакета приложения. При необходимости запустите загрузчик кнопкой устройства. Это обновление не заменяет загрузчик.</value>
+  </data>
+  <data name="Firmware_ChargeBeforeUpdate" xml:space="preserve">
+    <value>Перед обновлением по Bluetooth зарядите Chameleon минимум до 20% и дождитесь измерения заряда.</value>
+  </data>
 </root>

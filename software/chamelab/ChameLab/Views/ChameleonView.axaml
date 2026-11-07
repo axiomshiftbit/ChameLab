@@ -128,26 +128,29 @@
                   <Arc StartAngle="-90" StrokeThickness="9" StrokeLineCap="Round"
                        SweepAngle="{Binding Battery?.Percent, Converter={x:Static conv:PercentToSweepConverter.Instance}}"
                        Stroke="{Binding Battery?.Percent, Converter={x:Static conv:BatteryBrushConverter.Instance}}"
-                       IsVisible="{Binding Battery, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                       IsVisible="{Binding HasBatteryMeasurement}" />
                   <PathIcon Data="{StaticResource Icon.bolt}" Width="26" Height="26"
                             Foreground="{Binding Battery?.Percent, Converter={x:Static conv:BatteryBrushConverter.Instance}}"
-                            IsVisible="{Binding Battery, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                            IsVisible="{Binding HasBatteryMeasurement}" />
                   <PathIcon Data="{StaticResource Icon.bolt}" Width="26" Height="26" Opacity="0.35"
-                            IsVisible="{Binding Battery, Converter={x:Static ObjectConverters.IsNull}}" />
+                            IsVisible="{Binding !HasBatteryMeasurement}" />
                 </Panel>
   
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
                   <TextBlock Text="{x:Static loc:Strings.Chameleon_BatteryHeader}" Classes="overline" />
                   <TextBlock Text="{Binding Battery?.Percent, StringFormat='{}{0}%'}"
                              FontSize="34" FontWeight="Bold"
-                             IsVisible="{Binding Battery, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                             IsVisible="{Binding HasBatteryMeasurement}" />
                   <TextBlock Classes="caption"
                              Text="{Binding Battery?.Volts, StringFormat={x:Static loc:Strings.Chameleon_BatteryVolts}}"
-                             IsVisible="{Binding Battery, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                             IsVisible="{Binding HasBatteryMeasurement}" />
                   <TextBlock Classes="caption" FontWeight="SemiBold"
                              Text="{Binding Battery?.ConditionText}"
                              Foreground="{Binding Battery?.Condition, Converter={x:Static conv:BatteryBrushConverter.Instance}}"
                              IsVisible="{Binding Battery?.ConditionText, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                  <TextBlock Text="—" FontSize="34" FontWeight="Bold" IsVisible="{Binding IsBatteryPending}" />
+                  <TextBlock Text="{x:Static loc:Strings.Chameleon_BatteryNotMeasured}" Classes="caption"
+                             IsVisible="{Binding IsBatteryPending}" />
                   <TextBlock Text="{x:Static loc:Strings.Chameleon_NotAvailable}" TextWrapping="Wrap" FontSize="18" FontWeight="SemiBold" Margin="0,4,0,0"
                              IsVisible="{Binding Battery, Converter={x:Static ObjectConverters.IsNull}}" />
                   <TextBlock Text="{x:Static loc:Strings.Chameleon_ThisModelHasNoBatteryGauge}" Classes="caption"

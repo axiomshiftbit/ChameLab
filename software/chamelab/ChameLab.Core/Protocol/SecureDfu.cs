@@ -1,46 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using ChameLab.Transport;
 using ChameLab.Localization;
 
 namespace ChameLab.Protocol;
-
-/// <summary>An nrfutil application DFU package (<c>ultra-dfu-app.zip</c>): init packet + firmware image.</summary>
-public sealed record DfuPackage(byte[] InitPacket, byte[] Firmware)
-{
-    public static DfuPackage Parse(byte[] zip)
-    {
-        try
-        {
-            using var archive = new ZipArchive(new MemoryStream(zip), ZipArchiveMode.Read);
-            byte[] Read(string name)
-            {
-                var entry = archive.GetEntry(name) ?? throw new InvalidDataException(string.Format(Strings.Dfu_Missing, name));
-                using var s = entry.Open();
-                using var ms = new MemoryStream();
-                s.CopyTo(ms);
-                return ms.ToArray();
-            }
-
-            using var manifest = JsonDocument.Parse(Read("manifest.json"));
-            if (!manifest.RootElement.GetProperty("manifest").TryGetProperty("application", out var app))
-                throw new InvalidDataException(Strings.Dfu_AppOnly);
-            var init = Read(app.GetProperty("dat_file").GetString()!);
-            var fw = Read(app.GetProperty("bin_file").GetString()!);
-            if (init.Length == 0 || fw.Length == 0) throw new InvalidDataException(Strings.Dfu_Empty);
-            return new DfuPackage(init, fw);
-        }
-        catch (Exception ex) when (ex is InvalidDataException or JsonException or KeyNotFoundException)
-        {
-            throw new InvalidDataException(string.Format(Strings.Dfu_NotPackage, ex.Message), ex);
-        }
-    }
-}
 
 /// <summary>Raised when the bootloader drops the link; expected right after the last object is executed.</summary>
 public sealed class DfuLinkClosedException() : IOException(Strings.Dfu_LinkLost);
@@ -76,63 +42,80 @@ public sealed class SecureDfu(IDfuChannel channel)
         OpSelect = 0x06, OpMtu = 0x07, OpWrite = 0x08, OpPing = 0x09, OpResponse = 0x60;
     private const byte ObjCommand = 0x01, ObjData = 0x02;
 
-    private int _sinceReceipt;
-
-    /// <summary>Uploads the package; <paramref name="progress"/> gets the fraction of the image written.</summary>
+    /// <summary>Uploads a checked application. A retry starts from zero, including after power loss.</summary>
     public async Task FlashAsync(DfuPackage package, IProgress<double>? progress = null, CancellationToken ct = default)
     {
+        if (channel.MaxDataSize is <= 0 or > 65535 || channel.PacketReceiptInterval is < 0 or > 65535)
+            throw new IOException(Strings.Dfu_InvalidResponse);
         var prn = (ushort)channel.PacketReceiptInterval;
-        await RequestAsync(ct, OpSetPrn, (byte)prn, (byte)(prn >> 8));
+        await RequestAsync(ct, OpSetPrn, (byte)prn, (byte)(prn >> 8)).ConfigureAwait(false);
 
-        await RequestAsync(ct, OpSelect, ObjCommand);
-        await RequestAsync(ct, [OpCreate, ObjCommand, .. BitConverter.GetBytes((uint)package.InitPacket.Length)]);
-        await StreamAsync(package.InitPacket, 0, package.InitPacket.Length, ct);
-        await RequestAsync(ct, OpExecute);
+        var command = await RequestAsync(ct, OpSelect, ObjCommand).ConfigureAwait(false);
+        if (BitConverter.ToUInt32(command, 0) < package.InitPacket.Length)
+            throw new IOException(Strings.Dfu_InvalidResponse);
+        // CREATE command resets all saved progress in the nRF5 SDK. Do not mix a partial old image
+        // with a new package, or assume that RAM progress survived a bootloader reset.
+        await RequestAsync(ct, [OpCreate, ObjCommand, .. BitConverter.GetBytes((uint)package.InitPacket.Length)]).ConfigureAwait(false);
+        await StreamAsync(package.InitPacket, 0, package.InitPacket.Length, 0, ct).ConfigureAwait(false);
+        await RequestAsync(ct, OpExecute).ConfigureAwait(false); // device verifies the signed init packet here
 
         var fw = package.Firmware;
-        var maxObject = (int)BitConverter.ToUInt32(await RequestAsync(ct, OpSelect, ObjData), 0);
-        for (var offset = 0; offset < fw.Length; offset += maxObject)
+        var selected = await RequestAsync(ct, OpSelect, ObjData).ConfigureAwait(false);
+        var maxObject = BitConverter.ToUInt32(selected, 0);
+        if (maxObject is 0 or > 1024 * 1024 || BitConverter.ToUInt32(selected, 4) != 0 || BitConverter.ToUInt32(selected, 8) != 0)
+            throw new IOException(Strings.Dfu_InvalidResponse);
+        uint crc = 0;
+        for (var offset = 0; offset < fw.Length;)
         {
-            var length = Math.Min(maxObject, fw.Length - offset);
-            await RequestAsync(ct, [OpCreate, ObjData, .. BitConverter.GetBytes((uint)length)]);
-            await StreamAsync(fw, offset, length, ct);
-            var last = offset + length >= fw.Length;
+            var length = Math.Min((int)maxObject, fw.Length - offset);
+            await RequestAsync(ct, [OpCreate, ObjData, .. BitConverter.GetBytes((uint)length)]).ConfigureAwait(false);
+            crc = await StreamAsync(fw, offset, length, crc, ct).ConfigureAwait(false);
+            var last = offset + length == fw.Length;
             try
             {
-                await RequestAsync(ct, OpExecute);
+                await RequestAsync(ct, OpExecute).ConfigureAwait(false);
             }
-            // Executing the last object activates the image; the bootloader may reset before it answers.
-            catch (Exception ex) when (last && ex is DfuLinkClosedException or TimeoutException) { }
-            progress?.Report((double)(offset + length) / fw.Length);
+            // A reset may hide the final reply. The service MUST confirm the original device
+            // and expected version after reconnecting before presenting a successful update.
+            catch (Exception ex) when (last && !ct.IsCancellationRequested && ex is DfuLinkClosedException or TimeoutException) { }
+            offset += length;
+            progress?.Report((double)offset / fw.Length);
         }
     }
 
-    /// <summary>Writes one object and checks the device's running CRC of everything sent so far.</summary>
-    private async Task StreamAsync(byte[] data, int offset, int length, CancellationToken ct)
+    private async Task<uint> StreamAsync(ReadOnlyMemory<byte> data, int offset, int length, uint crc, CancellationToken ct)
     {
-        var prn = channel.PacketReceiptInterval;
-        var chunk = channel.MaxDataSize;
-        _sinceReceipt = 0;
-        for (var i = 0; i < length; i += chunk)
+        var receipts = 0;
+        for (var i = 0; i < length;)
         {
-            var n = Math.Min(chunk, length - i);
-            await channel.WriteDataAsync(data.AsSpan(offset + i, n).ToArray(), ct);
-            if (prn > 0 && ++_sinceReceipt == prn)
+            ct.ThrowIfCancellationRequested();
+            var n = Math.Min(channel.MaxDataSize, length - i);
+            var chunk = data.Slice(offset + i, n);
+            await channel.WriteDataAsync(chunk.ToArray(), ct).ConfigureAwait(false);
+            crc = Crc32(chunk.Span, crc);
+            i += n;
+            if (channel.PacketReceiptInterval > 0 && ++receipts == channel.PacketReceiptInterval)
             {
-                _sinceReceipt = 0;
-                Check(await channel.ReceiveAsync(ct), OpCrc);
+                receipts = 0;
+                CheckCrc(Check(await channel.ReceiveAsync(ct).ConfigureAwait(false), OpCrc), offset + i, crc);
             }
         }
-
-        var crc = await RequestAsync(ct, OpCrc);
-        uint deviceOffset = BitConverter.ToUInt32(crc, 0), deviceCrc = BitConverter.ToUInt32(crc, 4);
-        var expected = Crc32(data, offset + length);
-        if (deviceOffset != offset + length || deviceCrc != expected)
-            throw new IOException(string.Format(Strings.Dfu_Corrupted, deviceOffset, deviceCrc, offset + length, expected));
+        CheckCrc(await RequestAsync(ct, OpCrc).ConfigureAwait(false), offset + length, crc);
+        return crc;
     }
 
-    private async Task<byte[]> RequestAsync(CancellationToken ct, params byte[] request) =>
-        Check(await channel.RequestAsync(request, ct), request[0]);
+    private static void CheckCrc(byte[] payload, int offset, uint crc)
+    {
+        uint deviceOffset = BitConverter.ToUInt32(payload, 0), deviceCrc = BitConverter.ToUInt32(payload, 4);
+        if (deviceOffset != offset || deviceCrc != crc)
+            throw new IOException(string.Format(Strings.Dfu_Corrupted, deviceOffset, deviceCrc, offset, crc));
+    }
+
+    private async Task<byte[]> RequestAsync(CancellationToken ct, params byte[] request)
+    {
+        ct.ThrowIfCancellationRequested();
+        return Check(await channel.RequestAsync(request, ct).ConfigureAwait(false), request[0]);
+    }
 
     /// <summary>Validates a response to <paramref name="op"/> and returns its payload.</summary>
     public static byte[] Check(byte[] r, byte op)
@@ -141,15 +124,18 @@ public sealed class SecureDfu(IDfuChannel channel)
             throw new IOException(string.Format(Strings.Dfu_Unexpected, Convert.ToHexString(r)));
         if (r[2] != 0x01)
             throw new IOException(string.Format(Strings.Dfu_Rejected, op, r[2], (r.Length > 3 ? $"/0x{r[3]:X2}" : "")));
+        var size = op switch { OpSelect => 12, OpCrc => 8, OpMtu => 2, OpPing => 1, _ => 0 };
+        if (r.Length != 3 + size) throw new IOException(Strings.Dfu_InvalidResponse);
         return r[3..];
     }
 
-    private static uint Crc32(byte[] data, int length)
+    // Incremental: each firmware byte is hashed once, rather than rehashing the prefix for every object.
+    internal static uint Crc32(ReadOnlySpan<byte> data, uint previous = 0)
     {
-        var crc = 0xFFFFFFFF;
-        for (var i = 0; i < length; i++)
+        var crc = ~previous;
+        foreach (var value in data)
         {
-            crc ^= data[i];
+            crc ^= value;
             for (var k = 0; k < 8; k++) crc = (crc >> 1) ^ (0xEDB88320u & (uint)-(int)(crc & 1));
         }
         return ~crc;
@@ -165,6 +151,7 @@ public sealed class SerialDfuChannel : IDfuChannel
     private readonly ITransport _transport;
     private readonly byte[] _readBuffer = new byte[256];
     private int _readPos, _readLen;
+    private Task? _disposeTask;
 
     private SerialDfuChannel(ITransport transport) => _transport = transport;
 
@@ -176,15 +163,17 @@ public sealed class SerialDfuChannel : IDfuChannel
     /// <summary>Opens <paramref name="transport"/> and asks the bootloader for its frame size.</summary>
     public static async Task<SerialDfuChannel> OpenAsync(ITransport transport, CancellationToken ct)
     {
-        await transport.ConnectAsync(ct);
-        await Task.Delay(200, ct);
         var channel = new SerialDfuChannel(transport);
         try
         {
-            SecureDfu.Check(await channel.RequestAsync([SecureDfu.OpPing, 0x01], ct), SecureDfu.OpPing);
+            await transport.ConnectAsync(ct).ConfigureAwait(false);
+            await Task.Delay(200, ct).ConfigureAwait(false);
+            var ping = SecureDfu.Check(await channel.RequestAsync([SecureDfu.OpPing, 0x01], ct).ConfigureAwait(false), SecureDfu.OpPing);
+            if (ping[0] != 0x01) throw new IOException(Strings.Dfu_InvalidResponse);
             var mtu = BitConverter.ToUInt16(SecureDfu.Check(await channel.RequestAsync([SecureDfu.OpMtu], ct), SecureDfu.OpMtu), 0);
             // Every byte may need SLIP escaping, and the opcode rides along.
             channel.MaxDataSize = (mtu - 1) / 2 - 1;
+            if (channel.MaxDataSize <= 0) throw new IOException(Strings.Dfu_InvalidResponse);
             return channel;
         }
         catch
@@ -202,7 +191,7 @@ public sealed class SerialDfuChannel : IDfuChannel
 
     public Task WriteDataAsync(byte[] data, CancellationToken ct) => SendAsync([SecureDfu.OpWrite, .. data], ct);
 
-    private Task SendAsync(byte[] payload, CancellationToken ct)
+    private async Task SendAsync(byte[] payload, CancellationToken ct)
     {
         var o = new List<byte>(payload.Length * 2 + 1);
         foreach (var b in payload)
@@ -212,45 +201,75 @@ public sealed class SerialDfuChannel : IDfuChannel
             else o.Add(b);
         }
         o.Add(SlipEnd);
-        return _transport.WriteAsync(o.ToArray(), ct);
+        try
+        {
+            await _transport.WriteAsync(o.ToArray(), ct).WaitAsync(ResponseTimeout, ct).ConfigureAwait(false);
+        }
+        catch
+        {
+            await DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
     }
 
     public async Task<byte[]> ReceiveAsync(CancellationToken ct)
     {
-        var deadline = DateTime.UtcNow + ResponseTimeout;
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        deadline.CancelAfter(ResponseTimeout);
         var frame = new List<byte>();
         var escaped = false;
-        while (true)
+        try
         {
-            if (_readPos == _readLen)
+            while (true)
             {
-                if (DateTime.UtcNow > deadline) throw new TimeoutException(Strings.Dfu_Stopped);
-                try
+                deadline.Token.ThrowIfCancellationRequested();
+                if (_readPos == _readLen)
                 {
-                    _readLen = await _transport.ReadAsync(_readBuffer, ct);
+                    // SerialPort's native read can ignore cancellation. WaitAsync bounds the wait;
+                    // closing this channel then releases the native read before any retry uses it.
+                    try { _readLen = await _transport.ReadAsync(_readBuffer, deadline.Token).WaitAsync(deadline.Token).ConfigureAwait(false); }
+                    catch (IOException) { throw new DfuLinkClosedException(); }
+                    _readPos = 0;
+                    continue;
                 }
-                catch (IOException ex) when (ex is not DfuLinkClosedException)
+                var b = _readBuffer[_readPos++];
+                if (escaped)
                 {
-                    // The transport noticed the device went away (the bootloader reset).
-                    throw new DfuLinkClosedException();
+                    if (b is not SlipEscEnd and not SlipEscEsc) throw new IOException(Strings.Dfu_InvalidResponse);
+                    frame.Add(b == SlipEscEnd ? SlipEnd : SlipEsc);
+                    escaped = false;
                 }
-                _readPos = 0;
-                continue;
+                else if (b == SlipEnd)
+                {
+                    if (frame.Count > 0) return frame.ToArray();
+                }
+                else if (b == SlipEsc) escaped = true;
+                else frame.Add(b);
+                if (frame.Count > 64) throw new IOException(Strings.Dfu_InvalidResponse);
             }
-            var b = _readBuffer[_readPos++];
-            if (b == SlipEnd)
-            {
-                if (frame.Count > 0) return frame.ToArray();
-            }
-            else if (escaped)
-            {
-                frame.Add(b == SlipEscEnd ? SlipEnd : SlipEsc);
-                escaped = false;
-            }
-            else if (b == SlipEsc) escaped = true;
-            else frame.Add(b);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            await DisposeAsync().ConfigureAwait(false);
+            throw new TimeoutException(Strings.Dfu_Stopped);
+        }
+        catch
+        {
+            await DisposeAsync().ConfigureAwait(false);
+            throw;
         }
     }
 
-    public ValueTask DisposeAsync() => _transport.DisposeAsync();
+    public async ValueTask DisposeAsync()
+    {
+        _disposeTask ??= CloseTransportAsync();
+        try { await _disposeTask.WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false); }
+        catch (TimeoutException) { /* native close continues; this channel is never reused */ }
+    }
+
+    private async Task CloseTransportAsync()
+    {
+        try { await _transport.DisposeAsync().ConfigureAwait(false); }
+        catch { /* preserve the original transfer error; native close can race a USB reset */ }
+    }
 }

@@ -5,7 +5,8 @@ GROUP(-lgcc -lc -lnosys)
 
 MEMORY
 {
-  FLASH (rx) : ORIGIN = 0x27000, LENGTH = 0xCC000
+  /* 22 FDS virtual pages of 2048 words below the bootloader at 0xF3000. */
+  FLASH (rx) : ORIGIN = 0x27000, LENGTH = 0xA0000
   RAM (rwx) :  ORIGIN = 0x20002ae8, LENGTH = 0x35518
 }
 

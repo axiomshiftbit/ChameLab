@@ -26,6 +26,59 @@ namespace ChameLab.UiTests;
 public class DeviceRefreshTests
 {
     [AvaloniaFact]
+    public async Task DashboardReadsBatteryAgainWhenFirstMeasurementIsNotReady()
+    {
+        var transport = new DeviceTransport();
+        transport.BatterySamples.Enqueue([0, 0, 0, 0]);
+        var device = new DeviceService([new Scanner(transport)]);
+        await device.ConnectAsync(new(TransportKind.Ble, "synthetic", "Test device"));
+        var model = new ChameleonViewModel(device, new CardLibrary(new MemoryKeyValueStore()),
+            new FirmwareUpdateViewModel(device, new FirmwareUpdateService(device, [])));
+        try
+        {
+            await model.OnActivatedAsync(); Dispatcher.UIThread.RunJobs();
+            for (var i = 0; i < 30 && model.Battery?.Millivolts != 4000; i++)
+            {
+                await Task.Delay(100); Dispatcher.UIThread.RunJobs();
+            }
+            Assert.Equal(4000, model.Battery?.Millivolts);
+            Assert.Equal(80, model.Battery?.Percent);
+            Assert.True(model.HasBatteryMeasurement);
+            Assert.False(model.IsBatteryPending);
+            Assert.Equal(2, transport.Requests.Count(r => r.Command == Command.GetBatteryInfoEx));
+            Assert.Single(transport.Requests, r => r.Command == Command.GetSlotInfo);
+        }
+        finally { await model.OnDeactivatedAsync(); await device.DisconnectAsync(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(0)]
+    [InlineData(3000)]
+    public async Task UnmeasuredBatteryIsNotShownAsEmptyAndLeavingStopsRetries(int millivolts)
+    {
+        var transport = new DeviceTransport { DefaultBatterySample = [(byte)(millivolts >> 8), (byte)millivolts, 0, 0] };
+        var device = new DeviceService([new Scanner(transport)]);
+        await device.ConnectAsync(new(TransportKind.Ble, "synthetic", "Test device"));
+        var model = new ChameleonViewModel(device, new CardLibrary(new MemoryKeyValueStore()),
+            new FirmwareUpdateViewModel(device, new FirmwareUpdateService(device, [])));
+        var window = new Window { Width = 360, Height = 800, Content = new ChameleonView { DataContext = model } };
+        try
+        {
+            await model.OnActivatedAsync(); Dispatcher.UIThread.RunJobs();
+            window.Show(); Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
+            Assert.Equal(millivolts > 0, model.HasBatteryMeasurement);
+            Assert.Equal(millivolts == 0, model.IsBatteryPending);
+            Assert.Equal(millivolts > 0, window.GetVisualDescendants().OfType<TextBlock>()
+                .Any(b => b.Text == "0%" && b.IsEffectivelyVisible));
+            await model.OnDeactivatedAsync();
+            var reads = transport.Requests.Count(r => r.Command == Command.GetBatteryInfoEx);
+            await Task.Delay(1200); Dispatcher.UIThread.RunJobs();
+            Assert.Equal(reads, transport.Requests.Count(r => r.Command == Command.GetBatteryInfoEx));
+        }
+        finally { window.Close(); await model.OnDeactivatedAsync(); await device.DisconnectAsync(); }
+    }
+
+    [AvaloniaFact]
     public async Task DashboardRefreshKeepsRowsAndReusesHandshakeIdentity()
     {
         var transport = new DeviceTransport();
@@ -108,6 +161,8 @@ public class DeviceRefreshTests
         public List<ChameleonFrame> Requests { get; } = new();
         public DeviceMode Mode { get; set; }
         public int Generation { get; init; }
+        public Queue<byte[]> BatterySamples { get; } = new();
+        public byte[] DefaultBatterySample { get; init; } = [0x0F, 0xA0, 80, 4];
         public TransportKind Kind => TransportKind.Ble;
         public string DisplayName => "Synthetic device";
         public bool IsConnected => true;
@@ -122,7 +177,7 @@ public class DeviceRefreshTests
                 {
                     Command.GetAppVersion => [2, 3],
                     Command.GetDeviceMode => [(byte)Mode],
-                    Command.GetBatteryInfoEx => [0x0F, 0xA0, 80, 4],
+                    Command.GetBatteryInfoEx => BatterySamples.TryDequeue(out var sample) ? sample : DefaultBatterySample,
                     Command.GetSlotInfo => new byte[32],
                     Command.GetEnabledSlots => new byte[16],
                     Command.GetAllSlotNicks => new byte[16],

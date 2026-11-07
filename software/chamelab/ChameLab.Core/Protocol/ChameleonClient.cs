@@ -2544,6 +2544,14 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
     public Task WipeFdsAsync(CancellationToken ct = default) =>
         conn.SendExpectAsync(Command.WipeFds, Status.Success, timeoutMs: 5000, ct: ct);
 
-    public void EnterBootloader() =>
-        _ = conn.SendAsync(Command.EnterBootloader, timeoutMs: 500);
+    public void EnterBootloader() => _ = EnterBootloaderAsync();
+
+    public async Task EnterBootloaderAsync(CancellationToken ct = default)
+    {
+        // Firmware resets without replying. Await the write/timeout instead of closing the port
+        // after a guessed delay while the command may still be queued behind another request.
+        try { await conn.SendExpectAsync(Command.EnterBootloader, Status.Success, timeoutMs: 1000, ct: ct); }
+        catch (TimeoutException) { ct.ThrowIfCancellationRequested(); }
+        catch (ChameleonDisconnectedException) { ct.ThrowIfCancellationRequested(); }
+    }
 }

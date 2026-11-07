@@ -22,7 +22,7 @@ internal static class WindowsSerialVid
     /// its device was unplugged, so presence is checked against the PnP tree.
     /// </summary>
     /// <param name="usbId">Device key fragment such as <c>VID_1915&amp;PID_521F</c>.</param>
-    public static bool PortMatchesUsbId(string portName, string usbId)
+    public static bool PortMatchesUsbId(string portName, string usbId, string? serial = null)
     {
         using var usb = Registry.LocalMachine.OpenSubKey(
             @"SYSTEM\CurrentControlSet\Enum\USB");
@@ -38,6 +38,7 @@ internal static class WindowsSerialVid
 
             foreach (var instanceName in deviceKey.GetSubKeyNames())
             {
+                if (serial is not null && !string.Equals(instanceName, serial, StringComparison.OrdinalIgnoreCase)) continue;
                 using var paramsKey = deviceKey.OpenSubKey(
                     $@"{instanceName}\Device Parameters");
                 if (paramsKey?.GetValue("PortName") is string pn &&

@@ -28,10 +28,12 @@ internal static class Program
                 case ["check-languages"]: await CheckLanguages(); break;
                 case ["announce-release", var tag]: await ReleaseAnnouncer.Run(tag, false); break;
                 case ["announce-release", var tag, "--dry-run"]: await ReleaseAnnouncer.Run(tag, true); break;
+                case ["verify-firmware", var file, var model]: FirmwarePackageTools.Verify(file, model); break;
+                case ["mac-bundle", var folder, var version]: DesktopBundle.CreateMac(folder, version, Root()); break;
                 case ["zip", var source, var destination]: Archive(source, destination); break;
                 case ["name-release-files", var folder, var appVersion, var firmwareVersion]: NameReleaseFiles(folder, appVersion, firmwareVersion); break;
                 case ["--help"] or []:
-                    Console.WriteLine("ChameLab development tools\n  generate-hardnested [--check]\n  import-hardnested-tables PROXMARK3_CHECKOUT\n  prepare-hardnested-reference DISPOSABLE_PROXMARK3_CHECKOUT\n  compare-hardnested MANAGED NATIVE OUTPUT [REPETITIONS] [--cases FILE] [--only CASE...]\n  reference-vectors --generator EXE --nested EXE --staticnested EXE --mfkey32v2 EXE [--output JSON]\n  benchmark nested|static-encrypted [ITERATIONS WARMUPS]\n  read-mfc4k --help\n  pr-review MODE\n  zip SOURCE_DIRECTORY OUTPUT.zip\n  name-release-files DIRECTORY APP_VERSION FIRMWARE_VERSION");
+                    Console.WriteLine("ChameLab development tools\n  generate-hardnested [--check]\n  import-hardnested-tables PROXMARK3_CHECKOUT\n  prepare-hardnested-reference DISPOSABLE_PROXMARK3_CHECKOUT\n  compare-hardnested MANAGED NATIVE OUTPUT [REPETITIONS] [--cases FILE] [--only CASE...]\n  reference-vectors --generator EXE --nested EXE --staticnested EXE --mfkey32v2 EXE [--output JSON]\n  benchmark nested|static-encrypted [ITERATIONS WARMUPS]\n  read-mfc4k --help\n  pr-review MODE\n  zip SOURCE_DIRECTORY OUTPUT.zip\n  verify-firmware FILE.zip ultra|lite\n  mac-bundle PUBLISH_DIRECTORY VERSION\n  name-release-files DIRECTORY APP_VERSION FIRMWARE_VERSION");
                     break;
                 default: throw new ArgumentException("Unknown command. Run with --help.");
             }

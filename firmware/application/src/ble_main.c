@@ -196,28 +196,30 @@ void nus_data_response(uint8_t *p_data, uint16_t length) {
     NRF_LOG_INFO("BLE nus service response data length: %d", length);
     NRF_LOG_DEBUG("BLE TX: %u bytes", length);
 
-    ret_code_t err_code;
-    uint16_t remain = length;
     uint16_t count = 0;
-    do {
-        remain = MIN(m_ble_nus_max_data_len, remain);
-        err_code = ble_nus_data_send(&m_nus, p_data + count, &remain, m_conn_handle);
-        // NRF_LOG_INFO("Data send length(amount): %d", remain);
+    uint32_t started = app_timer_cnt_get();
+    while (count < length && g_is_ble_connected) {
+        uint16_t remain = MIN(m_ble_nus_max_data_len, length - count);
+        ret_code_t err_code = ble_nus_data_send(&m_nus, p_data + count, &remain, m_conn_handle);
         if (err_code == NRF_SUCCESS) {
+            if (remain == 0) return;
             count += remain;
-            remain = length - count;
-        }
-        // NRF_LOG_INFO("Data send length(count): %d", count);
-        if (err_code == NRF_ERROR_BUSY) {
-            continue;
-        }
-        if ((err_code != NRF_ERROR_INVALID_STATE) &&
-                (err_code != NRF_ERROR_RESOURCES) &&
-                (err_code != NRF_ERROR_NOT_FOUND)) {
+            started = app_timer_cnt_get();
+        } else if (err_code == NRF_ERROR_BUSY || err_code == NRF_ERROR_RESOURCES) {
+            // Wait for radio progress, without spinning forever when the peer stops accepting
+            // notifications. The host will time out the incomplete reply and can reconnect.
+            if (app_timer_cnt_diff_compute(app_timer_cnt_get(), started) >= APP_TIMER_TICKS(1000)) {
+                NRF_LOG_WARNING("BLE reply timed out");
+                return;
+            }
+            sd_app_evt_wait();
+        } else if (err_code == NRF_ERROR_INVALID_STATE || err_code == NRF_ERROR_NOT_FOUND) {
+            return; // connected does not imply that NUS notifications are still enabled
+        } else {
             APP_ERROR_CHECK(err_code);
+            return;
         }
-
-    } while (count != length && g_is_ble_connected);
+    }
 }
 
 bool is_nus_working(void) {

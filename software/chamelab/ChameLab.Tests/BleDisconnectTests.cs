@@ -57,6 +57,43 @@ public class BleDisconnectTests
         Assert.Equal(1, disconnects);
     }
 
+    [Theory]
+    [InlineData("00000000-0000-0000-0000-c00102030406", true)]
+    [InlineData("00000000-0000-0000-0000-c00102030409", false)]
+    [InlineData("11111111-2222-3333-4444-555555555555", false)]
+    public void DfuNeverMatchesAnUnrelatedAddress(string id, bool expected)
+    {
+        var device = Fake<IDevice>((name, args) => name == "get_Id" ? Guid.Parse(id) : null);
+        Assert.Equal(expected, BleDfuLocator.IsBootloaderOf(device, Convert.FromHexString("C00102030405")));
+    }
+
+    [Fact]
+    public async Task DfuCloseDoesNotWaitForNotificationShutdown()
+    {
+        var stopUpdates = false;
+        var characteristic = Fake<ICharacteristic>((name, args) => name switch
+        {
+            "StartUpdatesAsync" => Task.CompletedTask,
+            "StopUpdatesAsync" => Stall(), _ => null,
+        });
+        Task Stall() { stopUpdates = true; return Task.Delay(Timeout.Infinite); }
+        var service = Fake<IService>((name, args) => name == "GetCharacteristicAsync" ? Task.FromResult(characteristic) : null);
+        var device = Fake<IDevice>((name, args) => name switch
+        {
+            "RequestMtuAsync" => Task.FromResult(247), "GetServiceAsync" => Task.FromResult(service), _ => null,
+        });
+        var adapter = Fake<IAdapter>((name, args) => name switch
+        {
+            "ConnectToDeviceAsync" => Task.CompletedTask,
+            "DisconnectDeviceAsync" => Task.Delay(Timeout.Infinite, (CancellationToken)args[1]!), _ => null,
+        });
+        var channel = await BleDfuChannel.OpenAsync(adapter, device, default);
+        var read = channel.ReceiveAsync(default);
+        await channel.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(4));
+        await Assert.ThrowsAsync<ChameLab.Protocol.DfuLinkClosedException>(() => read);
+        Assert.False(stopUpdates);
+    }
+
     private static T Fake<T>(Func<string, object?[], object?> call) where T : class
     {
         var result = DispatchProxy.Create<T, Proxy>();
