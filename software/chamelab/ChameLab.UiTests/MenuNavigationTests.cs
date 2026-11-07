@@ -16,6 +16,31 @@ namespace ChameLab.UiTests;
 
 public class MenuNavigationTests
 {
+    private sealed class WaitingPage : PageViewModelBase
+    {
+        public TaskCompletionSource Refresh { get; } = new();
+        public WaitingPage() : base(() => "Waiting", "info") { }
+        public override Task OnActivatedAsync() => Refresh.Task;
+    }
+
+    [AvaloniaFact]
+    public void DeviceRefreshDoesNotHoldNavigationToAnotherPage()
+    {
+        var device = new DeviceService([]);
+        var store = new MemoryKeyValueStore();
+        var model = new MainViewModel(device, new CardLibrary(store), new DictionaryLibrary(store),
+            new FirmwareUpdateService(device, []));
+        var page = new WaitingPage();
+        try
+        {
+            model.SelectedNavItem = page;
+            Assert.Same(page, model.CurrentPage);
+            model.SelectedNavItem = model.Settings;
+            Assert.Same(model.Settings, model.CurrentPage);
+        }
+        finally { page.Refresh.TrySetResult(); model.Connect.StopWatching(); }
+    }
+
     [AvaloniaFact]
     public void EmptySlotsPageDoesNotShowAModalPickerWithAnInactiveCloseButton()
     {

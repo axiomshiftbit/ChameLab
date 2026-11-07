@@ -240,7 +240,11 @@ public sealed class ChameleonViewModel : PageViewModelBase
         var client = _device.Client;
         if (client is null) return;
 
-        var info = await client.GetDeviceInfoAsync();
+        // The handshake already read immutable identity/firmware fields. Only the mode
+        // can change while this connection is alive (including from another page).
+        var info = _device.DeviceInfo is { } identity
+            ? identity with { Mode = await client.GetDeviceModeAsync() }
+            : await client.GetDeviceInfoAsync();
         BatteryInfo? bat = null;
         try { bat = await client.GetBatteryInfoAsync(); } catch { /* lite has no gauge */ }
 
@@ -260,18 +264,25 @@ public sealed class ChameleonViewModel : PageViewModelBase
 
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
+            if (!ReferenceEquals(client, _device.Client)) return;
             Info = info;
             Battery = bat;
-            Slots.Clear();
-            foreach (var slot in slots) Slots.Add(new SlotItemViewModel(slot, _cards));
-            _activeSlot = 0;
+            if (Slots.Count == slots.Length && Slots.Select(s => s.Index).SequenceEqual(slots.Select(s => s.Index)))
+            {
+                for (var i = 0; i < slots.Length; i++) Slots[i].Update(slots[i]);
+            }
+            else
+            {
+                Slots.Clear();
+                foreach (var slot in slots) Slots.Add(new SlotItemViewModel(slot, _cards));
+            }
             ActiveSlot = active;
             _suppressModeWrite = true;
             ReaderMode = info.Mode == DeviceMode.Reader;
             _suppressModeWrite = false;
         });
 
-        if (!IsDirty) await LoadSettingsAsync(client);
+        if (!IsDirty) await LoadSettingsAsync(client, preserveEdits: true);
     });
 
     private Task ToggleModeAsync() => RunAsync(async () =>
@@ -283,7 +294,7 @@ public sealed class ChameleonViewModel : PageViewModelBase
         Notify(string.Format(Strings.Chameleon_SwitchedMode, target));
     });
 
-    private async Task LoadSettingsAsync(ChameleonClient client)
+    private async Task LoadSettingsAsync(ChameleonClient client, bool preserveEdits = false)
     {
         var anim = await client.GetAnimationModeAsync();
         var sleep = await client.GetSleepTimeoutAsync();
@@ -304,6 +315,7 @@ public sealed class ChameleonViewModel : PageViewModelBase
 
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
+            if (!ReferenceEquals(client, _device.Client) || preserveEdits && IsDirty) return;
             AnimationMode = anim;
             SleepTimeout = sleep;
             ButtonAShort = a;

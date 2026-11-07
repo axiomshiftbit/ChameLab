@@ -453,6 +453,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
     private void SetSelected(CardItemViewModel? value)
     {
         if (ReferenceEquals(value, _selected)) return;
+        ScanGeneration = null;
         this.RaiseAndSetIfChanged(ref _selected, value, nameof(Selected));
         Action = CardAction.None;
         // Moving to another card or closing the editor answers the slot question with “no”.
@@ -1203,6 +1204,13 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         private set => this.RaiseAndSetIfChanged(ref field, value);
     }
 
+    /// <summary>Read-only live detection; never inferred from the UID or stored as a write capability.</summary>
+    public string? ScanGeneration
+    {
+        get;
+        private set => this.RaiseAndSetIfChanged(ref field, value);
+    }
+
     /// <summary>The open card supports memory reading, regardless of its source.</summary>
     public bool CanDump
     {
@@ -1338,6 +1346,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         ScanMissText = null;
         Prng = null;
         FormSource = null;
+        ScanGeneration = null;
         _hasDump = false;
         _isManual = false;
         // Leaving the add pane stops a dump still in flight.
@@ -1596,6 +1605,21 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
             catch (ChameleonException) { /* keep the guess */ }
         }
 
+        string? generation = null;
+        if (tags.Count == 1 && CardFormats.GuessHfType(tags[0].Sak, tags[0].Atqa).IsMifareClassic())
+        {
+            generation = Strings.Cards_GenerationUnknown;
+            try
+            {
+                var inspection = await client.InspectWriteTargetAsync(checkMemory: false);
+                if (inspection is not null && inspection.Tag.Uid.AsSpan().SequenceEqual(tags[0].Uid))
+                    generation = inspection.Gen4 ? "Gen4 GTU / Ultimate"
+                        : inspection.Generation?.Label() ?? Strings.Cards_GenerationUnknown;
+            }
+            catch (ChameleonException) { /* optional detection must not discard a successful scan */ }
+            catch (FormatException) { /* unsupported read-configuration reply */ }
+        }
+
         await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
         {
             ResetAddState();
@@ -1612,6 +1636,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
             Form = new CardEditorViewModel(card, sameFrequency: true);
             SetScanMatches(card);
             FormSource = string.Format(Strings.Cards_SourceTypeUid, card.Tag.DisplayName(), t.UidHex);
+            ScanGeneration = generation is null ? null : string.Format(Strings.Cards_Generation, generation);
         });
 
         Notify(Loc.Plural(Strings.Plural_FoundHfTags, tags.Count));

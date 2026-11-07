@@ -19,8 +19,16 @@ public sealed class SlotItemViewModel(SlotInfo info, CardLibrary? library = null
     /// <summary>Takes the slot as read back from the device, keeping this row (and the list selection).</summary>
     public void Update(SlotInfo info)
     {
-        _info = info;
+        // Polling normally returns the same contents in new objects. Avoid invalidating
+        // all bindings (and the slot's layout) unless its displayed contents changed.
         IsActive = info.IsActive;
+        var unchanged = _info.Index == info.Index && _info.HfType == info.HfType && _info.LfType == info.LfType
+            && _info.HfEnabled == info.HfEnabled && _info.LfEnabled == info.LfEnabled
+            && _info.HfNick == info.HfNick && _info.LfNick == info.LfNick
+            && _info.HfColor == info.HfColor && _info.LfColor == info.LfColor
+            && (_info.LfCycle is null ? info.LfCycle is null : info.LfCycle is { } cycle && _info.LfCycle.SameAs(cycle));
+        _info = info;
+        if (unchanged) return;
         foreach (var name in new[]
                  {
                      nameof(Info), nameof(HfNick), nameof(LfNick), nameof(HfType), nameof(LfType),

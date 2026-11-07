@@ -16,6 +16,12 @@
     <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <!-- Installable development builds and UI checks use the same optimized runtime. -->
+    <UseInterpreter>false</UseInterpreter>
+    <RunAOTCompilation>true</RunAOTCompilation>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- Mono runtime settings (a larger garbage collector nursery, see the file). -->
     <AndroidEnvironment Include="environment.txt" />

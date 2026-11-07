@@ -40,9 +40,11 @@ Desktop packages include the .NET runtime; an SDK is not needed to run them.
 The fork's Android package is `io.github.axiomshiftbit.chamelab`, so the original app
 can remain installed. Transfer a card library using export and import.
 
-**Actions development builds:** names may omit the version. The `android-arm64-debug`
-artifact contains `ChameLab-arm64-debug.apk`; builds ending in `-development.apk`
-are also test builds and use the `.dev` package. `ChameLab-ui-tests.apk` automatically
+**Actions development builds:** download `release-artifacts-gui-android` and install
+`chamelab-android-arm64-development.apk` (use `android-arm` for older 32-bit devices).
+These APKs use optimized Release builds with AOT and the `.dev` package. The old
+`ChameLab-arm64-debug.apk` uses the interpreter and is unsuitable for performance
+evaluation. `ChameLab-ui-tests.apk` automatically
 runs interface tests and is not intended for regular use. Extract the downloaded
 Actions artifact archive first.
 

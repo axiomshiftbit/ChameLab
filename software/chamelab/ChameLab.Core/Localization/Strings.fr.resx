@@ -3706,4 +3706,6 @@ Octets identiques : {1} ; différents : {2} ; inconnus : {3}.</value>
   <data name="Hex_NoMatch" xml:space="preserve"><value>Aucune correspondance dans le tampon ouvert.</value></data>
   <data name="Hex_MatchAt" xml:space="preserve"><value>Trouvé à 0x{0}.</value></data>
   <data name="Hex_AllMemory" xml:space="preserve"><value>Afficher toute la mémoire</value></data>
+  <data name="Cards_Generation" xml:space="preserve"><value>Generation: {0}</value><comment>English fallback for newly added features.</comment></data>
+  <data name="Cards_GenerationUnknown" xml:space="preserve"><value>Not confirmed (ordinary card, Gen2/CUID/FUID or protected Gen4)</value><comment>English fallback for newly added features.</comment></data>
 </root>

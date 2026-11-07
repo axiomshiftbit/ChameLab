@@ -81,24 +81,17 @@ jobs:
         run: dotnet build software/chamelab/ChameLab.Android -t:InstallAndroidDependencies -f net10.0-android -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" -p:AcceptAndroidSDKLicenses=true
       - name: Build isolated UI test APK
         run: |
-          dotnet build software/chamelab/ChameLab.Android -t:SignAndroidPackage -c Debug -r android-x64 -p:ChameLabUiTests=true -p:EmbedAssembliesIntoApk=true -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME"
+          dotnet build software/chamelab/ChameLab.Android -t:SignAndroidPackage -c Release -r android-x64 -p:ChameLabUiTests=true -p:EmbedAssembliesIntoApk=true -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME"
           mkdir -p "$RUNNER_TEMP/ui-apk"
-          cp software/chamelab/ChameLab.Android/bin/Debug/net10.0-android/android-x64/*-Signed.apk "$RUNNER_TEMP/ui-apk/ChameLab-ui-tests.apk"
+          cp software/chamelab/ChameLab.Android/bin/Release/net10.0-android/android-x64/*-Signed.apk "$RUNNER_TEMP/ui-apk/ChameLab-ui-tests.apk"
       - uses: actions/upload-artifact@v7
         with:
           name: android-ui-test-apk
           path: ${{ runner.temp }}/ui-apk/*.apk
           retention-days: 14
-      - name: Build installable Android app
-        run: |
-          dotnet build software/chamelab/ChameLab.Android -t:SignAndroidPackage -c Debug -r android-arm64 -p:ApplicationId=io.github.axiomshiftbit.chamelab.dev -p:EmbedAssembliesIntoApk=true -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME"
-          mkdir -p "$RUNNER_TEMP/android-app"
-          cp software/chamelab/ChameLab.Android/bin/Debug/net10.0-android/android-arm64/*-Signed.apk "$RUNNER_TEMP/android-app/ChameLab-arm64-debug.apk"
-      - uses: actions/upload-artifact@v7
-        with:
-          name: android-arm64-debug
-          path: ${{ runner.temp }}/android-app/*.apk
-          retention-days: 14
+      # Installable development APKs come from release-builds/build_gui.yml:
+      # Release + AOT. Android Debug defaults to the interpreter and must not
+      # be presented as the ordinary app when evaluating phone performance.
 
   android-ui:
     needs: android-build

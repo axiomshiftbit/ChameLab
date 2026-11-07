@@ -298,9 +298,11 @@ public sealed class MainViewModel : ViewModelBase
             }
             CurrentPage = page;
             if (IsCompact) IsPaneOpen = false;
-            await page.OnActivatedAsync();
         }
         finally { _navigation.Release(); }
+        // Device refresh may take several BLE round trips. It must not queue navigation
+        // behind it: the user can leave a page while its refresh is still running.
+        await page.OnActivatedAsync();
     }
 
     private async Task OpenCardAsync(string id)

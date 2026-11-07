@@ -3706,4 +3706,6 @@
   <data name="Hex_NoMatch" xml:space="preserve"><value>В открытой памяти совпадений нет.</value></data>
   <data name="Hex_MatchAt" xml:space="preserve"><value>Найдено по адресу 0x{0}.</value></data>
   <data name="Hex_AllMemory" xml:space="preserve"><value>Показать всю память</value></data>
+  <data name="Cards_Generation" xml:space="preserve"><value>Поколение: {0}</value></data>
+  <data name="Cards_GenerationUnknown" xml:space="preserve"><value>Не подтверждено (обычная карта, Gen2/CUID/FUID или защищённая Gen4)</value></data>
 </root>

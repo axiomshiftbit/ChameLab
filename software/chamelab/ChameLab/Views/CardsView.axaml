@@ -420,6 +420,8 @@
               <TextBox Classes="titlebox" Text="{Binding Form?.Name}" MaxLength="64" PlaceholderText="{x:Static loc:Strings.Cards_CardName}" />
               <TextBlock Text="{Binding FormSource}" Classes="caption" TextWrapping="Wrap"
                          IsVisible="{Binding IsEditingNew}" />
+              <TextBlock Text="{Binding ScanGeneration}" Classes="caption" TextWrapping="Wrap"
+                         IsVisible="{Binding ScanGeneration, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
               <TextBlock Text="{Binding Selected?.Summary}" Classes="caption" TextWrapping="Wrap"
                          IsVisible="{Binding IsCardOpen}" />
             </StackPanel>

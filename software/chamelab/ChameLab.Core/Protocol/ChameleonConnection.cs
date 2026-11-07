@@ -112,13 +112,14 @@ public sealed class ChameleonConnection(ITransport transport) : IAsyncDisposable
             _pending[cmd] = tcs;
 
             // The timeout covers the write too: a write to an unplugged port may never complete.
-            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _cts.Token);
             timeoutCts.CancelAfter(timeoutMs);
             await using var reg = timeoutCts.Token.Register(() =>
             {
                 // Only this request's entry: a later one for the same command must not be failed.
                 _pending.TryRemove(new KeyValuePair<Command, TaskCompletionSource<ChameleonFrame>>(cmd, tcs));
-                if (ct.IsCancellationRequested) tcs.TrySetCanceled(ct);
+                if (_closed) tcs.TrySetException(new ChameleonDisconnectedException());
+                else if (ct.IsCancellationRequested) tcs.TrySetCanceled(ct);
                 else tcs.TrySetException(new TimeoutException(string.Format(Strings.Device_CommandTimeout, cmd, timeoutMs)));
             });
 
@@ -174,6 +175,8 @@ public sealed class ChameleonConnection(ITransport transport) : IAsyncDisposable
     {
         _closed = true;
         _cts.Cancel();
+        // Release command callers before native transport cleanup, which can be slow.
+        FailAllPending(new ChameleonDisconnectedException());
         // Close the transport before awaiting the read loop: some streams (SerialPort on
         // Windows) ignore the cancellation token, so only closing unblocks a pending read.
         await transport.DisposeAsync();
@@ -181,7 +184,6 @@ public sealed class ChameleonConnection(ITransport transport) : IAsyncDisposable
         {
             try { await loop.WaitAsync(TimeSpan.FromSeconds(2)); } catch { /* ignore */ }
         }
-        FailAllPending(new ChameleonDisconnectedException());
         _cts.Dispose();
     }
 }

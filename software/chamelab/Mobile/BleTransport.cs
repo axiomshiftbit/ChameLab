@@ -33,9 +33,21 @@ internal static class NordicUart
 /// on the TX characteristic are buffered into a channel that <see cref="ReadAsync"/>
 /// drains; <see cref="WriteAsync"/> chunks frames to the negotiated MTU on RX.
 /// </summary>
-public sealed class BleTransport(Guid deviceId, string displayName) : ITransport
+public sealed class BleTransport : ITransport
 {
-    private readonly IAdapter _adapter = CrossBluetoothLE.Current.Adapter;
+    private readonly IAdapter _adapter;
+    private readonly Guid deviceId;
+    private readonly string displayName;
+
+    public BleTransport(Guid deviceId, string displayName)
+        : this(deviceId, displayName, CrossBluetoothLE.Current.Adapter) { }
+
+    internal BleTransport(Guid deviceId, string displayName, IAdapter adapter)
+    {
+        this.deviceId = deviceId;
+        this.displayName = displayName;
+        _adapter = adapter;
+    }
 
     private IDevice? _device;
     private ICharacteristic? _rx;
@@ -152,16 +164,20 @@ public sealed class BleTransport(Guid deviceId, string displayName) : ITransport
     {
         _adapter.DeviceDisconnected -= OnDeviceDisconnected;
         _adapter.DeviceConnectionLost -= OnDeviceConnectionLost;
+        _incoming.Writer.TryComplete();
         if (_tx is not null)
         {
             _tx.ValueUpdated -= OnTxValueUpdated;
-            try { await _tx.StopUpdatesAsync(); } catch { /* ignore */ }
+            // Closing the link stops notifications too. A separate CCCD write can wait
+            // behind a stalled GATT operation and prevent Disconnect from ever starting.
         }
         if (_device is not null)
         {
-            try { await _adapter.DisconnectDeviceAsync(_device); } catch { /* ignore */ }
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            try { await _adapter.DisconnectDeviceAsync(_device, timeout.Token); } catch { /* ignore */ }
         }
-        _incoming.Writer.TryComplete();
+        _tx = _rx = null;
+        _device = null;
     }
 }
 

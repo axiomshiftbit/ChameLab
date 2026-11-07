@@ -16,6 +16,8 @@ namespace ChameLab.Controls;
 /// scroll position and open sections between visits.
 /// The views of <see cref="Preload"/> are built ahead, one per idle moment once the shown page is
 /// up, and laid out unseen once, so even the first visit to a page only shows it.
+/// Android builds only visited pages: constructing a whole view cannot yield mid-frame,
+/// even at idle priority, and warming all pages stalls startup/connection animations.
 /// </summary>
 public class PageHost : Panel
 {
@@ -119,6 +121,7 @@ public class PageHost : Panel
     /// </summary>
     private void QueuePreload()
     {
+        if (System.OperatingSystem.IsAndroid()) return;
         if (_preloadQueued || VisualRoot is null) return;
         _preloadQueued = true;
         Dispatcher.UIThread.Post(PreloadStep, DispatcherPriority.ApplicationIdle);
