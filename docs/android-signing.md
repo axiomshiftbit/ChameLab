@@ -15,19 +15,24 @@ android-tv-date-time, не используются. Keystore и пароли с
 | `ANDROID_KEY_ALIAS` | Alias ключа внутри хранилища |
 | `ANDROID_KEY_PASSWORD` | Пароль этого ключа |
 
-Владелец может создать отдельное JKS-хранилище через Android Studio
-(Build → Generate Signed App Bundle or APK → APK → Create new) либо локально
-через команду:
+Для нового ключа используется отдельное хранилище PKCS12 (`.p12`), создаваемое
+владельцем локально:
 
 ```sh
-keytool -genkeypair -storetype JKS -keyalg RSA -keysize 4096 -validity 10000 \
-  -alias chamelab-release -keystore /безопасный/путь/chamelab-release.jks
+umask 077
+keytool -genkeypair -storetype PKCS12 -keyalg RSA -keysize 4096 \
+  -sigalg SHA256withRSA -validity 10000 -alias chamelab-release \
+  -keystore /безопасный/путь/chamelab-release.p12 \
+  -dname "CN=ChameLab, OU=Release, O=ChameLab"
 ```
 
 Пароли вводятся интерактивно; их не следует указывать в аргументах, сообщениях
 или выводить для проверки. Значения секретов добавляются самим владельцем
 непосредственно в GitHub. Сохраните резервную копию хранилища и паролей вне репозитория:
 последующие обновления APK должны использовать тот же ключ.
+Для PKCS12 в `ANDROID_KEYSTORE_PASSWORD` и `ANDROID_KEY_PASSWORD` указывается
+одинаковый пароль. Уже существующий ключ можно перенести из JKS через
+`keytool -importkeystore` в отдельный файл PKCS12 с сохранением ключа и сертификата.
 
 - Релизная подпись используется только в сборке тега версии `v…` через Push handler.
   Если любого из четырёх секретов нет, сборка завершается ошибкой. Подмены

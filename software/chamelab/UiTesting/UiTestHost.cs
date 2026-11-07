@@ -60,7 +60,8 @@ public sealed class UiTestHost : ContentControl
                 {
                     File.WriteAllText(Path.Combine(OutputDirectory, "progress.json"), JsonSerializer.Serialize(new
                     {
-                        Page = page, Language = language, Theme = theme.ToString(), Completed = cases.Count
+                        Page = page, Language = language, Theme = theme.ToString(), Completed = cases.Count,
+                        ManagedBytes = GC.GetTotalMemory(false), WorkingSetBytes = Environment.WorkingSet
                     }));
                     Application.Current!.RequestedThemeVariant = theme;
                     var scene = LayoutScenarios.Create(page, language);
@@ -92,6 +93,12 @@ public sealed class UiTestHost : ContentControl
                         }
                     }
                     if (scene.Child?.DataContext is ViewModels.PageViewModelBase vm) await vm.OnDeactivatedAsync();
+                    Content = null;
+                    await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+                    // Each scenario constructs an isolated page/model graph. Release these
+                    // fixtures regularly: native render resources can otherwise exhaust a
+                    // small emulator before Mono sees enough managed allocations to collect.
+                    if (cases.Count % LayoutScenarios.Pages.Length == 0) GC.Collect();
                 }
             }
             File.WriteAllText(Path.Combine(OutputDirectory, "result.json"), JsonSerializer.Serialize(new

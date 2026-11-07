@@ -38,7 +38,9 @@ internal static class AndroidUi
                 await Adb(["shell", "run-as", Package, "cp", "/data/local/tmp/chamelab-ui-request.json", "files/ui-results/request.json"]);
                 await Adb(["shell", "rm", "/data/local/tmp/chamelab-ui-request.json"]);
                 var activities = Encoding.UTF8.GetString(await Adb(["shell", "cmd", "package", "resolve-activity", "--brief", Package], false));
-                var component = activities.Split('\n').Select(s => s.Trim()).LastOrDefault(s => s.Contains('/'));
+                // API 23 has no `cmd package`; its shell error contains a slash too.
+                var component = activities.Split('\n').Select(s => s.Trim())
+                    .LastOrDefault(s => s.StartsWith(Package + "/", StringComparison.Ordinal) && !s.Any(char.IsWhiteSpace));
                 if (component is not null) await Adb(["shell", "am", "start", "-W", "-n", component]);
                 else await Adb(["shell", "monkey", "-p", Package, "-c", "android.intent.category.LAUNCHER", "1"]);
                 JsonNode? report = null;

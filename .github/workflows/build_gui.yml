@@ -206,8 +206,8 @@ jobs:
             [[ -n "${!name}" ]] || { echo "::error::Missing release signing secret: $name"; exit 1; }
           done
           mkdir -p "$RUNNER_TEMP/chamelab-signing"
-          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/chamelab-signing/release.keystore"
-          chmod 600 "$RUNNER_TEMP/chamelab-signing/release.keystore"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/chamelab-signing/release.p12"
+          chmod 600 "$RUNNER_TEMP/chamelab-signing/release.p12"
       - name: Publish development APKs without release credentials
         if: ${{ !inputs.sign-android }}
         run: |
@@ -234,7 +234,7 @@ jobs:
               -p:ApplicationDisplayVersion=${{ needs.version.outputs.version }} \
               -p:ApplicationVersion=${{ needs.version.outputs.code }} \
               -p:AndroidKeyStore=true \
-              -p:AndroidSigningKeyStore="$RUNNER_TEMP/chamelab-signing/release.keystore" \
+              -p:AndroidSigningKeyStore="$RUNNER_TEMP/chamelab-signing/release.p12" \
               -p:AndroidSigningKeyAlias="$KEY_ALIAS" \
               -p:AndroidSigningKeyPass=env:KEY_PASSWORD \
               -p:AndroidSigningStorePass=env:KEYSTORE_PASSWORD -o "publish/$rid"
@@ -242,7 +242,7 @@ jobs:
           done
       - name: Delete temporary signing material
         if: ${{ always() && inputs.sign-android }}
-        run: rm -f "$RUNNER_TEMP/chamelab-signing/release.keystore"
+        run: rm -f "$RUNNER_TEMP/chamelab-signing/release.p12"
       - name: Upload release artifacts
         uses: actions/upload-artifact@v7
         with:
