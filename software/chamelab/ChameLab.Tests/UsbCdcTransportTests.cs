@@ -144,23 +144,21 @@ public class UsbCdcTransportTests
     {
         // The firmware resets if a second USB reply comes while the first is still uncollected.
         var host = new Host();
+        using var writes = new SemaphoreSlim(0);
+        host.Connection.AfterWrite = () => writes.Release();
         await using var protocol = new ChameleonConnection(new UsbCdcTransport(host, "usb1", "Chameleon"));
         await protocol.OpenAsync();
         var first = FrameCodec.Encode(Command.GetAppVersion);
         var version = protocol.SendAsync(Command.GetAppVersion);
         var battery = protocol.SendAsync(Command.GetBatteryInfo);
+        Assert.True(await writes.WaitAsync(TimeSpan.FromSeconds(5)), "First request was not written.");
         await Task.Delay(200);
         lock (host.Connection.Written) Assert.Equal(first, host.Connection.Written.ToArray());
 
         host.Connection.Reads.Enqueue(FrameCodec.Encode(Command.GetAppVersion, [1, 2]));
         await version.WaitAsync(TimeSpan.FromSeconds(5));
         var second = FrameCodec.Encode(Command.GetBatteryInfo);
-        for (var i = 0; i < 500; i++)
-        {
-            lock (host.Connection.Written)
-                if (host.Connection.Written.Count == first.Length + second.Length) break;
-            await Task.Delay(10);
-        }
+        Assert.True(await writes.WaitAsync(TimeSpan.FromSeconds(5)), "Second request was not written after the reply.");
         lock (host.Connection.Written) Assert.Equal(first.Concat(second), host.Connection.Written);
         host.Connection.Reads.Enqueue(FrameCodec.Encode(Command.GetBatteryInfo, [3]));
         await battery.WaitAsync(TimeSpan.FromSeconds(5));
