@@ -301,7 +301,13 @@ static void system_off_enter(void) {
     ret_code_t ret;
     m_system_off_processing = true;
     // Save tag data
-    tag_emulation_save();
+    if (!tag_emulation_save() && !g_is_low_battery_shutdown) {
+        // Keep unsaved slot data in RAM and retry later. Low-battery shutdown
+        // remains mandatory when there is no energy to keep the device running.
+        m_system_off_processing = false;
+        sleep_timer_start(settings_get_sleep_timeout());
+        return;
+    }
 
     if (g_is_low_battery_shutdown) {
         // Don't create too complex animations, just blink LED1 three times.
@@ -593,7 +599,7 @@ static void cycle_slot(bool dec) {
         slot_new = tag_emulation_slot_find_next(slot_now);
     }
     // Update status only if the new card slot switch is valid
-    tag_emulation_change_slot(slot_new, true); // Tell the analog card module that we need to switch card slots
+    if (!tag_emulation_change_slot(slot_new, true)) return;
     // Turn off the LEDs in case we were showing the battery status
     rgb_marquee_stop();
     uint32_t *led_pins = hw_get_led_array();

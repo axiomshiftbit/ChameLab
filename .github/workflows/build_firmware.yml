@@ -73,6 +73,7 @@ jobs:
       - name: Test allocation failures, slot metadata and shutdown cancellation
         run: |
           python3 firmware/tests/test_slot_metadata.py
+          python3 firmware/tests/test_slot_save_retry.py
           python3 firmware/tests/test_lf_allocations.py
           python3 firmware/tests/test_lf_circular_buffer.py
           python3 firmware/tests/test_sleep_cancellation.py

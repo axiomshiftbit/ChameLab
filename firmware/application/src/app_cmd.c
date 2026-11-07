@@ -41,11 +41,12 @@ extern void nfc_tag_14a_set_sniff_passive(bool passive);
 NRF_LOG_MODULE_REGISTER();
 
 
-static void change_slot_auto(uint8_t slot_new) {
+static bool change_slot_auto(uint8_t slot_new) {
     uint8_t slot_now = tag_emulation_get_slot();
     device_mode_t mode = get_device_mode();
-    tag_emulation_change_slot(slot_new, mode != DEVICE_MODE_READER);
+    if (!tag_emulation_change_slot(slot_new, mode != DEVICE_MODE_READER)) return false;
     apply_slot_change(slot_now, slot_new);
+    return true;
 }
 
 static data_frame_tx_t *cmd_processor_get_app_version(uint16_t cmd, uint16_t status, uint16_t length, uint8_t *data) {
@@ -1152,8 +1153,7 @@ static data_frame_tx_t *cmd_processor_set_active_slot(uint16_t cmd, uint16_t sta
     if (length != 1 || data[0] >= TAG_MAX_SLOT_NUM) {
         return data_frame_make(cmd, STATUS_PAR_ERR, 0, NULL);
     }
-    change_slot_auto(data[0]);
-    return data_frame_make(cmd, STATUS_SUCCESS, 0, NULL);
+    return data_frame_make(cmd, change_slot_auto(data[0]) ? STATUS_SUCCESS : STATUS_FLASH_WRITE_FAIL, 0, NULL);
 }
 
 static data_frame_tx_t *cmd_processor_set_slot_tag_type(uint16_t cmd, uint16_t status, uint16_t length, uint8_t *data) {
@@ -1225,6 +1225,7 @@ static data_frame_tx_t *cmd_processor_set_slot_enable(uint16_t cmd, uint16_t sta
     }
 
     uint8_t slot_now = payload->slot_index;
+    bool was_enabled = is_slot_enabled(slot_now, payload->sense_type);
     tag_emulation_slot_set_enable(slot_now, payload->sense_type, payload->enabled);
     if ((!payload->enabled) &&
             (!is_slot_enabled(slot_now, payload->sense_type == TAG_SENSE_HF ? TAG_SENSE_LF : TAG_SENSE_HF))) {
@@ -1234,15 +1235,17 @@ static data_frame_tx_t *cmd_processor_set_slot_enable(uint16_t cmd, uint16_t sta
         if (slot_prev == slot_now) {
             set_slot_light_color(RGB_MAGENTA);
         } else {
-            change_slot_auto(slot_prev);
+            if (!change_slot_auto(slot_prev)) {
+                tag_emulation_slot_set_enable(slot_now, payload->sense_type, was_enabled);
+                return data_frame_make(cmd, STATUS_FLASH_WRITE_FAIL, 0, NULL);
+            }
         }
     }
     return data_frame_make(cmd, STATUS_SUCCESS, 0, NULL);
 }
 
 static data_frame_tx_t *cmd_processor_slot_data_config_save(uint16_t cmd, uint16_t status, uint16_t length, uint8_t *data) {
-    tag_emulation_save();
-    return data_frame_make(cmd, STATUS_SUCCESS, 0, NULL);
+    return data_frame_make(cmd, tag_emulation_save() ? STATUS_SUCCESS : STATUS_FLASH_WRITE_FAIL, 0, NULL);
 }
 
 static data_frame_tx_t *cmd_processor_get_active_slot(uint16_t cmd, uint16_t status, uint16_t length, uint8_t *data) {

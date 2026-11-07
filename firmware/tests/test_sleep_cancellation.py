@@ -41,7 +41,7 @@ volatile bool g_is_ble_connected, m_is_field_on;
 bool g_is_tag_emulating;
 static uint32_t m_reset_source, leds[8];
 static int usb, mode, hook, shutdowns, restores, animation, starts;
-static bool requested=true;
+static bool requested=true, save_fail;
 static int nrfx_power_usbstatus_get(void) { return usb; }
 static int app_timer_create(int *t,int m,void (*cb)(void *)) { return 0; }
 static int app_timer_stop(int t) { return 0; }
@@ -55,7 +55,7 @@ static void activity(int stage) {
     else m_system_off_processing=false;
     sleep_timer_stop();
 }
-static void tag_emulation_save(void) { activity(1); }
+static bool tag_emulation_save(void) { activity(1); return !save_fail; }
 static void rgb_marquee_stop(void) {}
 static void hw_rgb_pwm_release(void) {}
 static void set_slot_light_color(int c) {}
@@ -95,7 +95,17 @@ int main(void) {
     timer_sleep_event_handle(NULL);
     sleep_system_run(system_off_enter,system_on);
     assert(shutdowns==0);
-    puts("Shutdown cancellation: 180 interleavings PASS");
+    g_is_ble_connected=false; mode=0; hook=0; save_fail=true;
+    g_is_low_battery_shutdown=false; shutdowns=starts=0;
+    timer_sleep_event_handle(NULL);
+    sleep_system_run(system_off_enter,system_on);
+    assert(shutdowns==0 && starts==1 && !m_system_off_processing);
+    // An empty battery cannot keep RAM powered indefinitely after a write failure.
+    g_is_low_battery_shutdown=true;
+    timer_sleep_event_handle(NULL);
+    sleep_system_run(system_off_enter,system_on);
+    assert(shutdowns==1);
+    puts("Shutdown cancellation: 180 interleavings and flash failure PASS");
 }
 '''
 with tempfile.TemporaryDirectory(prefix="chamelab-sleep-") as directory:

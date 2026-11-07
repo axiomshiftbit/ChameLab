@@ -9,7 +9,7 @@ Each release (v1.4.35 on) opens with `### Summary`, up to three of its most impo
 
 ## [unreleased][unreleased]
 
-## [v1.5.2][2026-11-07] · firmware v2.3.17-cl
+## [v1.5.2][2026-11-07] · firmware v2.3.18-cl
 ### Summary
  - Android: smoother page navigation, BLE recovery after returning to the app, and an unclipped startup logo.
  - Cards: one scrollable details area, adaptive save buttons and explanations of Gen detection results.
@@ -25,9 +25,10 @@ Each release (v1.4.35 on) opens with `### Summary`, up to three of its most impo
  - Dictionaries accept 4-, 6- and 16-byte keys; applicability depends on the card protocol. MIFARE Classic access conditions and value block handling have been checked.
  - App and firmware updates use axiomshiftbit/ChameLab releases. DFU validates the model, ZIP structure, image and release-package SHA-256, and each transferred object's CRC32 and offset. Success requires reconnection to the original device and version verification. Saved recovery jobs and encrypted slot/settings backups are available.
  - Firmware isolates commands and replies across USB/BLE sessions and resets MTU between connections; HF/APDU buffer bounds, CRC/WTX and flash completion handling are corrected.
- - Firmware 2.3.17-cl safely handles LF codec/buffer allocation failures and frees partial allocations; LF sample queue access is protected between interrupts and the main loop.
- - Firmware 2.3.17-cl validates corrupt slot names and UID sizes, fixes a response overflow with 255-byte ATS data, and safely ends HF selection when slot data is unavailable.
- - Firmware 2.3.17-cl cancels pending sleep when BLE, USB or a field becomes active during the shutdown animation; BLE advertising stops before final hardware shutdown.
+ - Firmware 2.3.18-cl safely handles LF codec/buffer allocation failures and frees partial allocations; LF sample queue access is protected between interrupts and the main loop.
+ - Firmware 2.3.18-cl validates corrupt slot names and UID sizes, fixes a response overflow with 255-byte ATS data, and safely ends HF selection when slot data is unavailable.
+ - Firmware 2.3.18-cl cancels pending sleep when BLE, USB or a field becomes active during the shutdown animation; BLE advertising stops before final hardware shutdown.
+ - Firmware no longer marks failed flash writes as saved: the command reports failure and slot switching preserves the current RAM copy for retry. Normal sleep is postponed if saving fails; low-battery shutdown remains mandatory.
  - Regression checks cover allocation failures, corrupt metadata, concurrent LF queue access and sleep cancellation. README clarifies downloads and DFU recovery.
 
 ## [v1.4.35][2026-11-05] · firmware v2.3.12-cl

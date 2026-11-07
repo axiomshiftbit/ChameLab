@@ -19,7 +19,7 @@ command-line client.
 
 ## Version 1.5.2
 
-App **1.5.2** ships with firmware **2.3.17-cl**. This release fixes the Android splash,
+App **1.5.2** ships with firmware **2.3.18-cl**. This release fixes the Android splash,
 BLE recovery and card details layout, and restores Gen explanations. Firmware improves
 handling of memory allocation failures, slot metadata, LF samples and sleep cancellation
 on connection. See the [changelog](CHANGELOG.md) for details.

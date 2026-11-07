@@ -79,7 +79,7 @@ STATIC_ASSERT(sizeof(tag_slot_config_t) == TAG_SLOT_CONFIG_CURRENT_SIZE);
 // The most basic emulation card initialization program
 void tag_emulation_init(void);
 // Some of the data stored in RAM can be saved to Flash through this interface
-void tag_emulation_save(void);
+bool tag_emulation_save(void);
 
 // Starting and ending of the emulation card
 void tag_emulation_load_data(void);
@@ -105,7 +105,7 @@ void tag_emulation_set_slot(uint8_t index);
 // Get the card slot currently used
 uint8_t tag_emulation_get_slot(void);
 // Switch the card slot to control whether the passing parameter control is closed during the switching period to listen to
-void tag_emulation_change_slot(uint8_t index, bool sense_disable);
+bool tag_emulation_change_slot(uint8_t index, bool sense_disable);
 // Get the card slot to enable the state
 bool is_slot_enabled(uint8_t slot, tag_sense_type_t sense_type);
 // Set the card slot to enable
