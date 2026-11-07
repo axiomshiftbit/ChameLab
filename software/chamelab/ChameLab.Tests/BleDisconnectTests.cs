@@ -11,9 +11,10 @@ namespace ChameLab.Tests;
 public class BleDisconnectTests
 {
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task DisconnectSkipsCccdAndBoundsMissingNativeCallback(bool missingCallback)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task DisconnectSkipsCccdAndBoundsMissingNativeCallback(bool missingCallback, bool ignoresCancellation)
     {
         var stopUpdates = false;
         var disconnects = 0;
@@ -43,7 +44,9 @@ public class BleDisconnectTests
         {
             disconnects++;
             Assert.True(ct.CanBeCanceled);
-            return missingCallback ? Task.Delay(Timeout.Infinite, ct) : Task.CompletedTask;
+            return missingCallback
+                ? Task.Delay(Timeout.Infinite, ignoresCancellation ? CancellationToken.None : ct)
+                : Task.CompletedTask;
         }
         var transport = new BleTransport(Guid.NewGuid(), "Synthetic BLE", adapter);
         await transport.ConnectAsync();

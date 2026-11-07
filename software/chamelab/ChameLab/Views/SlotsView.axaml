@@ -314,7 +314,10 @@
       </Border>
 
       <ScrollViewer Grid.Row="1" IsVisible="{Binding HasPane}" IsEnabled="{Binding !IsAsking}">
-        <StackPanel Classes="panestack" DataContext="{Binding Editor}" x:DataType="vm:SlotEditorViewModel">
+        <c:DeferredContent IsActive="{Binding HasPane}">
+            <c:DeferredContent.ContentTemplate>
+              <DataTemplate x:DataType="vm:SlotsViewModel">
+<StackPanel Classes="panestack" DataContext="{Binding Editor}" x:DataType="vm:SlotEditorViewModel">
 
           <!-- ===================== HF (with the emulator settings of its card) ===================== -->
           <Border Classes="card">
@@ -454,6 +457,9 @@
             </StackPanel>
           </Border>
         </StackPanel>
+              </DataTemplate>
+            </c:DeferredContent.ContentTemplate>
+          </c:DeferredContent>
       </ScrollViewer>
 
       <!-- Lightbox: dims and blocks the editor while a question waits for an answer. -->

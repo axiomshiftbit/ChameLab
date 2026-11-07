@@ -137,14 +137,13 @@ public sealed partial class CardsViewModel
                 if (_writeSession is null)
                 {
                     if (inspection.Gen4) SelectedGeneration = MagicGeneration.Gen4;
-                    else if (inspection.Generation is { } gen) SelectedGeneration = gen;
+                    else if (inspection.GenerationConfidence == DetectionConfidence.Confirmed && inspection.Generation is { } gen) SelectedGeneration = gen;
                     else if (inspection.Type.IsMifareClassic()) { SelectedGeneration = MagicGeneration.Gen2; WriteGen2Block0 = false; }
                 }
                 _writeInspection = inspection;
                 HasWriteTarget = CompatibleTarget(inspection);
-                var kind = inspection.Gen4 ? "Gen4 GTU / Ultimate"
-                    : inspection.Generation?.Label() ?? Strings.Writer_GenerationUnknown;
-                TargetSummary = $"{Strings.Writer_Found}: {inspection.Type.DisplayName()}\n{kind}";
+                var kind = inspection.GenerationSummary;
+                TargetSummary = $"{Strings.Writer_Found}: {inspection.Type.DisplayName()}\n{kind}\n{inspection.GenerationExplanation}";
                 if (inspection.Memory is { } dump)
                 {
                     TargetSummary += "\n" + string.Format(Strings.Writer_MemoryResult, inspection.ReadableDataBlocks,

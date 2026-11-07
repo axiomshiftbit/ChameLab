@@ -308,13 +308,29 @@
     <Panel Grid.Row="0" Grid.RowSpan="3" Background="#80000000"
            DataContext="{Binding Firmware}" IsVisible="{Binding IsDialogOpen}" x:DataType="vm:FirmwareUpdateViewModel">
       <!-- Stretched up to MaxWidth (and centered there), so the width doesn't follow the step text. -->
+      <c:DeferredContent IsActive="{Binding IsDialogOpen}">
+        <c:DeferredContent.ContentTemplate>
+          <DataTemplate x:DataType="vm:FirmwareUpdateViewModel">
       <Border Classes="card" MaxWidth="520" Margin="16" VerticalAlignment="Center">
+        <ScrollViewer MaxHeight="600">
         <StackPanel Spacing="14">
           <TextBlock Text="{Binding InstallTitle}" Classes="h2" TextWrapping="Wrap" />
 
           <!-- Confirm -->
           <StackPanel Spacing="10" IsVisible="{Binding IsConfirming}">
             <TextBlock TextWrapping="Wrap" Text="{Binding InstallHint}" />
+            <StackPanel Spacing="8" IsVisible="{Binding CanBackup}">
+              <CheckBox IsChecked="{Binding BackupBeforeUpdate}">
+                <TextBlock Text="{x:Static loc:Strings.Backup_BeforeUpdate}" TextWrapping="Wrap" />
+              </CheckBox>
+              <StackPanel Spacing="8" IsVisible="{Binding BackupBeforeUpdate}">
+                <TextBlock Text="{x:Static loc:Strings.Backup_PasswordHint}" TextWrapping="Wrap" Classes="caption" />
+                <TextBox Text="{Binding BackupPassword}" PasswordChar="●" MaxLength="1024" PlaceholderText="{x:Static loc:Strings.Backup_Password}" />
+                <TextBox Text="{Binding BackupPasswordRepeat}" PasswordChar="●" MaxLength="1024" PlaceholderText="{x:Static loc:Strings.Backup_RepeatPassword}" />
+              </StackPanel>
+              <TextBlock IsVisible="{Binding !BackupBeforeUpdate}" Text="{x:Static loc:Strings.Backup_Skipped}" Classes="caption" TextWrapping="Wrap" />
+            </StackPanel>
+            <TextBlock Text="{Binding Error}" TextWrapping="Wrap" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
             <Border Classes="inset" Padding="0" IsVisible="{Binding InstallNotes, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
               <ScrollViewer MaxHeight="260" Padding="14,10">
                 <c:MarkdownView Markdown="{Binding InstallNotes}" TextElement.FontSize="12" />
@@ -327,6 +343,20 @@
           </StackPanel>
 
           <!-- Installing -->
+          <StackPanel Spacing="10" IsVisible="{Binding IsRecovery}">
+            <TextBlock Text="{Binding StepText}" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Static loc:Strings.Firmware_RecoveryInstructions}" TextWrapping="Wrap" Classes="caption" />
+            <TextBlock Text="{Binding Error}" TextWrapping="Wrap" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            <WrapPanel Orientation="Horizontal" HorizontalAlignment="Right">
+              <Button Content="{x:Static loc:Strings.Common_Close}" Command="{Binding CloseCommand}" Margin="4" b:DialogKeys.IsCancel="True" />
+              <Button Command="{Binding DiscardRecoveryCommand}" Margin="4" >
+                <TextBlock Text="{x:Static loc:Strings.Firmware_RecoveryDiscard}" TextWrapping="Wrap" TextAlignment="Center" />
+              </Button>
+              <Button Classes="accent" Content="{x:Static loc:Strings.Main_Retry}" Command="{Binding RetryCommand}"
+                      IsVisible="{Binding CanRetry}" Margin="4" b:DialogKeys.IsDefault="True" />
+            </WrapPanel>
+          </StackPanel>
+
           <StackPanel Spacing="10" IsVisible="{Binding IsInstalling}">
             <TextBlock Text="{Binding StepText}" TextWrapping="Wrap" />
             <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}"
@@ -353,10 +383,54 @@
             </StackPanel>
           </StackPanel>
         </StackPanel>
+        </ScrollViewer>
       </Border>
+          </DataTemplate>
+        </c:DeferredContent.ContentTemplate>
+      </c:DeferredContent>
     </Panel>
 
     <!-- ==================== Exit hint ==================== -->
+    <Panel Grid.Row="0" Grid.RowSpan="3" Background="#80000000" DataContext="{Binding Backups}"
+           IsVisible="{Binding IsOpen}" x:DataType="vm:DeviceBackupViewModel">
+      <c:DeferredContent IsActive="{Binding IsOpen}">
+        <c:DeferredContent.ContentTemplate>
+          <DataTemplate x:DataType="vm:DeviceBackupViewModel">
+      <Border Classes="card" MaxWidth="520" Margin="16" VerticalAlignment="Center">
+        <ScrollViewer MaxHeight="600">
+          <StackPanel Spacing="12">
+            <TextBlock Text="{x:Static loc:Strings.Backup_Title}" Classes="h2" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Static loc:Strings.Backup_Scope}" Classes="caption" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding Error}" TextWrapping="Wrap" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsWorking}" />
+            <StackPanel Spacing="10" IsEnabled="{Binding !IsWorking}">
+              <WrapPanel ItemSpacing="8" LineSpacing="8">
+                <Button Command="{Binding ImportCommand}" >
+                <TextBlock Text="{x:Static loc:Strings.Backup_Import}" TextWrapping="Wrap" TextAlignment="Center" />
+              </Button>
+                <Button Command="{Binding ExportCommand}" IsEnabled="{Binding HasFile}" >
+                <TextBlock Text="{x:Static loc:Strings.Backup_Export}" TextWrapping="Wrap" TextAlignment="Center" />
+              </Button>
+              </WrapPanel>
+              <TextBox Text="{Binding Password}" PasswordChar="●" MaxLength="1024" PlaceholderText="{x:Static loc:Strings.Backup_Password}" IsVisible="{Binding HasFile}" />
+              <Button Command="{Binding UnlockCommand}" IsVisible="{Binding HasFile}" >
+                <TextBlock Text="{x:Static loc:Strings.Backup_Unlock}" TextWrapping="Wrap" TextAlignment="Center" />
+              </Button>
+              <TextBlock Text="{x:Static loc:Strings.Backup_RestoreWarning}" TextWrapping="Wrap" IsVisible="{Binding CanRestore}" />
+              <Button Classes="accent" Command="{Binding RestoreCommand}" IsVisible="{Binding CanRestore}" >
+                <TextBlock Text="{x:Static loc:Strings.Backup_ConfirmRestore}" TextWrapping="Wrap" TextAlignment="Center" />
+              </Button>
+              <Button Content="{x:Static loc:Strings.Common_Close}" Command="{Binding CloseCommand}" HorizontalAlignment="Right" b:DialogKeys.IsCancel="True" />
+            </StackPanel>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+          </DataTemplate>
+        </c:DeferredContent.ContentTemplate>
+      </c:DeferredContent>
+    </Panel>
+
     <!-- After Back on the start page; a second Back within a moment closes the app. -->
     <Border Grid.Row="0" Grid.RowSpan="2" VerticalAlignment="Bottom" HorizontalAlignment="Center"
             Margin="16,0,16,24" Padding="16,9" CornerRadius="18" IsHitTestVisible="False"

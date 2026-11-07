@@ -3741,4 +3741,187 @@ Bytes iguales: {1}; distintos: {2}; desconocidos: {3}.</value>
   <data name="Firmware_ChargeBeforeUpdate" xml:space="preserve">
     <value>Before updating over Bluetooth, charge Chameleon to at least 20% and wait for a battery measurement.</value>
   </data>
+  <data name="Firmware_RecoveryTitle" xml:space="preserve">
+    <value>Recover firmware</value>
+  </data>
+  <data name="Firmware_RecoveryInvalid" xml:space="preserve">
+    <value>The saved recovery task is damaged or incompatible. It has not been overwritten.</value>
+  </data>
+  <data name="Firmware_RecoveryReady" xml:space="preserve">
+    <value>Saved update: {0}, {1}. The application package has passed the integrity and compatibility checks again.</value>
+  </data>
+  <data name="Firmware_RecoveryEmpty" xml:space="preserve">
+    <value>There is no usable recovery task on this device. Recovery here is available for updates started by this application. If your Chameleon starts normally, connect it and choose a firmware package.</value>
+  </data>
+  <data name="Firmware_RecoveryInstructions" xml:space="preserve">
+    <value>Power the same Chameleon and keep the original USB or Bluetooth connection available. Retry reinstalls the saved application from the beginning. The bootloader is not replaced. If the device is not found, reconnect USB or enter DFU with its buttons and retry.</value>
+  </data>
+  <data name="Firmware_RecoveryDiscard" xml:space="preserve">
+    <value>Discard saved task</value>
+  </data>
+  <data name="Backup_Title" xml:space="preserve">
+    <value>Encrypted backup</value>
+  </data>
+  <data name="Backup_IncompleteRead" xml:space="preserve">
+    <value>The device returned incomplete memory data. Reading stopped.</value>
+  </data>
+  <data name="Backup_InvalidOrPassword" xml:space="preserve">
+    <value>Incorrect password, damaged file or unsupported backup format.</value>
+  </data>
+  <data name="Backup_PasswordHint" xml:space="preserve">
+    <value>Enter the same password twice, at least 12 characters. Keep it safely: the application cannot recover it. The encrypted copy stays on this phone or computer.</value>
+  </data>
+  <data name="Backup_Busy" xml:space="preserve">
+    <value>A backup operation is already running.</value>
+  </data>
+  <data name="Backup_SaveFailed" xml:space="preserve">
+    <value>The encrypted backup could not be saved and verified. Firmware update has not started.</value>
+  </data>
+  <data name="Backup_NotSupported" xml:space="preserve">
+    <value>This firmware cannot restore every setting in the backup. No data has changed.</value>
+  </data>
+  <data name="Backup_VerificationFailed" xml:space="preserve">
+    <value>Readback verification found a mismatch. Keep the backup and retry.</value>
+  </data>
+  <data name="Backup_LocalAvailable" xml:space="preserve">
+    <value>A local encrypted copy is available. Export it to keep a copy outside the application, or enter its password to inspect it before restoring.</value>
+  </data>
+  <data name="Backup_None" xml:space="preserve">
+    <value>No local backup. Create one before a firmware update, or import a .clbackup file.</value>
+  </data>
+  <data name="Backup_Imported" xml:space="preserve">
+    <value>File selected. Enter its password to check it.</value>
+  </data>
+  <data name="Backup_Exported" xml:space="preserve">
+    <value>Encrypted copy exported. Keep the file and password separately.</value>
+  </data>
+  <data name="Backup_Preview" xml:space="preserve">
+    <value>{0} · {1:g} · Slots: {2}. Password and integrity verified.</value>
+  </data>
+  <data name="Backup_ConnectOriginal" xml:space="preserve">
+    <value>Connect the original Chameleon and check the backup again to restore.</value>
+  </data>
+  <data name="Backup_Restoring" xml:space="preserve">
+    <value>Restoring slot {0} of 8…</value>
+  </data>
+  <data name="Backup_Restored" xml:space="preserve">
+    <value>Slots and settings restored and verified by reading them back.</value>
+  </data>
+  <data name="Backup_RestoreInterrupted" xml:space="preserve">
+    <value>Restoration did not finish. Some data may have changed. Keep the file and retry on the same device.</value>
+  </data>
+  <data name="Backup_BeforeUpdate" xml:space="preserve">
+    <value>Back up slots and settings before updating</value>
+  </data>
+  <data name="Backup_Password" xml:space="preserve">
+    <value>Backup password</value>
+  </data>
+  <data name="Backup_RepeatPassword" xml:space="preserve">
+    <value>Repeat the password</value>
+  </data>
+  <data name="Backup_Skipped" xml:space="preserve">
+    <value>Updating without a new backup of slots and settings.</value>
+  </data>
+  <data name="Backup_Creating" xml:space="preserve">
+    <value>Creating an encrypted backup…</value>
+  </data>
+  <data name="Backup_Reading" xml:space="preserve">
+    <value>Reading slot {0} of 8…</value>
+  </data>
+  <data name="Backup_Import" xml:space="preserve">
+    <value>Import file</value>
+  </data>
+  <data name="Backup_Export" xml:space="preserve">
+    <value>Export encrypted copy</value>
+  </data>
+  <data name="Backup_Unlock" xml:space="preserve">
+    <value>Check backup</value>
+  </data>
+  <data name="Backup_RestoreWarning" xml:space="preserve">
+    <value>Restoration replaces all eight slots and device settings. Do not disconnect until verification finishes.</value>
+  </data>
+  <data name="Backup_ConfirmRestore" xml:space="preserve">
+    <value>Replace slots and settings</value>
+  </data>
+  <data name="Storage_FileTooLarge" xml:space="preserve">
+    <value>This file is too large for this operation.</value>
+  </data>
+  <data name="Cards_GenerationConfirmed" xml:space="preserve">
+    <value>{0} — protocol confirmed</value>
+  </data>
+  <data name="Cards_GenerationEstimated" xml:space="preserve">
+    <value>Gen3 — presumed</value>
+  </data>
+  <data name="Cards_GenerationProtocolConfirmed" xml:space="preserve">
+    <value>Read-only probes confirmed the protocol response. This does not certify the manufacturer or every write operation.</value>
+  </data>
+  <data name="Cards_GenerationReadHint" xml:space="preserve">
+    <value>Block 0 was readable without authentication. Other compatible cards may behave the same way; UID writing is not confirmed.</value>
+  </data>
+  <data name="Cards_GenerationNotProven" xml:space="preserve">
+    <value>Gen2, CUID and FUID cannot be reliably distinguished by these read-only probes. Unknown does not mean genuine or defective.</value>
+  </data>
+  <data name="Capabilities_Title" xml:space="preserve">
+    <value>Firmware capabilities</value>
+  </data>
+  <data name="Capabilities_Supported" xml:space="preserve">
+    <value>Supported by the connected firmware.</value>
+  </data>
+  <data name="Capabilities_Unsupported" xml:space="preserve">
+    <value>Unavailable: the connected firmware does not advertise the required commands.</value>
+  </data>
+  <data name="Capabilities_Unknown" xml:space="preserve">
+    <value>The firmware did not report its capabilities. Compatibility will be checked when the operation runs.</value>
+  </data>
+  <data name="Capabilities_Unavailable" xml:space="preserve">
+    <value>{0}: the connected firmware does not support the required commands.</value>
+  </data>
+  <data name="Capabilities_InvalidReply" xml:space="preserve">
+    <value>Invalid firmware capability report.</value>
+  </data>
+  <data name="Capabilities_ScanLimited" xml:space="preserve">
+    <value>Some scan modes are unavailable in this firmware. See Firmware capabilities on the Chameleon page.</value>
+  </data>
+  <data name="Capabilities_HfScan" xml:space="preserve">
+    <value>HF card scanning</value>
+  </data>
+  <data name="Capabilities_LfScan" xml:space="preserve">
+    <value>EM410x card scanning</value>
+  </data>
+  <data name="Capabilities_ClassicRead" xml:space="preserve">
+    <value>MIFARE Classic reading</value>
+  </data>
+  <data name="Capabilities_ClassicWrite" xml:space="preserve">
+    <value>MIFARE Classic writing</value>
+  </data>
+  <data name="Capabilities_SlotColors" xml:space="preserve">
+    <value>Slot LED colors</value>
+  </data>
+  <data name="Capabilities_LfCycle" xml:space="preserve">
+    <value>Multiple LF cards per slot</value>
+  </data>
+  <data name="Capabilities_BatteryCondition" xml:space="preserve">
+    <value>Battery condition</value>
+  </data>
+  <data name="Capabilities_LongPress" xml:space="preserve">
+    <value>Long press timing</value>
+  </data>
+  <data name="Capabilities_BlePairing" xml:space="preserve">
+    <value>Bluetooth pairing settings</value>
+  </data>
+  <data name="Capabilities_FirmwareUpdate" xml:space="preserve">
+    <value>Application firmware update</value>
+  </data>
+  <data name="Firmware_RecoveryOtherDevice" xml:space="preserve">
+    <value>A recovery task for a different Chameleon is still saved. Complete it or explicitly discard it on the recovery screen before updating this device.</value>
+  </data>
+  <data name="Backup_Scope" xml:space="preserve">
+    <value>Includes slot memory and readable device settings. Bluetooth bonds and the application card library are not included.</value>
+  </data>
+  <data name="Capabilities_ClassicKeySearch" xml:space="preserve">
+    <value>MIFARE Classic key search</value>
+  </data>
+  <data name="Capabilities_UlcKeySearch" xml:space="preserve">
+    <value>Ultralight C key search</value>
+  </data>
 </root>

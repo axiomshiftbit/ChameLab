@@ -12,7 +12,7 @@ namespace ChameLab.ViewModels;
 
 public enum FirmwareCheckState { None, Checking, UpToDate, Available, Failed }
 
-public enum FirmwareDialog { None, Confirm, Installing, Done, Failed }
+public enum FirmwareDialog { None, Confirm, Recovery, Installing, Done, Failed }
 
 /// <summary>
 /// Firmware version check against the GitHub releases (on every connect) and the
@@ -25,6 +25,7 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
 
     private readonly DeviceService _device;
     private readonly FirmwareUpdateService _service;
+    private readonly DeviceBackupService? _backupService;
 
     private FirmwareCheckState _checkState;
     private FirmwareRelease? _latest;
@@ -39,13 +40,15 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
     // Kept for Retry: a failed flash leaves the device waiting in its bootloader.
     private DfuPackage? _package;
     private FirmwareUpdateTarget? _target;
+    private FirmwareVersion? _expectedVersion;
     // How the device was connected when the dialog opened; it is gone while the bootloader runs.
     private bool _overBle;
 
-    public FirmwareUpdateViewModel(DeviceService device, FirmwareUpdateService service)
+    public FirmwareUpdateViewModel(DeviceService device, FirmwareUpdateService service, DeviceBackupService? backupService = null)
     {
         _device = device;
         _service = service;
+        _backupService = backupService;
         CheckCommand = ReactiveCommand.CreateFromTask(() => CheckAsync(force: true));
         InstallLatestCommand = ReactiveCommand.Create(ShowInstallLatest);
         InstallFromFileCommand = ReactiveCommand.CreateFromTask(InstallFromFileAsync);
@@ -53,6 +56,8 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
         RetryCommand = ReactiveCommand.CreateFromTask(InstallAsync);
         CloseCommand = ReactiveCommand.Create(Close);
         OpenReleaseCommand = ReactiveCommand.CreateFromTask(OpenReleaseAsync);
+        OpenRecoveryCommand = ReactiveCommand.CreateFromTask(OpenRecoveryAsync);
+        DiscardRecoveryCommand = ReactiveCommand.CreateFromTask(DiscardRecoveryAsync);
     }
 
     public ICommand CheckCommand { get; }
@@ -62,9 +67,18 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
     public ICommand RetryCommand { get; }
     public ICommand CloseCommand { get; }
     public ICommand OpenReleaseCommand { get; }
+    public ICommand OpenRecoveryCommand { get; }
+    public ICommand DiscardRecoveryCommand { get; }
+    public bool CanRecover => _service.CanRecover;
+    public bool CanBackup => _backupService?.IsSupported == true;
+    public DeviceBackupViewModel? Backups { get; init; }
+    public bool BackupBeforeUpdate { get; set => this.RaiseAndSetIfChanged(ref field, value); } = true;
+    public string BackupPassword { get; set => this.RaiseAndSetIfChanged(ref field, value); } = "";
+    public string BackupPasswordRepeat { get; set => this.RaiseAndSetIfChanged(ref field, value); } = "";
 
     /// <summary>Installing needs the bootloader over USB serial (desktop) or BLE (phones).</summary>
-    public bool CanInstall => _service.CanInstall(_device.Candidate?.Kind);
+    public bool CanInstall => _service.CanInstall(_device.Candidate?.Kind) &&
+        _device.DeviceInfo?.Capabilities.Allows(FirmwareFeature.FirmwareUpdate) == true;
 
     public FirmwareCheckState CheckState
     {
@@ -108,6 +122,7 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
             this.RaiseAndSetIfChanged(ref _dialog, value);
             this.RaisePropertyChanged(nameof(IsDialogOpen));
             this.RaisePropertyChanged(nameof(IsConfirming));
+            this.RaisePropertyChanged(nameof(IsRecovery));
             this.RaisePropertyChanged(nameof(IsInstalling));
             this.RaisePropertyChanged(nameof(IsDone));
             this.RaisePropertyChanged(nameof(IsFailed));
@@ -120,6 +135,7 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
 
     public bool IsDialogOpen => _dialog != FirmwareDialog.None;
     public bool IsConfirming => _dialog == FirmwareDialog.Confirm;
+    public bool IsRecovery => _dialog == FirmwareDialog.Recovery;
     public bool IsInstalling => _dialog == FirmwareDialog.Installing;
     public bool IsDone => _dialog == FirmwareDialog.Done;
     public bool IsFailed => _dialog == FirmwareDialog.Failed;
@@ -222,6 +238,7 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
         _pendingFile = null;
         _package = null;
         _target = null;
+        _expectedVersion = _latest.Version;
         InstallTitle = string.Format(Strings.Firmware_InstallPrompt, _latest.Version);
         SetTransport();
         Error = null;
@@ -232,7 +249,7 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
     {
         if (!CanInstall) return;
         PickedFile? picked;
-        try { picked = await StorageService.OpenAsync(Strings.Firmware_PackageTitle, "zip"); }
+        try { picked = await StorageService.OpenBoundedAsync(Strings.Firmware_PackageTitle, DfuPackage.MaxZipSize, "zip"); }
         catch (Exception ex) { Error = ex.Message; Dialog = FirmwareDialog.Failed; return; }
         if (picked is not { } file) return;
 
@@ -250,6 +267,7 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
         _pendingRelease = null;
         _pendingFile = file.Data;
         _target = null;
+        _expectedVersion = null;
         InstallTitle = string.Format(Strings.Firmware_InstallFromPrompt, file.Name);
         SetTransport();
         Error = null;
@@ -258,6 +276,13 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
 
     private async Task InstallAsync()
     {
+        if (_target is null && CanBackup && BackupBeforeUpdate &&
+            (!EncryptedDeviceBackup.IsValidPassword(BackupPassword) || BackupPassword != BackupPasswordRepeat))
+        {
+            Error = Strings.Backup_PasswordHint;
+            Dialog = FirmwareDialog.Confirm;
+            return;
+        }
         Dialog = FirmwareDialog.Installing;
         Error = null;
         var name = _pendingRelease?.Version.ToString() ?? Strings.Firmware_TheFirmware;
@@ -273,7 +298,21 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
                 _package = await Task.Run(() => DfuPackage.Parse(zip));
             }
             // Prepared before the restart, so a retry still knows which bootloader is this device's.
-            _target ??= _service.PrepareTarget();
+            if (_target is null)
+            {
+                var target = _service.PrepareTarget();
+                _package.RequireModel(target.Device.Model);
+                // Preserve the pending device's backup before creating one for another device.
+                await _service.CheckRecoveryTargetAsync(target.Device);
+                if (CanBackup && BackupBeforeUpdate)
+                {
+                    SetStep(Strings.Backup_Creating);
+                    await _backupService!.CreateAsync(BackupPassword, new Progress<int>(slot =>
+                        SetStep(string.Format(Strings.Backup_Reading, slot), slot / 8.0)));
+                    BackupPassword = ""; BackupPasswordRepeat = "";
+                }
+                _target = target;
+            }
 
             await _service.InstallAsync(_package, _target, new Progress<FirmwareUpdateProgress>(p =>
             {
@@ -285,7 +324,7 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
                     case FirmwareUpdateStep.Flashing: SetStep(string.Format(Strings.Firmware_Flashing, p.Fraction), p.Fraction); break;
                     case FirmwareUpdateStep.Reconnecting: SetStep(Strings.Firmware_WaitingRestart); break;
                 }
-            }), expectedVersion: _pendingRelease?.Version);
+            }), expectedVersion: _expectedVersion);
 
             _package = null;
             _target = null;
@@ -305,10 +344,52 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
 
     private void SetTransport()
     {
-        _overBle = _device.Candidate?.Kind == TransportKind.Ble;
+        _overBle = (_target?.Candidate ?? _device.Candidate)?.Kind == TransportKind.Ble;
         this.RaisePropertyChanged(nameof(InstallNotes));
         this.RaisePropertyChanged(nameof(InstallHint));
         this.RaisePropertyChanged(nameof(KeepConnectedHint));
+    }
+
+    private async Task OpenRecoveryAsync()
+    {
+        if (IsInstalling) return;
+        _pendingRelease = null;
+        _pendingFile = null;
+        _package = null;
+        _target = null;
+        _expectedVersion = null;
+        Error = null;
+        InstallTitle = Strings.Firmware_RecoveryTitle;
+        SetStep(Strings.Firmware_CheckingPackage);
+        Dialog = FirmwareDialog.Installing;
+        try
+        {
+            if (await _service.LoadRecoveryAsync() is { } saved)
+            {
+                _target = _service.PrepareRecovery(saved);
+                _package = saved.Package;
+                _expectedVersion = saved.ExpectedVersion;
+                SetTransport();
+                StepText = string.Format(Strings.Firmware_RecoveryReady, saved.Device.ModelName,
+                    saved.ExpectedVersion?.ToString() ?? Strings.Firmware_TheFirmware);
+            }
+            else StepText = Strings.Firmware_RecoveryEmpty;
+        }
+        catch (Exception ex) { Error = ex.Message; StepText = Strings.Firmware_RecoveryEmpty; }
+        Dialog = FirmwareDialog.Recovery;
+    }
+
+    private async Task DiscardRecoveryAsync()
+    {
+        if (IsInstalling) return;
+        try
+        {
+            await _service.DiscardRecoveryAsync();
+            _package = null;
+            _target = null;
+            Dialog = FirmwareDialog.None;
+        }
+        catch (Exception ex) { Error = ex.Message; }
     }
 
     private void SetStep(string text, double? fraction = null)
@@ -321,6 +402,7 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
     private void Close()
     {
         if (IsInstalling) return;
+        BackupPassword = ""; BackupPasswordRepeat = "";
         Dialog = FirmwareDialog.None;
     }
 

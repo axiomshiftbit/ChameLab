@@ -12,6 +12,7 @@ public interface IKeyValueStore
 {
     string? Read(string key);
     void Write(string key, string value);
+    void WriteDurable(string key, string value) => Write(key, value);
 }
 
 /// <summary>Stores each key as a file under the per-user application data folder.</summary>
@@ -29,13 +30,22 @@ public sealed class FileKeyValueStore(string? root = null) : IKeyValueStore
         return File.Exists(path) ? File.ReadAllText(path) : null;
     }
 
-    public void Write(string key, string value)
+    public void Write(string key, string value) => WriteCore(key, value, durable: false);
+    public void WriteDurable(string key, string value) => WriteCore(key, value, durable: true);
+
+    private void WriteCore(string key, string value, bool durable)
     {
         Directory.CreateDirectory(_root);
         // Write-then-rename so a crash mid-save never truncates the library.
         var path = PathFor(key);
         var tmp = path + ".tmp";
-        File.WriteAllText(tmp, value);
+        using (var stream = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
+        {
+            using var writer = new StreamWriter(stream, leaveOpen: true);
+            writer.Write(value);
+            writer.Flush();
+            if (durable) stream.Flush(flushToDisk: true);
+        }
         File.Move(tmp, path, overwrite: true);
     }
 }

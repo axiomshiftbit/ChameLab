@@ -33,7 +33,8 @@ public readonly record struct FirmwareUpdateProgress(FirmwareUpdateStep Step, do
 /// Checks GitHub releases for newer firmware and installs a DFU package: restarts
 /// the device into its bootloader, flashes it over USB serial or BLE and reconnects.
 /// </summary>
-public sealed partial class FirmwareUpdateService(DeviceService device, IReadOnlyList<IDfuLocator> locators, HttpClient? http = null)
+public sealed partial class FirmwareUpdateService(DeviceService device, IReadOnlyList<IDfuLocator> locators, HttpClient? http = null,
+    FirmwareRecoveryStore? recovery = null)
 {
     /// <summary>Where releases (with <c>ultra-dfu-app.zip</c> / <c>lite-dfu-app.zip</c>) are published.</summary>
     public const string Repository = "axiomshiftbit/ChameLab";
@@ -51,6 +52,18 @@ public sealed partial class FirmwareUpdateService(DeviceService device, IReadOnl
 
     /// <summary>Whether firmware can be installed to a device connected over <paramref name="kind"/>.</summary>
     public bool CanInstall(TransportKind? kind) => locators.Any(l => l.Kind == kind);
+    public bool CanRecover => recovery is not null && locators.Count > 0;
+
+    public Task<FirmwareRecovery?> LoadRecoveryAsync() => Task.Run(() => recovery?.Load());
+    public Task DiscardRecoveryAsync() => Task.Run(() => recovery?.Clear());
+    public Task CheckRecoveryTargetAsync(DeviceInfo info) => Task.Run(() => recovery?.RequireCompatible(info));
+
+    public FirmwareUpdateTarget PrepareRecovery(FirmwareRecovery saved)
+    {
+        var locator = locators.FirstOrDefault(l => l.Kind == saved.Candidate.Kind)
+            ?? throw new NotSupportedException(Strings.Firmware_NotSupportedHere);
+        return new(saved.Candidate, saved.Device, locator.Prepare(saved.Candidate, saved.Device));
+    }
 
     /// <summary>Whether a release file is the application package for <paramref name="model"/>: <c>ultra-dfu-app-2.3.2-cl.zip</c>.</summary>
     public static bool IsPackage(string? name, DeviceModel model) =>
@@ -151,6 +164,7 @@ public sealed partial class FirmwareUpdateService(DeviceService device, IReadOnl
             package.RequireModel(target.Device.Model);
             if (device.Client is { } client)
             {
+                device.DeviceInfo?.Capabilities.Require(FirmwareFeature.FirmwareUpdate);
                 if (device.DeviceInfo?.ChipId != target.Device.ChipId || device.DeviceInfo?.Model != target.Device.Model)
                     throw new InvalidOperationException(Strings.Firmware_WrongDevice);
                 if (target.Candidate.Kind == TransportKind.Ble)
@@ -164,10 +178,13 @@ public sealed partial class FirmwareUpdateService(DeviceService device, IReadOnl
                     if (battery.Millivolts == 0 || battery.Percent < 20)
                         throw new InvalidOperationException(Strings.Firmware_ChargeBeforeUpdate);
                 }
+                await Task.Run(() => recovery?.Save(target, package, expectedVersion), ct);
                 progress.Report(new(FirmwareUpdateStep.Restarting));
                 await client.EnterBootloaderAsync(ct);
                 await device.DisconnectAsync();
             }
+            else
+                await Task.Run(() => recovery?.Save(target, package, expectedVersion), ct);
 
             progress.Report(new(FirmwareUpdateStep.WaitingForBootloader));
             var channel = await PollAsync(token => target.Bootloader.TryOpenAsync(token), BootloaderTimeout, ct,
@@ -186,6 +203,12 @@ public sealed partial class FirmwareUpdateService(DeviceService device, IReadOnl
             {
                 var found = await device.ScanAsync(target.Candidate.Kind, token);
                 var candidate = found.FirstOrDefault(c => c.Id == target.Candidate.Id);
+                if (candidate is null && locators.FirstOrDefault(l => l.Kind == target.Candidate.Kind) is { } locator)
+                {
+                    var matching = await Task.Run(() => found.Where(c => locator.MatchesApplication(c, target.Device)).ToArray(), token);
+                    if (matching.Length > 1) throw new InvalidOperationException(Strings.Firmware_WrongDevice);
+                    candidate = matching.SingleOrDefault();
+                }
                 if (candidate is null) return null;
                 await device.ConnectAsync(candidate, token);
                 if (device.DeviceInfo is not { } info || info.ChipId != target.Device.ChipId || info.Model != target.Device.Model)
@@ -198,6 +221,7 @@ public sealed partial class FirmwareUpdateService(DeviceService device, IReadOnl
             if (expectedVersion is { } expected &&
                 (FirmwareVersion.OfDevice(device.DeviceInfo!.GitVersion, device.DeviceInfo.FirmwareVersion) is not { } actual || actual.CompareTo(expected) != 0))
                 throw new InvalidOperationException(Strings.Firmware_VersionNotConfirmed);
+            await Task.Run(() => recovery?.Clear(), ct);
         }
         finally { _installGate.Release(); }
     }

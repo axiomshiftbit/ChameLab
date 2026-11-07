@@ -6,6 +6,7 @@
              xmlns:conv="using:ChameLab.Converters"
              xmlns:b="using:ChameLab.Behaviors"
              xmlns:c="using:ChameLab.Controls"
+             xmlns:m="using:ChameLab.Models"
              x:Class="ChameLab.Views.ChameleonView"
              x:DataType="vm:ChameleonViewModel">
 
@@ -342,6 +343,25 @@
           </StackPanel>
         </Border>
 
+        <Expander x:Name="CapabilitiesExpander" Header="{x:Static loc:Strings.Capabilities_Title}" HorizontalAlignment="Stretch">
+          <c:DeferredContent IsActive="{Binding #CapabilitiesExpander.IsExpanded}">
+            <c:DeferredContent.ContentTemplate>
+              <DataTemplate x:DataType="vm:ChameleonViewModel">
+                <ItemsControl ItemsSource="{Binding Capabilities}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="m:FirmwareFeatureInfo">
+                      <StackPanel Spacing="2" Margin="0,5">
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding Description}" Classes="caption" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </DataTemplate>
+            </c:DeferredContent.ContentTemplate>
+          </c:DeferredContent>
+        </Expander>
+
         <!-- Firmware updates -->
         <Border Classes="card">
           <StackPanel Spacing="12">
@@ -369,6 +389,10 @@
               <Button Content="{x:Static loc:Strings.Chameleon_InstallFromFile}" Command="{Binding Firmware.InstallFromFileCommand}"
                       IsVisible="{Binding Firmware.CanInstall}"
                       ToolTip.Tip="{x:Static loc:Strings.Chameleon_InstallADFUPackageUltraDfu}" />
+              <Button Command="{Binding Firmware.Backups.OpenCommand}"
+                      IsVisible="{Binding Firmware.Backups.IsSupported, FallbackValue=False}" >
+        <TextBlock Text="{x:Static loc:Strings.Backup_Title}" TextWrapping="Wrap" TextAlignment="Center" />
+      </Button>
             </WrapPanel>
           </StackPanel>
         </Border>

@@ -169,15 +169,23 @@ public sealed class SerialScanner : ITransportScanner, IManualSerialScanner
 public sealed class SerialDfuLocator : IDfuLocator
 {
     public TransportKind Kind => TransportKind.Serial;
+    public bool MatchesApplication(TransportCandidate candidate, DeviceInfo info)
+    {
+        if (candidate.Kind != Kind || info.Address.Length != 12 || !info.Address.All(Uri.IsHexDigit)) return false;
+        if (OperatingSystem.IsWindows()) return WindowsSerialVid.PortMatchesUsbId(candidate.Id, "VID_6868", info.Address);
+        if (OperatingSystem.IsLinux()) return string.Equals(SerialScanner.LinuxUsbId(candidate.Id, "idVendor"), "6868", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(SerialScanner.LinuxUsbId(candidate.Id, "serial"), info.Address, StringComparison.OrdinalIgnoreCase);
+        return OperatingSystem.IsMacOS() && MacUsbSerial.Matches(candidate.Id, info.Address);
+    }
 
     public IDfuTarget Prepare(TransportCandidate device, DeviceInfo info)
     {
         if (info.Address.Length != 12 || !info.Address.All(Uri.IsHexDigit))
             throw new InvalidOperationException(Strings.Firmware_WrongDevice);
-        return new Target(SerialScanner.PortNames(), info.Address);
+        return new Target(info.Address);
     }
 
-    private sealed class Target(IReadOnlyCollection<string> before, string serial) : IDfuTarget
+    private sealed class Target(string serial) : IDfuTarget
     {
         public async Task<IDfuChannel?> TryOpenAsync(CancellationToken ct)
         {
@@ -202,7 +210,7 @@ public sealed class SerialDfuLocator : IDfuLocator
                         string.Equals(SerialScanner.LinuxUsbId(name, "serial"), serial, StringComparison.OrdinalIgnoreCase))
                         candidates.Add(name);
                 }
-                else if (name.StartsWith("/dev/cu.usbmodem", StringComparison.Ordinal) && !before.Contains(name) &&
+                else if (name.StartsWith("/dev/cu.usbmodem", StringComparison.Ordinal) &&
                          MacUsbSerial.Matches(name, serial))
                 {
                     candidates.Add(name);

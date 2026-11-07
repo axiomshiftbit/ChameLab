@@ -65,7 +65,7 @@ public sealed class SlotEditorViewModel : PageViewModelBase
 
     internal void SetLfCapabilities(IReadOnlyList<ushort> capabilities)
     {
-        _supportsLfCycle = capabilities.Contains((ushort)Command.LfSetCycle) && capabilities.Contains((ushort)Command.LfGetCycle);
+        _supportsLfCycle = new FirmwareCapabilities(capabilities).Supports(FirmwareFeature.LfCycle);
         this.RaisePropertyChanged(nameof(SupportsMultiLf));
         RaiseDirty();
     }
@@ -216,7 +216,7 @@ public sealed class SlotEditorViewModel : PageViewModelBase
             await LoadUidAsync(client, Hf);
             await LoadUidAsync(client, Lf);
             var capabilities = await client.GetCapabilitiesAsync();
-            var supportsCycle = capabilities.Contains((ushort)Command.LfSetCycle) && capabilities.Contains((ushort)Command.LfGetCycle);
+            var supportsCycle = new FirmwareCapabilities(capabilities).Supports(FirmwareFeature.LfCycle);
             var cycle = supportsCycle && LfCycleCard.CanCycle(Lf.SavedType)
                 ? await client.GetLfCycleAsync() : new LfCardCycle([]);
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>

@@ -75,7 +75,7 @@ int  nfc_tag_14a_4_data_savecb(tag_specific_type_t type, tag_data_buffer_t *buff
 bool nfc_tag_14a_4_data_factory(uint8_t slot, tag_specific_type_t tag_type);
 
 /* Static response table management (called before hw mode -e) */
-void nfc_tag_14a_4_add_static_response(const uint8_t *cmd,  uint8_t cmd_len,
+bool nfc_tag_14a_4_add_static_response(const uint8_t *cmd,  uint8_t cmd_len,
                                        const uint8_t *resp, uint16_t resp_len);
 void nfc_tag_14a_4_clear_static_responses(void);
 

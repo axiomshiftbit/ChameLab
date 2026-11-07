@@ -4,6 +4,8 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
+using System.Linq;
+using Avalonia.VisualTree;
 using ChameLab.Behaviors;
 using ChameLab.ViewModels;
 
@@ -11,15 +13,24 @@ namespace ChameLab.Views;
 
 public partial class CardsView : UserControl
 {
+    private ScrollViewer? _memoryScroll;
+    private Border? _memoryCard;
     public CardsView()
     {
         InitializeComponent();
-        MemoryScroll.LayoutUpdated += (_, _) => FitMemoryScroll();
-        MemoryScroll.AddHandler(RequestBringIntoViewEvent, OnMemoryBringIntoView, handledEventsToo: true);
         // Opening cards, and dragging them into place in manual order.
         _ = new ListReorder(CardList, ListScroll);
-        // NDEF records are dragged into place by their grip, within the editor pane.
-        _ = new ListReorder(NdefList, PaneScroll);
+    }
+
+    private void OnMemoryLoaded(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Border card || ReferenceEquals(card, _memoryCard)) return;
+        _memoryCard = card;
+        _memoryScroll = card.GetVisualDescendants().OfType<ScrollViewer>().Single(c => c.Name == "MemoryScroll");
+        _memoryScroll.LayoutUpdated += (_, _) => FitMemoryScroll();
+        _memoryScroll.AddHandler(RequestBringIntoViewEvent, OnMemoryBringIntoView, handledEventsToo: true);
+        var ndefList = card.GetLogicalDescendants().OfType<ListBox>().Single(c => c.Name == "NdefList");
+        _ = new ListReorder(ndefList, PaneScroll);
     }
 
     // ---- Memory editor ---------------------------------------------------------
@@ -32,9 +43,9 @@ public partial class CardsView : UserControl
     /// </summary>
     private void OnMemoryBringIntoView(object? sender, RequestBringIntoViewEventArgs e)
     {
-        if (e.TargetObject == MemoryScroll) return;
+        if (e.TargetObject == _memoryScroll) return;
         e.Handled = true;
-        MemoryScroll.BringIntoView();
+        _memoryScroll?.BringIntoView();
     }
 
     /// <summary>
@@ -43,11 +54,11 @@ public partial class CardsView : UserControl
     /// </summary>
     private void FitMemoryScroll()
     {
-        if (!MemoryScroll.IsEffectivelyVisible || PaneScroll.Viewport.Height <= 0) return;
-        if (MemoryScroll.TranslatePoint(default, MemoryCard) is not { } top) return;
-        var below = MemoryCard.Bounds.Height - top.Y - MemoryScroll.Bounds.Height;
+        if (_memoryScroll is not { IsEffectivelyVisible: true } scroll || _memoryCard is not { } card || PaneScroll.Viewport.Height <= 0) return;
+        if (scroll.TranslatePoint(default, card) is not { } top) return;
+        var below = card.Bounds.Height - top.Y - scroll.Bounds.Height;
         var max = Math.Max(160, Math.Floor(PaneScroll.Viewport.Height - top.Y - below));
-        if (Math.Abs(MemoryScroll.MaxHeight - max) >= 1) MemoryScroll.MaxHeight = max;
+        if (Math.Abs(scroll.MaxHeight - max) >= 1) scroll.MaxHeight = max;
     }
 
     // ---- The open folder's title: renamed in place, deleted after a confirmation ----

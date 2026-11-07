@@ -118,6 +118,14 @@
       </Border>
 
       <StackPanel Grid.Row="2" Spacing="10">
+      <Button Command="{Binding Firmware.Backups.OpenCommand}"
+              IsVisible="{Binding Firmware.Backups.IsSupported, FallbackValue=False}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" >
+        <TextBlock Text="{x:Static loc:Strings.Backup_Title}" TextWrapping="Wrap" TextAlignment="Center" />
+      </Button>
+      <Button Command="{Binding Firmware.OpenRecoveryCommand}"
+              IsVisible="{Binding Firmware.CanRecover, FallbackValue=False}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" >
+        <TextBlock Text="{x:Static loc:Strings.Firmware_RecoveryTitle}" TextWrapping="Wrap" TextAlignment="Center" />
+      </Button>
       <Expander IsVisible="{Binding CanManualSerial}" Header="{x:Static loc:Strings.Connect_ManualSerial}" HorizontalAlignment="Stretch">
         <StackPanel Spacing="8">
           <TextBox Text="{Binding ManualSerialPort}" PlaceholderText="COM3 / /dev/ttyACM0" />

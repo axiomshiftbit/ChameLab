@@ -21,6 +21,7 @@ public sealed class DeviceService(IEnumerable<ITransportScanner> scanners)
     private readonly IReadOnlyList<ITransportScanner> _scanners = scanners.ToList();
     public DeviceJournal Journal { get; } = new();
     private ChameleonConnection? _conn;
+    private Task _disconnecting = Task.CompletedTask;
 
     public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
     public ChameleonClient? Client { get; private set; }
@@ -120,7 +121,10 @@ public sealed class DeviceService(IEnumerable<ITransportScanner> scanners)
         Client = null;
         DeviceInfo = null;
         if (conn is not null)
-            await conn.DisposeAsync();
+            _disconnecting = conn.DisposeAsync().AsTask();
+        // Reflect the logical disconnect immediately; reconnect still waits for the old
+        // native handle below, so a slow USB/BLE close cannot make the header look stuck.
         SetState(ConnectionState.Disconnected);
+        await _disconnecting;
     }
 }

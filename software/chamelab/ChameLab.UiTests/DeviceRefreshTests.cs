@@ -26,6 +26,26 @@ namespace ChameLab.UiTests;
 public class DeviceRefreshTests
 {
     [AvaloniaFact]
+    public async Task ReportedMissingHfCommandsDisableScanButUnknownFirmwareDoesNot()
+    {
+        var transport = new DeviceTransport { SupportedCommands = [Command.ChangeDeviceMode, Command.Em410xScan] };
+        var device = new DeviceService([new Scanner(transport)]);
+        await device.ConnectAsync(new(TransportKind.Ble, "synthetic", "Test device"));
+        try
+        {
+            var store = new MemoryKeyValueStore();
+            var model = new CardsViewModel(device, new CardLibrary(store), new DictionaryLibrary(store));
+            Dispatcher.UIThread.RunJobs();
+            Assert.False(model.CanScanHf);
+            Assert.False(model.ScanHfCommand.CanExecute(null));
+            Assert.True(model.CanScanLf);
+            Assert.Equal(Strings.Capabilities_ScanLimited, model.ScanCapabilitiesHint);
+            Assert.DoesNotContain(transport.Requests, r => r.Command == Command.Hf14aScan);
+        }
+        finally { await device.DisconnectAsync(); }
+    }
+
+    [AvaloniaFact]
     public async Task DashboardReadsBatteryAgainWhenFirstMeasurementIsNotReady()
     {
         var transport = new DeviceTransport();
@@ -161,6 +181,7 @@ public class DeviceRefreshTests
         public List<ChameleonFrame> Requests { get; } = new();
         public DeviceMode Mode { get; set; }
         public int Generation { get; init; }
+        public Command[] SupportedCommands { get; init; } = [];
         public Queue<byte[]> BatterySamples { get; } = new();
         public byte[] DefaultBatterySample { get; init; } = [0x0F, 0xA0, 80, 4];
         public TransportKind Kind => TransportKind.Ble;
@@ -176,6 +197,7 @@ public class DeviceRefreshTests
                 byte[] payload = request.Command switch
                 {
                     Command.GetAppVersion => [2, 3],
+                    Command.GetDeviceCapabilities => SupportedCommands.SelectMany(c => new[] { (byte)((ushort)c >> 8), (byte)c }).ToArray(),
                     Command.GetDeviceMode => [(byte)Mode],
                     Command.GetBatteryInfoEx => BatterySamples.TryDequeue(out var sample) ? sample : DefaultBatterySample,
                     Command.GetSlotInfo => new byte[32],

@@ -17,9 +17,10 @@ public sealed class ConnectViewModel : PageViewModelBase
 {
     private readonly DeviceService _device;
 
-    public ConnectViewModel(DeviceService device) : base(() => Strings.Connect_Connect, "link")
+    public ConnectViewModel(DeviceService device, FirmwareUpdateViewModel? firmware = null) : base(() => Strings.Connect_Connect, "link")
     {
         _device = device;
+        Firmware = firmware;
 
         ConnectSerialCommand = ReactiveCommand.CreateFromTask(() => RunAsync(async () =>
         {
@@ -35,6 +36,7 @@ public sealed class ConnectViewModel : PageViewModelBase
     }
 
     public ObservableCollection<TransportCandidate> Candidates { get; } = new();
+    public FirmwareUpdateViewModel? Firmware { get; }
 
     public TransportCandidate? Selected
     {

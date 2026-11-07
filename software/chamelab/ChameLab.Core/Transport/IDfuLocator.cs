@@ -19,6 +19,8 @@ public interface IDfuLocator
     /// to remember what tells its bootloader apart from other devices.
     /// </summary>
     IDfuTarget Prepare(TransportCandidate device, DeviceInfo info);
+    /// <summary>Identifies the same application after the OS assigned a different port name.</summary>
+    bool MatchesApplication(TransportCandidate candidate, DeviceInfo info) => false;
 }
 
 /// <summary>One device's bootloader, to be found and opened after the restart.</summary>

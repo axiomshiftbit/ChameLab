@@ -93,6 +93,8 @@ public sealed class KeySearchViewModel : PageViewModelBase
         try
         {
             var client = _device.Client ?? throw new InvalidOperationException(Strings.Tool_device_required);
+            if (Kind.Kind == KeySearchKind.UltralightC) _device.DeviceInfo?.Capabilities.Require(FirmwareFeature.UltralightCKeySearch);
+            if (Kind.Kind == KeySearchKind.MifareClassic) _device.DeviceInfo?.Capabilities.Require(FirmwareFeature.ClassicKeySearch);
             var mode = await client.GetDeviceModeAsync(cancellation.Token);
             try
             {

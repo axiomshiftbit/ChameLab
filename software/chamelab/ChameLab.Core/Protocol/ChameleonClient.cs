@@ -87,9 +87,10 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
         return Convert.ToHexString(f.Data);
     }
 
-    public async Task<DeviceMode> GetDeviceModeAsync(CancellationToken ct = default)
+    public async Task<DeviceMode> GetDeviceModeAsync(CancellationToken ct = default, bool strict = false)
     {
         var f = await conn.SendExpectAsync(Command.GetDeviceMode, Status.Success, ct: ct);
+        if (strict && (f.Data.Length != 1 || f.Data[0] > 1)) throw new System.IO.InvalidDataException(Strings.Backup_IncompleteRead);
         return (f.Data.Length > 0 && f.Data[0] != 0) ? DeviceMode.Reader : DeviceMode.Tag;
     }
 
@@ -115,6 +116,7 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
     }
 
     private IReadOnlyList<ushort>? _capabilities;
+    private bool _capabilitiesUnavailable;
 
     /// <summary>The commands the firmware supports once read (they can't change while connected), else null.</summary>
     public IReadOnlyList<ushort>? Capabilities => _capabilities;
@@ -122,12 +124,17 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
     public async Task<IReadOnlyList<ushort>> GetCapabilitiesAsync(CancellationToken ct = default)
     {
         if (_capabilities is { } known) return known;
+        if (_capabilitiesUnavailable) return Array.Empty<ushort>();
         var f = await conn.SendAsync(Command.GetDeviceCapabilities, ct: ct);
+        if (f.Status is Status.InvalidCmd or Status.NotImplemented || f.Status == Status.Success && f.Data.Length == 0)
+            _capabilitiesUnavailable = true;
+        if (f.Status != Status.Success) return Array.Empty<ushort>(); // unknown, never cached as absent
+        if (f.Data.Length == 0) return Array.Empty<ushort>(); // no usable capability report
+        if (f.Data.Length % 2 != 0) throw new System.IO.InvalidDataException(Strings.Capabilities_InvalidReply);
         var list = new List<ushort>();
-        if (f.Status == Status.Success)
-            for (var i = 0; i + 1 < f.Data.Length; i += 2)
-                list.Add(BinaryPrimitives.ReadUInt16BigEndian(f.Data.AsSpan(i)));
-        return _capabilities = list;
+        for (var i = 0; i < f.Data.Length; i += 2)
+            list.Add(BinaryPrimitives.ReadUInt16BigEndian(f.Data.AsSpan(i)));
+        return _capabilities = list.AsReadOnly();
     }
 
     /// <summary>Gathers everything needed for the dashboard in one call.</summary>
@@ -142,7 +149,7 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
         try { addr = await GetAddressAsync(ct); } catch { addr = "-"; }
         var mode = await GetDeviceModeAsync(ct);
         var colors = false;
-        try { colors = (await GetCapabilitiesAsync(ct)).Contains((ushort)Command.SetSlotColor); }
+        try { await GetCapabilitiesAsync(ct); colors = new FirmwareCapabilities(_capabilities).Supports(FirmwareFeature.SlotColors); }
         catch { /* older firmware */ }
         return new DeviceInfo
         {
@@ -153,14 +160,16 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
             Address = addr,
             Mode = mode,
             SupportsSlotColors = colors,
+            SupportedCommands = _capabilities?.ToArray(),
         };
     }
 
     // ---- Slots ---------------------------------------------------------
 
-    public async Task<int> GetActiveSlotAsync(CancellationToken ct = default)
+    public async Task<int> GetActiveSlotAsync(CancellationToken ct = default, bool strict = false)
     {
         var f = await conn.SendExpectAsync(Command.GetActiveSlot, Status.Success, ct: ct);
+        if (strict && (f.Data.Length != 1 || f.Data[0] > 7)) throw new System.IO.InvalidDataException(Strings.Backup_IncompleteRead);
         return (f.Data.Length > 0 ? f.Data[0] : 0) + 1; // fw 0-based → 1-based
     }
 
@@ -169,13 +178,14 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
             [(byte)(slot1Based - 1)], ct: ct);
 
     /// <summary>Reads type + enable + nick for all 8 slots and marks the active one.</summary>
-    public async Task<IReadOnlyList<SlotInfo>> GetAllSlotsAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<SlotInfo>> GetAllSlotsAsync(CancellationToken ct = default, bool strict = false)
     {
         var slots = new List<SlotInfo>(8);
         for (var i = 1; i <= 8; i++)
             slots.Add(new SlotInfo { Index = i });
 
         var info = await conn.SendExpectAsync(Command.GetSlotInfo, Status.Success, ct: ct);
+        if (strict && info.Data.Length != 32) throw new System.IO.InvalidDataException(Strings.Backup_Invalid);
         for (var i = 0; i < 8 && (i * 4 + 3) < info.Data.Length; i++)
         {
             slots[i].HfType = (TagSpecificType)BinaryPrimitives.ReadUInt16BigEndian(info.Data.AsSpan(i * 4));
@@ -185,38 +195,50 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
         try
         {
             var en = await conn.SendExpectAsync(Command.GetEnabledSlots, Status.Success, ct: ct);
+            if (strict && (en.Data.Length != 16 || en.Data.Any(v => v > 1))) throw new System.IO.InvalidDataException(Strings.Backup_Invalid);
             for (var i = 0; i < 8 && (i * 2 + 1) < en.Data.Length; i++)
             {
                 slots[i].HfEnabled = en.Data[i * 2] != 0;
                 slots[i].LfEnabled = en.Data[i * 2 + 1] != 0;
             }
         }
-        catch { /* older firmware */ }
+        catch when (!strict) { /* older firmware */ }
 
         try
         {
             var nicks = await conn.SendExpectAsync(Command.GetAllSlotNicks, Status.Success, ct: ct);
+            if (strict)
+            {
+                var offset = 0;
+                for (var n = 0; n < 16; n++)
+                {
+                    if (offset >= nicks.Data.Length || nicks.Data[offset] > 32) throw new System.IO.InvalidDataException(Strings.Backup_Invalid);
+                    offset += 1 + nicks.Data[offset];
+                }
+                if (offset != nicks.Data.Length) throw new System.IO.InvalidDataException(Strings.Backup_Invalid);
+            }
             ParseNicks(nicks.Data, slots);
         }
-        catch { /* older firmware */ }
+        catch when (!strict) { /* older firmware */ }
 
         try
         {
             var colors = await conn.SendExpectAsync(Command.GetAllSlotColors, Status.Success, ct: ct);
+            if (strict && colors.Data.Length != 48) throw new System.IO.InvalidDataException(Strings.Backup_Invalid);
             for (var i = 0; i < 8 && (i * 6 + 5) < colors.Data.Length; i++)
             {
                 slots[i].HfColor = SlotColorFromBytes(colors.Data.AsSpan(i * 6, 3));
                 slots[i].LfColor = SlotColorFromBytes(colors.Data.AsSpan(i * 6 + 3, 3));
             }
         }
-        catch { /* older firmware */ }
+        catch when (!strict) { /* older firmware */ }
 
         try
         {
-            var active = await GetActiveSlotAsync(ct);
+            var active = await GetActiveSlotAsync(ct, strict);
             if (active is >= 1 and <= 8) slots[active - 1].IsActive = true;
         }
-        catch { /* ignore */ }
+        catch when (!strict) { /* ignore */ }
 
         return slots;
     }
@@ -320,10 +342,11 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
 
     // ---- Emulator configuration (active slot) -------------------------
 
-    public async Task<Mf1EmulatorConfig> GetMf1EmulatorConfigAsync(CancellationToken ct = default)
+    public async Task<Mf1EmulatorConfig> GetMf1EmulatorConfigAsync(CancellationToken ct = default, bool strict = false)
     {
         var f = await conn.SendExpectAsync(Command.Mf1GetEmulatorConfig, Status.Success, ct: ct);
         var d = f.Data;
+        if (strict && (d.Length != 5 || d.Take(4).Any(v => v > 1))) throw new System.IO.InvalidDataException(Strings.Backup_IncompleteRead);
         return new Mf1EmulatorConfig(
             Detection: d.Length > 0 && d[0] != 0,
             Gen1a: d.Length > 1 && d[1] != 0,
@@ -396,18 +419,20 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
         return all;
     }
 
-    public async Task<bool> GetMf1FieldOffDoResetAsync(CancellationToken ct = default)
+    public async Task<bool> GetMf1FieldOffDoResetAsync(CancellationToken ct = default, bool strict = false)
     {
         var f = await conn.SendExpectAsync(Command.Mf1GetFieldOffDoReset, Status.Success, ct: ct);
+        if (strict && (f.Data.Length != 1 || f.Data[0] > 1)) throw new System.IO.InvalidDataException(Strings.Backup_IncompleteRead);
         return f.Data.Length > 0 && f.Data[0] != 0;
     }
 
     public Task SetMf1FieldOffDoResetAsync(bool enabled, CancellationToken ct = default) =>
         conn.SendExpectAsync(Command.Mf1SetFieldOffDoReset, Status.Success, [(byte)(enabled ? 1 : 0)], ct: ct);
 
-    public async Task<MifareClassicPrngType> GetMf1PrngTypeAsync(CancellationToken ct = default)
+    public async Task<MifareClassicPrngType> GetMf1PrngTypeAsync(CancellationToken ct = default, bool strict = false)
     {
         var f = await conn.SendExpectAsync(Command.Mf1GetPrngType, Status.Success, ct: ct);
+        if (strict && (f.Data.Length != 1)) throw new System.IO.InvalidDataException(Strings.Backup_IncompleteRead);
         return (MifareClassicPrngType)(f.Data.Length > 0 ? f.Data[0] : 0);
     }
 
@@ -624,27 +649,30 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
 
     // ---- Ultralight / NTAG emulator settings --------------------------
 
-    public async Task<bool> GetMf0UidMagicModeAsync(CancellationToken ct = default)
+    public async Task<bool> GetMf0UidMagicModeAsync(CancellationToken ct = default, bool strict = false)
     {
         var f = await conn.SendExpectAsync(Command.Mf0NtagGetUidMagicMode, Status.Success, ct: ct);
+        if (strict && (f.Data.Length != 1 || f.Data[0] > 1)) throw new System.IO.InvalidDataException(Strings.Backup_IncompleteRead);
         return f.Data.Length > 0 && f.Data[0] != 0;
     }
 
     public Task SetMf0UidMagicModeAsync(bool enabled, CancellationToken ct = default) =>
         conn.SendExpectAsync(Command.Mf0NtagSetUidMagicMode, Status.Success, [(byte)(enabled ? 1 : 0)], ct: ct);
 
-    public async Task<EmulatorWriteMode> GetMf0WriteModeAsync(CancellationToken ct = default)
+    public async Task<EmulatorWriteMode> GetMf0WriteModeAsync(CancellationToken ct = default, bool strict = false)
     {
         var f = await conn.SendExpectAsync(Command.Mf0NtagGetWriteMode, Status.Success, ct: ct);
+        if (strict && (f.Data.Length != 1)) throw new System.IO.InvalidDataException(Strings.Backup_IncompleteRead);
         return (EmulatorWriteMode)(f.Data.Length > 0 ? f.Data[0] : 0);
     }
 
     public Task SetMf0WriteModeAsync(EmulatorWriteMode mode, CancellationToken ct = default) =>
         conn.SendExpectAsync(Command.Mf0NtagSetWriteMode, Status.Success, [(byte)mode], ct: ct);
 
-    public async Task<bool> GetMf0DetectionEnableAsync(CancellationToken ct = default)
+    public async Task<bool> GetMf0DetectionEnableAsync(CancellationToken ct = default, bool strict = false)
     {
         var f = await conn.SendExpectAsync(Command.Mf0NtagGetDetectionEnable, Status.Success, ct: ct);
+        if (strict && (f.Data.Length != 1 || f.Data[0] > 1)) throw new System.IO.InvalidDataException(Strings.Backup_IncompleteRead);
         return f.Data.Length > 0 && f.Data[0] != 0;
     }
 
@@ -1200,7 +1228,14 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
     /// <summary>Sets the ID emulated by the active LF slot for the given LF tag type.</summary>
     public Task SetLfEmulatorIdAsync(TagSpecificType type, byte[] id, CancellationToken ct = default)
     {
-        var cmd = type switch
+        var cmd = LfEmulatorSetCommand(type);
+        var len = type.LfIdLength();
+        if (len > 0 && id.Length != len)
+            throw new ArgumentException(string.Format(Strings.Device_IdLengthGot, type.DisplayName(), len, id.Length));
+        return conn.SendExpectAsync(cmd, Status.Success, id, ct: ct);
+    }
+
+    internal static Command LfEmulatorSetCommand(TagSpecificType type) => type switch
         {
             _ when type.IsEm410x() => Command.Em410xSetEmuId,
             TagSpecificType.HidProx => Command.HidProxSetEmuId,
@@ -1211,12 +1246,7 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
             TagSpecificType.Idteck => Command.IdteckSetEmuId,
             TagSpecificType.FarpointePyramid => Command.PyramidSetEmuId,
             _ => throw new NotSupportedException(string.Format(Strings.Device_CannotEmulate, type.DisplayName())),
-        };
-        var len = type.LfIdLength();
-        if (len > 0 && id.Length != len)
-            throw new ArgumentException(string.Format(Strings.Device_IdLengthGot, type.DisplayName(), len, id.Length));
-        return conn.SendExpectAsync(cmd, Status.Success, id, ct: ct);
-    }
+    };
 
     /// <summary>Writes whole 4-byte pages into the active Ultralight / NTAG slot.</summary>
     public Task Mf0WriteEmuPagesAsync(int startPage, byte[] pages, CancellationToken ct = default)
@@ -1378,14 +1408,14 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
     public async Task<CardSave> ReadCardFromSlotAsync(
         SlotInfo slot, TagSenseType sense,
         IProgress<MifareProgress>? progress = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default, bool strict = false)
     {
         var tag = sense == TagSenseType.Hf ? slot.HfType : slot.LfType;
         if (tag == TagSpecificType.Undefined)
             throw new InvalidOperationException(string.Format(Strings.Device_SlotHasNoCard, slot.Index, sense));
         var nick = sense == TagSenseType.Hf ? slot.HfNick : slot.LfNick;
 
-        var previous = await GetActiveSlotAsync(ct);
+        var previous = await GetActiveSlotAsync(ct, strict);
         if (previous != slot.Index) await SetActiveSlotAsync(slot.Index, ct);
         try
         {
@@ -1396,11 +1426,11 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
             }
             else
             {
-                await ReadHf14aAntiCollAsync(card, ct);
+                await ReadHf14aAntiCollAsync(card, ct, strict);
                 if (tag.IsMifareClassic())
                     card.Data = await ReadMf1BlocksAsync(tag.MifareClassicBlocks(), progress, ct);
                 else if (tag.IsUltralight())
-                    await ReadUltralightAsync(card, tag, progress, ct);
+                    await ReadUltralightAsync(card, tag, progress, ct, strict);
             }
             card.Name = !string.IsNullOrWhiteSpace(nick)
                 ? nick
@@ -1440,32 +1470,32 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
     /// none for other types or an empty / disabled HF side. The slot is activated for the
     /// read and the previously active slot restored.
     /// </summary>
-    public async Task<SlotEmulatorSettings> ReadEmulatorSettingsAsync(SlotInfo slot, CancellationToken ct = default)
+    public async Task<SlotEmulatorSettings> ReadEmulatorSettingsAsync(SlotInfo slot, CancellationToken ct = default, bool strict = false)
     {
-        var mfc = slot.HfEnabled && slot.HfType.IsMifareClassic();
-        var ul = slot.HfEnabled && slot.HfType.IsUltralight();
+        var mfc = (strict || slot.HfEnabled) && slot.HfType.IsMifareClassic();
+        var ul = (strict || slot.HfEnabled) && slot.HfType.IsUltralight();
         if (!mfc && !ul) return SlotEmulatorSettings.None;
 
-        var previous = await GetActiveSlotAsync(ct);
+        var previous = await GetActiveSlotAsync(ct, strict);
         if (previous != slot.Index) await SetActiveSlotAsync(slot.Index, ct);
         try
         {
             if (mfc)
             {
-                var cfg = await GetMf1EmulatorConfigAsync(ct);
+                var cfg = await GetMf1EmulatorConfigAsync(ct, strict);
                 MifareClassicPrngType? prng = null;
                 bool? fieldOff = null;
-                try { prng = await GetMf1PrngTypeAsync(ct); } catch (ChameleonException) { /* older firmware */ }
-                try { fieldOff = await GetMf1FieldOffDoResetAsync(ct); } catch (ChameleonException) { /* older firmware */ }
+                try { prng = await GetMf1PrngTypeAsync(ct, strict); } catch (ChameleonException ex) when (!strict || ex.Status is Status.InvalidCmd or Status.NotImplemented) { /* older firmware */ }
+                try { fieldOff = await GetMf1FieldOffDoResetAsync(ct, strict); } catch (ChameleonException ex) when (!strict || ex.Status is Status.InvalidCmd or Status.NotImplemented) { /* older firmware */ }
                 return new SlotEmulatorSettings(
                     new Mf1EmulatorSettings(cfg.Gen1a, cfg.Gen2, cfg.BlockAntiColl, cfg.Detection, cfg.WriteMode, prng, fieldOff),
                     null);
             }
 
-            var uid = await GetMf0UidMagicModeAsync(ct);
-            var mode = await GetMf0WriteModeAsync(ct);
+            var uid = await GetMf0UidMagicModeAsync(ct, strict);
+            var mode = await GetMf0WriteModeAsync(ct, strict);
             bool? detection = null;
-            try { detection = await GetMf0DetectionEnableAsync(ct); } catch (ChameleonException) { /* older firmware */ }
+            try { detection = await GetMf0DetectionEnableAsync(ct, strict); } catch (ChameleonException ex) when (!strict || ex.Status is Status.InvalidCmd or Status.NotImplemented) { /* older firmware */ }
             return new SlotEmulatorSettings(null, new Mf0EmulatorSettings(uid, mode, detection));
         }
         finally
@@ -1479,7 +1509,7 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
     /// Applies emulator settings to the active slot (the one its HF card is in); settings the
     /// firmware couldn't report are left alone. Not persisted until <see cref="SaveSlotConfigAsync"/>.
     /// </summary>
-    public async Task ApplyEmulatorSettingsAsync(SlotEmulatorSettings settings, CancellationToken ct = default)
+    public async Task ApplyEmulatorSettingsAsync(SlotEmulatorSettings settings, CancellationToken ct = default, bool strict = false)
     {
         if (settings.Mf1 is { } m)
         {
@@ -1489,22 +1519,22 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
             await SetMf1DetectionEnableAsync(m.Detection, ct);
             await SetMf1WriteModeAsync(m.WriteMode, ct);
             if (m.FieldOffReset is { } reset)
-                try { await SetMf1FieldOffDoResetAsync(reset, ct); } catch (ChameleonException) { }
+                try { await SetMf1FieldOffDoResetAsync(reset, ct); } catch (ChameleonException) when (!strict) { }
             if (m.Prng is { } prng)
-                try { await SetMf1PrngTypeAsync(prng, ct); } catch (ChameleonException) { }
+                try { await SetMf1PrngTypeAsync(prng, ct); } catch (ChameleonException) when (!strict) { }
         }
         if (settings.Mf0 is { } u)
         {
             await SetMf0UidMagicModeAsync(u.UidMagic, ct);
             await SetMf0WriteModeAsync(u.WriteMode, ct);
             if (u.Detection is { } detection)
-                try { await SetMf0DetectionEnableAsync(detection, ct); } catch (ChameleonException) { }
+                try { await SetMf0DetectionEnableAsync(detection, ct); } catch (ChameleonException) when (!strict) { }
         }
     }
 
     /// <summary>Reads everything a slot holds (both cards with their nick, LED color and enable flag, and the emulator settings).</summary>
     public async Task<SlotContent> ReadSlotContentAsync(
-        SlotInfo slot, IProgress<MifareProgress>? progress = null, CancellationToken ct = default)
+        SlotInfo slot, IProgress<MifareProgress>? progress = null, CancellationToken ct = default, bool strict = false)
     {
         async Task<SlotSide?> Side(TagSenseType sense)
         {
@@ -1512,13 +1542,13 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
                 ? (slot.HfType, slot.HfNick, slot.HfColor, slot.HfEnabled)
                 : (slot.LfType, slot.LfNick, slot.LfColor, slot.LfEnabled);
             if (type == TagSpecificType.Undefined) return null;
-            var card = await ReadCardFromSlotAsync(slot, sense, progress, ct);
+            var card = await ReadCardFromSlotAsync(slot, sense, progress, ct, strict);
             return new SlotSide(card, nick, color, enabled);
         }
 
         var hf = await Side(TagSenseType.Hf);
         var lf = await Side(TagSenseType.Lf);
-        var emulator = await ReadEmulatorSettingsAsync(slot, ct);
+        var emulator = await ReadEmulatorSettingsAsync(slot, ct, strict);
         LfCardCycle? cycle = null;
         if (LfCycleCard.CanCycle(slot.LfType) &&
             (await GetCapabilitiesAsync(ct)).Contains((ushort)Command.LfGetAllCycles))
@@ -1535,32 +1565,32 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
     /// left active.
     /// </summary>
     public async Task WriteSlotContentAsync(
-        int slot1Based, SlotContent content, IProgress<MifareProgress>? progress = null, CancellationToken ct = default)
+        int slot1Based, SlotContent content, IProgress<MifareProgress>? progress = null, CancellationToken ct = default, bool strict = false)
     {
         foreach (var (sense, side) in new[] { (TagSenseType.Hf, content.Hf), (TagSenseType.Lf, content.Lf) })
         {
             if (side is null)
             {
                 try { await DeleteSlotSenseTypeAsync(slot1Based, sense, ct); }
-                catch (ChameleonException) { /* already empty */ }
+                catch (ChameleonException) when (!strict) { /* already empty */ }
                 continue;
             }
 
             await LoadCardToSlotAsync(side.Card, slot1Based, progress, ct);
             // The upload names and colors the slot after the card; put back what the slot had.
             if (string.IsNullOrEmpty(side.Nick))
-                try { await DeleteSlotNickAsync(slot1Based, sense, ct); } catch (ChameleonException) { }
+                try { await DeleteSlotNickAsync(slot1Based, sense, ct); } catch (ChameleonException) when (!strict) { }
             else
                 await SetSlotNickAsync(slot1Based, sense, side.Nick, ct);
             try { await SetSlotColorAsync(slot1Based, sense, side.Color, ct); }
-            catch (ChameleonException) { /* older firmware: no per-card LED colors */ }
+            catch (ChameleonException) when (!strict) { /* older firmware: no per-card LED colors */ }
             if (!side.Enabled) await SetSlotEnableAsync(slot1Based, sense, enabled: false, ct);
         }
 
         if (content.Hf is not null && content.Emulator != SlotEmulatorSettings.None)
         {
             await SetActiveSlotAsync(slot1Based, ct);
-            await ApplyEmulatorSettingsAsync(content.Emulator, ct);
+            await ApplyEmulatorSettingsAsync(content.Emulator, ct, strict);
         }
         if (content.Lf is not null && content.LfCycle is { } cycle)
         {
@@ -1598,10 +1628,12 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
         return new Hf14aTag(card.Uid, card.Atqa, card.Sak, card.Ats);
     }
 
-    private async Task ReadHf14aAntiCollAsync(CardSave card, CancellationToken ct)
+    private async Task ReadHf14aAntiCollAsync(CardSave card, CancellationToken ct, bool strict = false)
     {
         // uidlen[1]|uid[uidlen]|atqa[2]|sak[1]|atslen[1]|ats[atslen]
         var d = (await conn.SendExpectAsync(Command.Hf14aGetAntiCollData, Status.Success, ct: ct)).Data;
+        if (strict && (d.Length < 9 || d[0] is not (4 or 7 or 10) || d.Length < d[0] + 5 || d.Length != d[0] + 5 + d[d[0] + 4]))
+            throw new System.IO.InvalidDataException(Strings.Backup_IncompleteRead);
         if (d.Length == 0) return;
         var o = 0;
         int uidLen = d[o++];
@@ -1625,23 +1657,25 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
         {
             var count = Math.Min(blocksPerFrame, total - start);
             var data = await Mf1ReadEmuBlockDataAsync(start, count, ct);
+            if (data.Length != count * 16) throw new System.IO.InvalidDataException(Strings.Backup_IncompleteRead);
             for (var i = 0; i < count; i++)
-                blocks.Add(data.Length >= (i + 1) * 16 ? data[(i * 16)..((i + 1) * 16)] : new byte[16]);
+                blocks.Add(data[(i * 16)..((i + 1) * 16)]);
             progress?.Report(new MifareProgress(start + count, total, start + count));
         }
         return blocks;
     }
 
     private async Task ReadUltralightAsync(
-        CardSave card, TagSpecificType tag, IProgress<MifareProgress>? progress, CancellationToken ct)
+        CardSave card, TagSpecificType tag, IProgress<MifareProgress>? progress, CancellationToken ct, bool strict = false)
     {
         var total = tag.UltralightPages();
         try
         {
             var count = await conn.SendExpectAsync(Command.Mf0NtagGetPageCount, Status.Success, ct: ct);
+            if (strict && (count.Data.Length != 1 || count.Data[0] == 0)) throw new System.IO.InvalidDataException(Strings.Backup_IncompleteRead);
             if (count.Data.Length > 0 && count.Data[0] > 0) total = count.Data[0];
         }
-        catch (ChameleonException) { /* fall back to the nominal page count */ }
+        catch (ChameleonException ex) when (!strict || ex.Status is Status.InvalidCmd or Status.NotImplemented) { /* fall back to the nominal page count */ }
 
         const int pagesPerFrame = 16;
         for (var page = 0; page < total; page += pagesPerFrame)
@@ -1649,17 +1683,20 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
             var n = Math.Min(pagesPerFrame, total - page);
             var data = (await conn.SendExpectAsync(Command.Mf0NtagReadEmuPageData, Status.Success,
                 [(byte)page, (byte)n], timeoutMs: 5000, ct: ct)).Data;
+            if (data.Length != n * 4) throw new System.IO.InvalidDataException(Strings.Backup_IncompleteRead);
             for (var i = 0; i < n; i++)
-                card.Data.Add(data.Length >= (i + 1) * 4 ? data[(i * 4)..((i + 1) * 4)] : new byte[4]);
+                card.Data.Add(data[(i * 4)..((i + 1) * 4)]);
             progress?.Report(new MifareProgress(page + n, total, page + n));
         }
 
         // Version / signature / counters exist only on some types; the firmware
         // answers INVALID_SLOT_TYPE for the rest.
         var version = await conn.SendAsync(Command.Mf0NtagGetVersionData, ct: ct);
+        if (strict) ValidateExtra(version, 8);
         if (version.Status == Status.Success && version.Data.Length == 8)
             card.Extra.UltralightVersion = version.Data;
         var signature = await conn.SendAsync(Command.Mf0NtagGetSignatureData, ct: ct);
+        if (strict) ValidateExtra(signature, 32);
         if (signature.Status == Status.Success && signature.Data.Length == 32)
             card.Extra.UltralightSignature = signature.Data;
         if (tag.HasUltralightCounters())
@@ -1667,9 +1704,17 @@ public sealed partial class ChameleonClient(ChameleonConnection conn)
             for (var i = 0; i < 3; i++)
             {
                 var ctr = await conn.SendAsync(Command.Mf0NtagGetCounterData, [(byte)i], ct: ct);
+                if (strict) ValidateExtra(ctr, 4);
                 if (ctr.Status != Status.Success || ctr.Data.Length < 3) break;
                 card.Extra.UltralightCounters.Add(ctr.Data[0] | (ctr.Data[1] << 8) | (ctr.Data[2] << 16));
             }
+        }
+
+        static void ValidateExtra(ChameleonFrame reply, int size)
+        {
+            if (reply.Status == Status.Success && reply.Data.Length == size) return;
+            if (reply.Status is Status.InvalidSlotType or Status.InvalidCmd or Status.NotImplemented) return;
+            throw new System.IO.InvalidDataException(Strings.Backup_IncompleteRead);
         }
     }
 

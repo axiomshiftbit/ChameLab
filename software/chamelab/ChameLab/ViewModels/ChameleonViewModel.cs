@@ -122,8 +122,13 @@ public sealed class ChameleonViewModel : PageViewModelBase
     public DeviceInfo? Info
     {
         get;
-        private set => this.RaiseAndSetIfChanged(ref field, value);
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref field, value);
+            this.RaisePropertyChanged(nameof(Capabilities));
+        }
     }
+    public IReadOnlyList<FirmwareFeatureInfo> Capabilities => (Info?.Capabilities ?? new FirmwareCapabilities(null)).Describe();
 
     public BatteryInfo? Battery
     {
@@ -369,12 +374,20 @@ public sealed class ChameleonViewModel : PageViewModelBase
 
         var threshold = 500;
         var hasThreshold = false;
-        try { threshold = await client.GetLongPressThresholdAsync(); hasThreshold = true; }
+        try
+        {
+            if (_device.DeviceInfo?.Capabilities.Allows(FirmwareFeature.LongPressThreshold) != false)
+            { threshold = await client.GetLongPressThresholdAsync(); hasThreshold = true; }
+        }
         catch { /* older firmware */ }
 
         var blePairing = false;
         var hasBle = false;
-        try { blePairing = await client.GetBlePairingEnableAsync(); hasBle = true; }
+        try
+        {
+            if (_device.DeviceInfo?.Capabilities.Allows(FirmwareFeature.BlePairing) != false)
+            { blePairing = await client.GetBlePairingEnableAsync(); hasBle = true; }
+        }
         catch { /* lite / older firmware has no BLE */ }
 
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>

@@ -27,8 +27,10 @@ public class SerialDfuTests
     public async Task CancelDuringInitialDelayClosesPort()
     {
         var transport = new SerialFake();
-        using var cancel = new CancellationTokenSource(30);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => SerialDfuChannel.OpenAsync(transport, cancel.Token));
+        using var cancel = new CancellationTokenSource();
+        var opening = SerialDfuChannel.OpenAsync(transport, cancel.Token);
+        cancel.Cancel(); // OpenAsync has reached its initial delay; no scheduler race between two timers.
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => opening);
         Assert.True(transport.Disposed);
     }
 

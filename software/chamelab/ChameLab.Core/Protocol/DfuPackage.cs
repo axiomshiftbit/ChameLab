@@ -23,9 +23,10 @@ public sealed class DfuPackage
     public ReadOnlyMemory<byte> InitPacket { get; }
     public ReadOnlyMemory<byte> Firmware { get; }
     public DeviceModel Model { get; }
+    public ReadOnlyMemory<byte> Zip { get; }
 
-    private DfuPackage(byte[] init, byte[] firmware, DeviceModel model) =>
-        (InitPacket, Firmware, Model) = (init, firmware, model);
+    private DfuPackage(byte[] init, byte[] firmware, DeviceModel model, byte[] zip) =>
+        (InitPacket, Firmware, Model, Zip) = (init, firmware, model, zip);
 
     public void RequireModel(DeviceModel model)
     {
@@ -80,7 +81,7 @@ public sealed class DfuPackage
             Array.Reverse(expected); // nRF5 init packets store the digest in little-endian order.
             if (!CryptographicOperations.FixedTimeEquals(expected, SHA256.HashData(firmware)))
                 throw new InvalidDataException(Strings.Dfu_HashMismatch);
-            return new DfuPackage(init, firmware, (DeviceModel)model);
+            return new DfuPackage(init, firmware, (DeviceModel)model, (byte[])zip.Clone());
         }
         catch (Exception ex) when (ex is InvalidDataException or JsonException or KeyNotFoundException
                                    or InvalidOperationException or EndOfStreamException)

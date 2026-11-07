@@ -62,6 +62,10 @@ jobs:
       - name: Test flash completion and stalled Bluetooth replies
         run: |
           python3 firmware/tests/test_lf_scan_bounds.py
+          python3 firmware/tests/test_boolean_settings.py
+          python3 firmware/tests/test_apdu_bounds.py
+          python3 firmware/tests/test_apdu_exchange.py
+          python3 firmware/tests/test_mf0_counter_flags.py
           python3 firmware/tests/test_flash_layout.py
           python3 firmware/tests/test_fds_completion.py
           python3 firmware/tests/test_ble_reply.py

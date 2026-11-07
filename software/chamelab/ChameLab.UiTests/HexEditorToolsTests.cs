@@ -169,12 +169,12 @@ public class HexEditorToolsTests
         Application.Current!.RequestedThemeVariant = dark ? ThemeVariant.Dark : ThemeVariant.Light;
         var scene = LayoutScenarios.Create("card-access", "ru");
         var view = (ChameLab.Views.CardsView)scene.Child!;
-        var editor = view.FindControl<HexEditor>("MemoryEditor")!;
         var window = new Window { Width = width, Height = 800, Content = scene };
         window.Show();
         try
         {
             Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
+            var editor = view.GetVisualDescendants().OfType<HexEditor>().Single(c => c.Name == "MemoryEditor");
             var toolbar = view.GetVisualDescendants().OfType<HexEditorToolbar>().Single();
             editor.Focus();
             editor.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.F, KeyModifiers = KeyModifiers.Control });

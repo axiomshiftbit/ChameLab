@@ -28,7 +28,9 @@ public static class StorageService
         ?? throw new InvalidOperationException(Strings.Storage_NoWindow);
 
     /// <summary>Shows an open dialog and returns the chosen file's bytes, or null if canceled.</summary>
-    public static async Task<PickedFile?> OpenAsync(string title, params string[] extensions)
+    public static Task<PickedFile?> OpenAsync(string title, params string[] extensions) => OpenBoundedAsync(title, int.MaxValue, extensions);
+
+    public static async Task<PickedFile?> OpenBoundedAsync(string title, int maxBytes, params string[] extensions)
     {
         var files = await Provider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
@@ -42,7 +44,13 @@ public static class StorageService
 
         await using var stream = await file.OpenReadAsync();
         using var ms = new MemoryStream();
-        await stream.CopyToAsync(ms);
+        var buffer = new byte[16384];
+        int count;
+        while ((count = await stream.ReadAsync(buffer)) > 0)
+        {
+            if (ms.Length + count > maxBytes) throw new InvalidDataException(Strings.Storage_FileTooLarge);
+            await ms.WriteAsync(buffer.AsMemory(0, count));
+        }
         return new PickedFile(file.Name, ms.ToArray());
     }
 
@@ -60,7 +68,9 @@ public static class StorageService
         if (file is null) return null;
 
         await using var stream = await file.OpenWriteAsync();
+        if (stream.CanSeek) stream.SetLength(0);
         await stream.WriteAsync(data);
+        await stream.FlushAsync();
         return file.Name;
     }
 

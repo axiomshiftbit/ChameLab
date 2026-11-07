@@ -161,8 +161,8 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         DiscardAndLeaveCommand = ReactiveCommand.Create(() => ResolveLeave(run: true));
         StayCommand = ReactiveCommand.Create(() => ResolveLeave(run: false));
 
-        ScanHfCommand = ReactiveCommand.CreateFromTask(ScanHfAsync, connected);
-        ScanLfCommand = ReactiveCommand.CreateFromTask(ScanLfAsync, connected);
+        ScanHfCommand = ReactiveCommand.CreateFromTask(ScanHfAsync, this.WhenAnyValue(x => x.CanScanHf));
+        ScanLfCommand = ReactiveCommand.CreateFromTask(ScanLfAsync, this.WhenAnyValue(x => x.CanScanLf));
         DumpCommand = ReactiveCommand.CreateFromTask(DumpAsync,
             this.WhenAnyValue(x => x.CanDump, x => x.IsConnected, x => x.DumpKeyCount, x => x.IsUltralightDump,
                     x => x.DumpPasswordError, x => x.IsBusy,
@@ -637,9 +637,17 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         private set
         {
             this.RaiseAndSetIfChanged(ref _isConnected, value);
+            this.RaisePropertyChanged(nameof(CanScanHf));
+            this.RaisePropertyChanged(nameof(CanScanLf));
+            this.RaisePropertyChanged(nameof(ScanCapabilitiesHint));
             RaiseDumpToolbar();
         }
     }
+
+    public bool CanScanHf => IsConnected && (_device.DeviceInfo?.Capabilities.Allows(FirmwareFeature.HfScan) ?? true);
+    public bool CanScanLf => IsConnected && (_device.DeviceInfo?.Capabilities.Allows(FirmwareFeature.LfScan) ?? true);
+    public string? ScanCapabilitiesHint => !IsConnected ? null : !CanScanHf || !CanScanLf
+        ? Strings.Capabilities_ScanLimited : _device.DeviceInfo?.Capabilities.IsKnown != true ? Strings.Capabilities_Unknown : null;
 
     public string? ProgressText
     {
@@ -1608,16 +1616,16 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         string? generation = null;
         if (tags.Count == 1 && CardFormats.GuessHfType(tags[0].Sak, tags[0].Atqa).IsMifareClassic())
         {
-            generation = Strings.Cards_GenerationUnknown;
+            generation = Strings.Cards_GenerationUnknown + "\n" + Strings.Cards_GenerationNotProven;
             try
             {
                 var inspection = await client.InspectWriteTargetAsync(checkMemory: false);
                 if (inspection is not null && inspection.Tag.Uid.AsSpan().SequenceEqual(tags[0].Uid))
-                    generation = inspection.Gen4 ? "Gen4 GTU / Ultimate"
-                        : inspection.Generation?.Label() ?? Strings.Cards_GenerationUnknown;
+                    generation = inspection.GenerationSummary + "\n" + inspection.GenerationExplanation;
             }
             catch (ChameleonException) { /* optional detection must not discard a successful scan */ }
             catch (FormatException) { /* unsupported read-configuration reply */ }
+            catch (TimeoutException) { /* the scan is usable even if optional probes time out */ }
         }
 
         await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>

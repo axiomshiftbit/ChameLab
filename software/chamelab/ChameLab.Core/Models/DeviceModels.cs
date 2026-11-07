@@ -20,6 +20,10 @@ public sealed record DeviceInfo
 
     /// <summary>The firmware takes per-card slot LED colors (ChameLab firmware, not the original one).</summary>
     public bool SupportsSlotColors { get; init; }
+    private FirmwareCapabilities? _capabilities;
+    public ushort[]? SupportedCommands { get; init { field = value; _capabilities = null; } }
+    [System.Text.Json.Serialization.JsonIgnore]
+    public FirmwareCapabilities Capabilities => _capabilities ??= new(SupportedCommands);
 
     public string ModelName => Model == DeviceModel.Lite ? "Chameleon Lite" : "Chameleon Ultra";
 }

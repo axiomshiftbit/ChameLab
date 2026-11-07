@@ -8,9 +8,27 @@ using ChameLab.Localization;
 
 namespace ChameLab.Protocol;
 
+public enum DetectionConfidence { Unknown, Estimated, Confirmed }
+
 public sealed record WriteTargetInspection(Hf14aTag Tag, TagSpecificType Type,
     MagicGeneration? Generation, bool Gen4, MifareDump? Memory)
 {
+    // Readable unauthenticated block 0 is a Gen3 hint, not proof of a writable UID.
+    public DetectionConfidence GenerationConfidence => Gen4 || Generation == MagicGeneration.Gen1a
+        ? DetectionConfidence.Confirmed : Generation == MagicGeneration.Gen3 ? DetectionConfidence.Estimated : DetectionConfidence.Unknown;
+    public string GenerationSummary => GenerationConfidence switch
+    {
+        DetectionConfidence.Confirmed => string.Format(Strings.Cards_GenerationConfirmed, Gen4 ? "Gen4 GTU / Ultimate" : "Gen1a"),
+        DetectionConfidence.Estimated => Strings.Cards_GenerationEstimated,
+        _ => Strings.Cards_GenerationUnknown,
+    };
+    public string GenerationExplanation => GenerationConfidence switch
+    {
+        DetectionConfidence.Confirmed => Strings.Cards_GenerationProtocolConfirmed,
+        DetectionConfidence.Estimated => Strings.Cards_GenerationReadHint,
+        _ => Strings.Cards_GenerationNotProven,
+    };
+
     public int ReadableDataBlocks => Memory is null ? 0 : Enumerable.Range(1, Memory.BlockCount - 1)
         .Count(b => !MifareClassic.IsTrailer(b) && Memory.GetBlock(b) is not null);
     public int TotalDataBlocks => Memory is null ? 0 : Memory.BlockCount - Memory.SectorCount - 1;
@@ -57,7 +75,9 @@ public sealed partial class ChameleonClient
                 {
                     var read = await Hf14aRawAsync(RawOpt.ActivateRfField | RawOpt.WaitResponse | RawOpt.AppendCrc | RawOpt.AutoSelect,
                         [0x30, 0x00], ct: ct);
-                    if (read.Length == 18) generation = MagicGeneration.Gen3;
+                    if (read.Length == 18 && HfSniff.CrcA(read.AsSpan(0, 16)) == (read[16] | read[17] << 8) &&
+                        tag.Uid.Length <= 10 && read.AsSpan(0, tag.Uid.Length).SequenceEqual(tag.Uid))
+                        generation = MagicGeneration.Gen3;
                 }
             }
             // GTU/Ultimate read-configuration only. A password mismatch cannot rule Gen4 out.

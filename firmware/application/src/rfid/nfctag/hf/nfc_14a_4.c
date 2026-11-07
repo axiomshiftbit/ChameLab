@@ -85,24 +85,23 @@ static uint8_t m_large_resp_count = 0;
 /*  Static response table                                               */
 /* ------------------------------------------------------------------ */
 
-void nfc_tag_14a_4_add_static_response(const uint8_t *cmd,  uint8_t cmd_len,
+bool nfc_tag_14a_4_add_static_response(const uint8_t *cmd,  uint8_t cmd_len,
                                        const uint8_t *resp, uint16_t resp_len) {
-    if (cmd_len > NFC_14A_4_MAX_STATIC_CMD_LEN) cmd_len = NFC_14A_4_MAX_STATIC_CMD_LEN;
+    if (cmd_len == 0 || cmd_len > NFC_14A_4_MAX_STATIC_CMD_LEN || resp_len > NFC_14A_4_MAX_LARGE_RESP_LEN) return false;
 
     if (resp_len > NFC_14A_4_MAX_STATIC_RESP_LEN) {
         /* Large response: RAM-only overflow table */
-        if (m_large_resp_count >= NFC_14A_4_MAX_LARGE_RESPONSES) return;
-        if (resp_len > NFC_14A_4_MAX_LARGE_RESP_LEN) resp_len = NFC_14A_4_MAX_LARGE_RESP_LEN;
+        if (m_large_resp_count >= NFC_14A_4_MAX_LARGE_RESPONSES) return false;
         nfc_tag_14a_4_large_response_t *le = &m_large_resp[m_large_resp_count++];
         le->cmd_len  = cmd_len;
         le->resp_len = resp_len;
         memcpy(le->cmd,  cmd,  cmd_len);
         memcpy(le->resp, resp, resp_len);
-        return;
+        return true;
     }
 
     /* Normal response: flash-backed table */
-    if (m_static_resp_count >= NFC_14A_4_MAX_STATIC_RESPONSES) return;
+    if (m_static_resp_count >= NFC_14A_4_MAX_STATIC_RESPONSES) return false;
     nfc_tag_14a_4_static_response_t *e = &m_static_resp[m_static_resp_count++];
     e->cmd_len  = cmd_len;
     e->resp_len = (uint8_t)resp_len;
@@ -113,6 +112,7 @@ void nfc_tag_14a_4_add_static_response(const uint8_t *cmd,  uint8_t cmd_len,
         memcpy(&m_tag_information->static_resp[m_tag_information->static_resp_count++],
                e, sizeof(*e));
     }
+    return true;
 }
 
 void nfc_tag_14a_4_clear_static_responses(void) {

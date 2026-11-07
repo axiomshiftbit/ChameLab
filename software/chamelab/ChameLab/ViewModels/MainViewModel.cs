@@ -21,12 +21,14 @@ public sealed class MainViewModel : ViewModelBase
     private static readonly TimeSpan ExitConfirmWindow = TimeSpan.FromSeconds(2);
 
     public MainViewModel(DeviceService device, CardLibrary cards, DictionaryLibrary dictionaries,
-        FirmwareUpdateService firmware)
+        FirmwareUpdateService firmware, DeviceBackupService? backupService = null)
     {
         _device = device;
 
-        Firmware = new FirmwareUpdateViewModel(device, firmware);
-        _connect = new ConnectViewModel(device);
+        backupService ??= new DeviceBackupService(device, AppServices.Store);
+        Backups = new DeviceBackupViewModel(backupService, device);
+        Firmware = new FirmwareUpdateViewModel(device, firmware, backupService) { Backups = Backups };
+        _connect = new ConnectViewModel(device, Firmware);
         Chameleon = new ChameleonViewModel(device, cards, Firmware);
         Slots = new SlotsViewModel(device, cards);
         Cards = new CardsViewModel(device, cards, dictionaries);
@@ -68,13 +70,18 @@ public sealed class MainViewModel : ViewModelBase
         _ = AppUpdate.CheckInBackgroundAsync();
         Firmware.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(FirmwareUpdateViewModel.IsInstalling)) UpdateWatching();
+            if (e.PropertyName == nameof(FirmwareUpdateViewModel.IsDialogOpen)) UpdateWatching();
+        };
+        Backups.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(DeviceBackupViewModel.IsOpen)) UpdateWatching();
         };
     }
 
     public ConnectViewModel Connect => _connect;
     /// <summary>Version check and install dialog; the dialog overlays the whole shell.</summary>
     public FirmwareUpdateViewModel Firmware { get; }
+    public DeviceBackupViewModel Backups { get; }
     /// <summary>Whether a newer ChameLab is out; shown in the top bar and in Settings.</summary>
     public AppUpdateViewModel AppUpdate { get; }
     /// <summary>The connected device: status, firmware and its settings.</summary>
@@ -116,7 +123,7 @@ public sealed class MainViewModel : ViewModelBase
     {
         // A firmware install looks for the bootloader itself: a Connect page scan running beside
         // it would cut its BLE scan short, so watching resumes only once the install is over.
-        if (ReferenceEquals(_currentPage, _connect) && _device.State == ConnectionState.Disconnected && !Firmware.IsInstalling)
+        if (ReferenceEquals(_currentPage, _connect) && _device.State == ConnectionState.Disconnected && !Firmware.IsDialogOpen && !Backups.IsOpen)
             _connect.StartWatching();
         else
             _connect.StopWatching();

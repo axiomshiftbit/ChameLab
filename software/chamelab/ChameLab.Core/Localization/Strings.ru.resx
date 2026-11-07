@@ -3741,4 +3741,187 @@
   <data name="Firmware_ChargeBeforeUpdate" xml:space="preserve">
     <value>Перед обновлением по Bluetooth зарядите Chameleon минимум до 20% и дождитесь измерения заряда.</value>
   </data>
+  <data name="Firmware_RecoveryTitle" xml:space="preserve">
+    <value>Восстановить прошивку</value>
+  </data>
+  <data name="Firmware_RecoveryInvalid" xml:space="preserve">
+    <value>Сохранённое задание восстановления повреждено или несовместимо. Оно не было перезаписано.</value>
+  </data>
+  <data name="Firmware_RecoveryReady" xml:space="preserve">
+    <value>Сохранённое обновление: {0}, {1}. Пакет приложения повторно прошёл проверку целостности и совместимости.</value>
+  </data>
+  <data name="Firmware_RecoveryEmpty" xml:space="preserve">
+    <value>На этом телефоне или компьютере нет пригодного задания восстановления. Здесь можно продолжить обновление, начатое этим приложением. Если хамелеон запускается нормально, подключите его и выберите пакет прошивки.</value>
+  </data>
+  <data name="Firmware_RecoveryInstructions" xml:space="preserve">
+    <value>Включите тот же хамелеон и обеспечьте исходное подключение по USB или Bluetooth. Повторная попытка устанавливает сохранённое приложение с начала, без замены загрузчика. Если устройство не найдено, переподключите USB или переведите его в DFU кнопками и повторите попытку.</value>
+  </data>
+  <data name="Firmware_RecoveryDiscard" xml:space="preserve">
+    <value>Удалить сохранённое задание</value>
+  </data>
+  <data name="Backup_Title" xml:space="preserve">
+    <value>Зашифрованная резервная копия</value>
+  </data>
+  <data name="Backup_IncompleteRead" xml:space="preserve">
+    <value>Устройство вернуло неполные данные памяти. Чтение остановлено.</value>
+  </data>
+  <data name="Backup_InvalidOrPassword" xml:space="preserve">
+    <value>Неверный пароль, повреждённый файл или неподдерживаемый формат копии.</value>
+  </data>
+  <data name="Backup_PasswordHint" xml:space="preserve">
+    <value>Введите одинаковый пароль дважды, не короче 12 символов. Сохраните его: приложение не запоминает и не может восстановить пароль. Зашифрованная копия останется на этом телефоне или компьютере.</value>
+  </data>
+  <data name="Backup_Busy" xml:space="preserve">
+    <value>Операция с резервной копией уже выполняется.</value>
+  </data>
+  <data name="Backup_SaveFailed" xml:space="preserve">
+    <value>Не удалось сохранить и проверить зашифрованную копию. Обновление прошивки не начато.</value>
+  </data>
+  <data name="Backup_NotSupported" xml:space="preserve">
+    <value>Эта прошивка не поддерживает восстановление всех настроек из копии. Данные не изменены.</value>
+  </data>
+  <data name="Backup_VerificationFailed" xml:space="preserve">
+    <value>Проверка чтением после восстановления выявила несовпадение. Сохраните копию и повторите восстановление.</value>
+  </data>
+  <data name="Backup_LocalAvailable" xml:space="preserve">
+    <value>Найдена локальная зашифрованная копия. Экспортируйте её для хранения вне приложения или введите пароль для проверки перед восстановлением.</value>
+  </data>
+  <data name="Backup_None" xml:space="preserve">
+    <value>Локальная копия отсутствует. Её можно создать перед обновлением прошивки или импортировать из файла .clbackup.</value>
+  </data>
+  <data name="Backup_Imported" xml:space="preserve">
+    <value>Файл выбран. Введите пароль для проверки копии.</value>
+  </data>
+  <data name="Backup_Exported" xml:space="preserve">
+    <value>Зашифрованная копия экспортирована. Храните файл и пароль отдельно.</value>
+  </data>
+  <data name="Backup_Preview" xml:space="preserve">
+    <value>{0} · {1:g} · Слотов: {2}. Пароль и целостность проверены.</value>
+  </data>
+  <data name="Backup_ConnectOriginal" xml:space="preserve">
+    <value>Для восстановления подключите исходный хамелеон и повторно проверьте копию.</value>
+  </data>
+  <data name="Backup_Restoring" xml:space="preserve">
+    <value>Восстановление слота {0} из 8…</value>
+  </data>
+  <data name="Backup_Restored" xml:space="preserve">
+    <value>Слоты и настройки восстановлены и проверены повторным чтением.</value>
+  </data>
+  <data name="Backup_RestoreInterrupted" xml:space="preserve">
+    <value>Восстановление не завершено. Часть слотов или настроек уже могла измениться. Сохраните файл и повторите попытку на том же устройстве.</value>
+  </data>
+  <data name="Backup_BeforeUpdate" xml:space="preserve">
+    <value>Сохранить слоты и настройки перед обновлением</value>
+  </data>
+  <data name="Backup_Password" xml:space="preserve">
+    <value>Пароль резервной копии</value>
+  </data>
+  <data name="Backup_RepeatPassword" xml:space="preserve">
+    <value>Повторите пароль</value>
+  </data>
+  <data name="Backup_Skipped" xml:space="preserve">
+    <value>Обновление будет выполнено без новой резервной копии слотов и настроек.</value>
+  </data>
+  <data name="Backup_Creating" xml:space="preserve">
+    <value>Создание зашифрованной копии…</value>
+  </data>
+  <data name="Backup_Reading" xml:space="preserve">
+    <value>Чтение слота {0} из 8…</value>
+  </data>
+  <data name="Backup_Import" xml:space="preserve">
+    <value>Импортировать файл</value>
+  </data>
+  <data name="Backup_Export" xml:space="preserve">
+    <value>Экспортировать зашифрованную копию</value>
+  </data>
+  <data name="Backup_Unlock" xml:space="preserve">
+    <value>Проверить копию</value>
+  </data>
+  <data name="Backup_RestoreWarning" xml:space="preserve">
+    <value>Восстановление заменит все восемь слотов и настройки устройства сохранёнными данными. Не отключайте устройство до завершения проверки.</value>
+  </data>
+  <data name="Backup_ConfirmRestore" xml:space="preserve">
+    <value>Заменить слоты и настройки</value>
+  </data>
+  <data name="Storage_FileTooLarge" xml:space="preserve">
+    <value>Этот файл слишком велик для данной операции.</value>
+  </data>
+  <data name="Cards_GenerationConfirmed" xml:space="preserve">
+    <value>{0} — протокол подтверждён</value>
+  </data>
+  <data name="Cards_GenerationEstimated" xml:space="preserve">
+    <value>Gen3 — предположительно</value>
+  </data>
+  <data name="Cards_GenerationProtocolConfirmed" xml:space="preserve">
+    <value>Проверка без записи подтвердила ответ протокола. Это не подтверждает производителя или возможность каждой операции записи.</value>
+  </data>
+  <data name="Cards_GenerationReadHint" xml:space="preserve">
+    <value>Блок 0 прочитан без аутентификации. Другие совместимые карты могут вести себя так же; возможность записи UID не подтверждена.</value>
+  </data>
+  <data name="Cards_GenerationNotProven" xml:space="preserve">
+    <value>Gen2, CUID и FUID нельзя надёжно различить этими проверками без записи. Неизвестное поколение не означает оригинальную или неисправную карту.</value>
+  </data>
+  <data name="Capabilities_Title" xml:space="preserve">
+    <value>Возможности прошивки</value>
+  </data>
+  <data name="Capabilities_Supported" xml:space="preserve">
+    <value>Поддерживается подключённой прошивкой.</value>
+  </data>
+  <data name="Capabilities_Unsupported" xml:space="preserve">
+    <value>Недоступно: подключённая прошивка не сообщает о поддержке необходимых команд.</value>
+  </data>
+  <data name="Capabilities_Unknown" xml:space="preserve">
+    <value>Прошивка не сообщила свои возможности. Совместимость будет проверена при выполнении операции.</value>
+  </data>
+  <data name="Capabilities_Unavailable" xml:space="preserve">
+    <value>{0}: подключённая прошивка не поддерживает необходимые команды.</value>
+  </data>
+  <data name="Capabilities_InvalidReply" xml:space="preserve">
+    <value>Некорректный ответ о возможностях прошивки.</value>
+  </data>
+  <data name="Capabilities_ScanLimited" xml:space="preserve">
+    <value>Некоторые режимы сканирования недоступны в этой прошивке. Подробности — «Возможности прошивки» на вкладке «Хамелеон».</value>
+  </data>
+  <data name="Capabilities_HfScan" xml:space="preserve">
+    <value>Сканирование HF-карт</value>
+  </data>
+  <data name="Capabilities_LfScan" xml:space="preserve">
+    <value>Сканирование карт EM410x</value>
+  </data>
+  <data name="Capabilities_ClassicRead" xml:space="preserve">
+    <value>Чтение MIFARE Classic</value>
+  </data>
+  <data name="Capabilities_ClassicWrite" xml:space="preserve">
+    <value>Запись MIFARE Classic</value>
+  </data>
+  <data name="Capabilities_SlotColors" xml:space="preserve">
+    <value>Цвета светодиодов слотов</value>
+  </data>
+  <data name="Capabilities_LfCycle" xml:space="preserve">
+    <value>Несколько LF-карт в слоте</value>
+  </data>
+  <data name="Capabilities_BatteryCondition" xml:space="preserve">
+    <value>Состояние аккумулятора</value>
+  </data>
+  <data name="Capabilities_LongPress" xml:space="preserve">
+    <value>Длительность долгого нажатия</value>
+  </data>
+  <data name="Capabilities_BlePairing" xml:space="preserve">
+    <value>Настройки сопряжения Bluetooth</value>
+  </data>
+  <data name="Capabilities_FirmwareUpdate" xml:space="preserve">
+    <value>Обновление приложения в устройстве</value>
+  </data>
+  <data name="Firmware_RecoveryOtherDevice" xml:space="preserve">
+    <value>Сохранено незавершённое обновление другого хамелеона. Завершите его либо явно удалите задание на экране восстановления перед обновлением этого устройства.</value>
+  </data>
+  <data name="Backup_Scope" xml:space="preserve">
+    <value>Копия включает память слотов и доступные для чтения настройки устройства. Сохранённые Bluetooth-сопряжения и библиотека карт приложения в неё не входят.</value>
+  </data>
+  <data name="Capabilities_ClassicKeySearch" xml:space="preserve">
+    <value>Поиск ключей MIFARE Classic</value>
+  </data>
+  <data name="Capabilities_UlcKeySearch" xml:space="preserve">
+    <value>Поиск ключей Ultralight C</value>
+  </data>
 </root>

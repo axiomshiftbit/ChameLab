@@ -36,10 +36,11 @@ public static class LayoutScenarios
         var dictionaries = new DictionaryLibrary(store);
         foreach (var size in new[] { 4, 6, 16 })
             dictionaries.Add(KeyDictionary.FromText($"Proxmark3 — dictionary {size * 8} bit", new string('1', size * 2)));
-        var firmware = new FirmwareUpdateViewModel(device, new FirmwareUpdateService(device, []));
+        var backup = new DeviceBackupService(device, store);
+        var firmware = new FirmwareUpdateViewModel(device, new FirmwareUpdateService(device, []), backup) { Backups = new(backup, device) };
         Control view = page switch
         {
-            "connect" => new ConnectView { DataContext = new ConnectViewModel(device) },
+            "connect" => new ConnectView { DataContext = new ConnectViewModel(device, firmware) },
             "connect-found" => ConnectScenario(),
             "notice" or "error" => MessageScenario(page),
             "settings" => new SettingsView { DataContext = new SettingsViewModel(cards, dictionaries, new AppUpdateViewModel()) },
@@ -137,7 +138,7 @@ public static class LayoutScenarios
         if (page == "card-access")
         {
             model.Form!.SelectedSector = 32;
-            view.FindControl<Expander>("MifareAccessExpander")!.IsExpanded = true;
+            view.GetLogicalDescendants().OfType<Expander>().Single(c => c.Name == "MifareAccessExpander").IsExpanded = true;
         }
         if (page == "card-compare")
         {

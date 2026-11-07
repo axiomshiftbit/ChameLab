@@ -59,12 +59,14 @@ public class FirmwareInstallTests
         var device = new DeviceService([scanner]);
         var bootloader = new Target(); bootloader.Channel.LoseLastAck = loseAck;
         var target = new FirmwareUpdateTarget(scanner.Candidate, Original, bootloader);
+        var recovery = new FirmwareRecoveryStore(new MemoryKeyValueStore());
         try
         {
-            await new FirmwareUpdateService(device, []).InstallAsync(DfuPackage.Parse(DfuPackageTests.Zip()), target,
+            await new FirmwareUpdateService(device, [], recovery: recovery).InstallAsync(DfuPackage.Parse(DfuPackageTests.Zip()), target,
                 new Progress<FirmwareUpdateProgress>(), expectedVersion: new FirmwareVersion(2, 3, 15, 0));
             Assert.Equal(Original.ChipId, device.DeviceInfo!.ChipId);
             Assert.Equal(1, scanner.Connections);
+            Assert.Null(recovery.Load());
         }
         finally { await device.DisconnectAsync(); }
     }

@@ -630,6 +630,8 @@
                   </Grid>
                 </Button>
               </UniformGrid>
+              <TextBlock Text="{Binding ScanCapabilitiesHint}" TextWrapping="Wrap" Classes="caption"
+                         IsVisible="{Binding ScanCapabilitiesHint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
               <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding ScanMissText}"
                          Foreground="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}"
@@ -703,7 +705,11 @@
                            b:BringIntoViewOnShow.IsEnabled="True" IsVisible="{Binding ProgressText, Converter={x:Static ObjectConverters.IsNotNull}}" />
               </StackPanel>
 
-              <views:CardWriterView IsVisible="{Binding IsWriteOpen}" />
+              <c:DeferredContent IsActive="{Binding IsWriteOpen}">
+                <c:DeferredContent.ContentTemplate>
+                  <DataTemplate x:DataType="vm:CardsViewModel"><views:CardWriterView /></DataTemplate>
+                </c:DeferredContent.ContentTemplate>
+              </c:DeferredContent>
             </StackPanel>
           </Border>
 
@@ -751,7 +757,10 @@
           </Border>
 
           <!-- ===================== Card details (add + edit) ===================== -->
-          <Border Classes="card" IsVisible="{Binding ShowEditor}">
+          <c:DeferredContent IsActive="{Binding ShowEditor}">
+            <c:DeferredContent.ContentTemplate>
+              <DataTemplate x:DataType="vm:CardsViewModel">
+<Border Classes="card" IsVisible="{Binding ShowEditor}">
             <StackPanel Spacing="10">
               <TextBlock Text="{x:Static loc:Strings.Cards_CardDetailsHeader}" Classes="overline" />
 
@@ -833,9 +842,15 @@
               </c:FlowGrid>
             </StackPanel>
           </Border>
+              </DataTemplate>
+            </c:DeferredContent.ContentTemplate>
+          </c:DeferredContent>
 
           <!-- Memory dump / continuation for scanned, saved, imported and manual cards. -->
-          <Border x:Name="MemoryCard" Classes="card" IsVisible="{Binding ShowMemoryEditor}">
+          <c:DeferredContent IsActive="{Binding ShowMemoryEditor}">
+            <c:DeferredContent.ContentTemplate>
+              <DataTemplate x:DataType="vm:CardsViewModel">
+<Border x:Name="MemoryCard" Loaded="OnMemoryLoaded" Classes="card" IsVisible="{Binding ShowMemoryEditor}">
             <StackPanel Spacing="12">
               <StackPanel Spacing="2">
                 <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
@@ -1230,6 +1245,9 @@
               </StackPanel>
             </StackPanel>
           </Border>
+              </DataTemplate>
+            </c:DeferredContent.ContentTemplate>
+          </c:DeferredContent>
 
           <!-- ===================== Password protection (Ultralight EV1 / NTAG21x) ===================== -->
           <!-- Hidden as a whole, so the list's spacing doesn't leave a gap for the hidden card. -->

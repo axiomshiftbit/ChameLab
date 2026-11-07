@@ -29,7 +29,7 @@ public static class AppServices
 
     public static DictionaryLibrary Dictionaries => field ??= new DictionaryLibrary(Store);
 
-    public static FirmwareUpdateService Firmware => field ??= new FirmwareUpdateService(Device, _dfu);
+    public static FirmwareUpdateService Firmware => field ??= new FirmwareUpdateService(Device, _dfu, recovery: new FirmwareRecoveryStore(Store));
 
     /// <summary>Scan sounds and vibration; the desktop player unless a head registers its own.</summary>
     public static IFeedbackPlayer Feedback => _feedback ??= new DesktopFeedbackPlayer();

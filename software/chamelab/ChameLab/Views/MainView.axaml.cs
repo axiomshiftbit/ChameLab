@@ -111,8 +111,8 @@ public partial class MainView : UserControl
         if (e.Handled || _topLevel is null || DataContext is not MainViewModel vm) return;
         e.Handled = CloseTopPopup(_topLevel)
                     || DialogKeys.TryCancel(_topLevel)
-                    // Nothing to cancel while firmware installs, and Back must not leave the dialog either.
-                    || vm.Firmware.IsDialogOpen
+                    // Busy device operations must keep their modal open until they finish.
+                    || vm.Firmware.IsDialogOpen || vm.Backups.IsOpen
                     || DialogKeys.TryGoBack(_topLevel)
                     || vm.TryGoBack()
                     // Only phones and the browser tab close on an unhandled Back; desktop ignores it.

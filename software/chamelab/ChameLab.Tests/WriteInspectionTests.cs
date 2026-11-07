@@ -13,6 +13,35 @@ namespace ChameLab.Tests;
 public class WriteInspectionTests
 {
     [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task UnauthenticatedBlockZeroIsOnlyAHintAndRequiresAValidCrc(bool validCrc)
+    {
+        var block = new byte[18]; new byte[] { 1, 2, 3, 4 }.CopyTo(block, 0);
+        var crc = HfSniff.CrcA(block.AsSpan(0, 16)); block[16] = (byte)crc; block[17] = (byte)(crc >> 8);
+        if (!validCrc) block[17] ^= 1;
+        var transport = new CardTransport { Response = req => req.Command == Command.Hf14aRaw
+            ? (Status.HfTagOk, req.Data[5] == 0x30 ? block : Array.Empty<byte>()) : null };
+        await using var connection = new ChameleonConnection(transport); await connection.OpenAsync();
+        var result = await new ChameleonClient(connection).InspectWriteTargetAsync(false);
+        Assert.Equal(validCrc ? DetectionConfidence.Estimated : DetectionConfidence.Unknown, result!.GenerationConfidence);
+        Assert.DoesNotContain(transport.Requests.Where(q => q.Command == Command.Hf14aRaw), q => q.Data[5] is 0xA0 or 0xA2 or 0x90);
+    }
+
+    [Theory]
+    [InlineData(null, false, DetectionConfidence.Unknown)]
+    [InlineData(MagicGeneration.Gen2, false, DetectionConfidence.Unknown)]
+    [InlineData(MagicGeneration.Gen3, false, DetectionConfidence.Estimated)]
+    [InlineData(MagicGeneration.Gen1a, false, DetectionConfidence.Confirmed)]
+    [InlineData(null, true, DetectionConfidence.Confirmed)]
+    public void GenerationConfidenceDoesNotPromoteGuessesToConfirmed(MagicGeneration? generation, bool gen4, DetectionConfidence expected)
+    {
+        var inspection = new WriteTargetInspection(new([1, 2, 3, 4], [4, 0], 8, []), TagSpecificType.Mifare1024, generation, gen4, null);
+        Assert.Equal(expected, inspection.GenerationConfidence);
+        Assert.False(string.IsNullOrWhiteSpace(inspection.GenerationExplanation));
+    }
+
+    [Theory]
     [InlineData(false, false, null)]
     [InlineData(true, false, null)]
     [InlineData(true, true, MagicGeneration.Gen1a)]

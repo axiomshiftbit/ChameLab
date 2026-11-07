@@ -174,7 +174,7 @@ public sealed class BleTransport : ITransport
         if (_device is not null)
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-            try { await _adapter.DisconnectDeviceAsync(_device, timeout.Token); } catch { /* ignore */ }
+            try { await _adapter.DisconnectDeviceAsync(_device, timeout.Token).WaitAsync(timeout.Token); } catch { /* ignore */ }
         }
         _tx = _rx = null;
         _device = null;
