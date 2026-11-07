@@ -11,6 +11,8 @@ using ReactiveUI;
 
 namespace ChameLab.ViewModels;
 
+public enum TargetScanState { Idle, Scanning, Found, Warning, Error }
+
 public sealed partial class CardsViewModel
 {
     public bool IsStandaloneWriter { get; set; }
@@ -24,6 +26,20 @@ public sealed partial class CardsViewModel
     public ICommand InspectBlankCommand { get; private set; } = null!;
     public ICommand StopInspectionCommand { get; private set; } = null!;
     public string TargetSummary { get; private set => this.RaiseAndSetIfChanged(ref field, value); } = Strings.Writer_ScanFirst;
+    public TargetScanState TargetState
+    {
+        get;
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref field, value);
+            this.RaisePropertyChanged(nameof(TargetIsSuccess));
+            this.RaisePropertyChanged(nameof(TargetIsWarning));
+            this.RaisePropertyChanged(nameof(TargetIsError));
+        }
+    }
+    public bool TargetIsSuccess => TargetState == TargetScanState.Found;
+    public bool TargetIsWarning => TargetState == TargetScanState.Warning;
+    public bool TargetIsError => TargetState == TargetScanState.Error;
     public bool TargetConfirmed { get; set => this.RaiseAndSetIfChanged(ref field, value); }
     public bool HasWriteTarget { get; private set => this.RaiseAndSetIfChanged(ref field, value); }
     public bool HasWriterSource => ActionTag is not null;
@@ -53,6 +69,7 @@ public sealed partial class CardsViewModel
         _writeInspection = null; _lfTarget = null;
         TargetConfirmed = HasWriteTarget = LfBlankAcknowledged = false;
         TargetSummary = Strings.Writer_ScanFirst;
+        TargetState = TargetScanState.Idle;
     }
 
     public void SetWriteSource(CardSave card)
@@ -69,32 +86,41 @@ public sealed partial class CardsViewModel
     private Task TestScanLfAsync() => RunAsync(async () =>
     {
         if (_device.Client is not { } client) return;
-        TargetSummary = Strings.Writer_ScanFirst;
-        var previous = await client.GetDeviceModeAsync();
+        ResetTargetInspection();
+        TargetSummary = Strings.Writer_InspectStarted;
+        TargetState = TargetScanState.Scanning;
+        DeviceMode? previous = null;
         try
         {
+            previous = await client.GetDeviceModeAsync();
             await client.SetDeviceModeAsync(DeviceMode.Reader);
             if (LfProtocol.IsEm410x()) await client.Em410xScanAsync(); else await client.LfScanAsync(LfProtocol);
             TargetSummary = Strings.Writer_LfFound;
+            TargetState = TargetScanState.Found;
             _device.Journal.Add("INFO", Strings.Writer_LfFound);
             ScanFeedback.Found();
         }
         catch (ChameleonException ex) when (ex.Status is Status.LfTagNoFound or Status.HfTagNo)
-        { TargetSummary = Strings.Writer_NotFound; ScanFeedback.Missed(); }
-        finally { if (!client.Connection.IsClosed) await client.SetDeviceModeAsync(previous); }
+        { TargetNotFound(); }
+        catch (Exception ex)
+        { TargetSummary = ex.Message; TargetState = TargetScanState.Error; throw; }
+        finally { if (!client.Connection.IsClosed && previous is { } mode) await client.SetDeviceModeAsync(mode); }
     });
 
     private Task InspectTargetAsync(bool memory) => _inspectTask = RunAsync(async () =>
     {
         if (_device.Client is not { } client) return;
         ResetTargetInspection();
+        TargetSummary = Strings.Writer_InspectStarted;
+        TargetState = TargetScanState.Scanning;
         using var cts = new CancellationTokenSource();
-        var previousMode = await client.GetDeviceModeAsync(cts.Token);
+        DeviceMode? previousMode = null;
         _inspectCts = cts;
         IsInspecting = true;
         _device.Journal.Add("INFO", Strings.Writer_InspectStarted);
         try
         {
+            previousMode = await client.GetDeviceModeAsync(cts.Token);
             await client.SetDeviceModeAsync(DeviceMode.Reader, cts.Token);
             if (IsLfWrite && ActionTag is { } lfType)
             {
@@ -107,7 +133,7 @@ public sealed partial class CardsViewModel
             {
                 var password = ParseGen4Password();
                 var inspection = await client.InspectWriteTargetAsync(memory, password, cts.Token);
-                if (inspection is null) { TargetSummary = Strings.Writer_NotFound; _device.Journal.Add("INFO", Strings.Journal_NoTag); return; }
+                if (inspection is null) { TargetNotFound(); return; }
                 if (_writeSession is null)
                 {
                     if (inspection.Gen4) SelectedGeneration = MagicGeneration.Gen4;
@@ -129,21 +155,37 @@ public sealed partial class CardsViewModel
                 }
                 else if (memory) TargetSummary += "\n" + Strings.Writer_DataUnknown;
                 if (!HasWriteTarget) TargetSummary += "\n" + Strings.Writer_Incompatible;
+                TargetState = !HasWriteTarget || memory && (inspection.Memory is null
+                    || inspection.ReadableDataBlocks < inspection.TotalDataBlocks
+                    || inspection.FactoryKeySectors < inspection.Memory.SectorCount)
+                    ? TargetScanState.Warning : TargetScanState.Found;
                 _device.Journal.Add("INFO", $"{Strings.Writer_Found}: {inspection.Type.DisplayName()}; {kind}");
             }
+            if (IsLfWrite) TargetState = TargetScanState.Found;
             ScanFeedback.Found();
         }
         catch (OperationCanceledException) when (cts.IsCancellationRequested)
-        { TargetSummary = Strings.Journal_Cancelled; _device.Journal.Add("CANCEL", Strings.Journal_Cancelled); }
+        { TargetSummary = Strings.Writer_InspectionCancelled; TargetState = TargetScanState.Warning;
+            _device.Journal.Add("CANCEL", Strings.Writer_InspectionCancelled); }
         catch (ChameleonException ex) when (ex.Status is Status.HfTagNo or Status.LfTagNoFound)
-        { TargetSummary = Strings.Writer_NotFound; ScanFeedback.Missed(); }
+        { TargetNotFound(); }
+        catch (Exception ex)
+        { TargetSummary = ex.Message; TargetState = TargetScanState.Error; throw; }
         finally
         {
             _inspectCts = null; IsInspecting = false;
-            if (!client.Connection.IsClosed) await client.SetDeviceModeAsync(previousMode);
+            if (!client.Connection.IsClosed && previousMode is { } mode) await client.SetDeviceModeAsync(mode);
             this.RaisePropertyChanged(nameof(CanConfirmTarget));
         }
     });
+
+    private void TargetNotFound()
+    {
+        TargetSummary = Strings.Writer_NotFound;
+        TargetState = TargetScanState.Error;
+        _device.Journal.Add("WARN", Strings.Journal_NoTag);
+        ScanFeedback.Missed();
+    }
 
     private bool CompatibleTarget(WriteTargetInspection target) => ActionTag switch
     {

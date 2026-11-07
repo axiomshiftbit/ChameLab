@@ -3615,4 +3615,6 @@
   <data name="Connect_ChooseHint" xml:space="preserve">
     <value>选择设备后点击“连接”，或双击设备所在行。</value>
   </data>
+  <data name="Writer_InspectionCancelled" xml:space="preserve"><value>检查已取消，未写入数据。</value></data>
+  <data name="Cards_SearchPlaceholder" xml:space="preserve"><value>搜索卡片</value></data>
 </root>

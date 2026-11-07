@@ -3615,4 +3615,6 @@
   <data name="Connect_ChooseHint" xml:space="preserve">
     <value>기기를 선택한 후 연결 버튼을 누르거나 기기 행을 두 번 클릭하세요.</value>
   </data>
+  <data name="Writer_InspectionCancelled" xml:space="preserve"><value>확인이 취소되었습니다. 데이터를 기록하지 않았습니다.</value></data>
+  <data name="Cards_SearchPlaceholder" xml:space="preserve"><value>카드 검색</value></data>
 </root>

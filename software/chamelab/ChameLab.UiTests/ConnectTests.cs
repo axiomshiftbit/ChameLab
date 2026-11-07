@@ -20,6 +20,31 @@ namespace ChameLab.UiTests;
 
 public class ConnectTests
 {
+    [AvaloniaFact]
+    public async Task BluetoothWatchingStopsDuringConnectionAndResumesAfterFailure()
+    {
+        var scanner = new WaitingBleScanner();
+        var device = new DeviceService([scanner]);
+        var store = new MemoryKeyValueStore();
+        var model = new MainViewModel(device, new CardLibrary(store), new DictionaryLibrary(store), new FirmwareUpdateService(device, []));
+        var states = new List<ConnectionState>();
+        device.StateChanged += states.Add;
+        try
+        {
+            Assert.True(scanner.Watching);
+            var connect = device.ConnectAsync(new(TransportKind.Ble, "synthetic", "Test Chameleon"));
+            Dispatcher.UIThread.RunJobs();
+            Assert.False(scanner.Watching);
+            scanner.Completion.SetException(new InvalidOperationException("Synthetic failed connection"));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => connect);
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(scanner.Watching);
+            await device.DisconnectAsync();
+            Assert.Equal(new[] { ConnectionState.Connecting, ConnectionState.Disconnected }, states);
+        }
+        finally { model.Connect.StopWatching(); }
+    }
+
     [AvaloniaTheory]
     [InlineData(false)]
     [InlineData(true)]
@@ -77,5 +102,22 @@ public class ConnectTests
             LastCandidate = candidate;
             throw new InvalidOperationException("Synthetic connection attempt.");
         }
+    }
+
+    private sealed class WaitingBleScanner : ITransportScanner, ITransportWatcher, ITransport
+    {
+        public TaskCompletionSource Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public bool Watching { get; private set; }
+        public TransportKind Kind => TransportKind.Ble;
+        public string DisplayName => "Synthetic BLE";
+        public bool IsConnected => false;
+        public void StartWatching(Action<IReadOnlyList<TransportCandidate>> changed) => Watching = true;
+        public void StopWatching() => Watching = false;
+        public Task<IReadOnlyList<TransportCandidate>> ScanAsync(CancellationToken ct = default) => Task.FromResult<IReadOnlyList<TransportCandidate>>([]);
+        public ITransport Create(TransportCandidate candidate) => this;
+        public Task ConnectAsync(CancellationToken ct = default) => Completion.Task;
+        public Task WriteAsync(ReadOnlyMemory<byte> data, CancellationToken ct = default) => throw new InvalidOperationException("No connection");
+        public Task<int> ReadAsync(Memory<byte> buffer, CancellationToken ct = default) => throw new InvalidOperationException("No connection");
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 }

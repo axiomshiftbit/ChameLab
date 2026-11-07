@@ -182,7 +182,6 @@
       <!-- HF -->
       <StackPanel Spacing="10" IsVisible="{Binding IsHf}">
         <StackPanel Spacing="8" IsVisible="{Binding IsAuthentication}">
-          <TextBlock Classes="caption" Text="{x:Static loc:Strings.Tool_hf_auth_description}" />
           <TextBlock Text="{x:Static loc:Strings.Common_Block}" />
           <NumericUpDown Value="{Binding AuthBlock}" Minimum="0" Maximum="255" />
           <ComboBox ItemsSource="{Binding AuthKeyTypes}" SelectedItem="{Binding AuthKeyType}" />
@@ -191,12 +190,12 @@
         </StackPanel>
 
         <TextBlock Classes="caption hint" TextWrapping="Wrap"
-                   Text="{x:Static loc:Strings.Tools_TheChameleonAnswersAReaderAs}" />
+                   Text="{Binding HfCaptureHint}" />
         <TextBlock Classes="caption" TextWrapping="Wrap" IsVisible="{Binding !IsConnected}"
                    Text="{x:Static loc:Strings.Tools_ConnectAChameleonToCaptureA}" />
         <TextBlock Classes="caption" TextWrapping="Wrap" IsVisible="{Binding IsHfUnsupported}"
                    Foreground="{DynamicResource BrandAmberBrush}"
-                   Text="{x:Static loc:Strings.Tools_ThisFirmwareHasNoHFSniffing}" />
+                   Text="{Binding HfUnsupportedHint}" />
         <!-- One line; when it gets tight, Save and Load drop their labels first, then Capture. -->
         <c:ActionRow>
           <ComboBox ItemsSource="{Binding HfDurations}" SelectedItem="{Binding HfSeconds}"

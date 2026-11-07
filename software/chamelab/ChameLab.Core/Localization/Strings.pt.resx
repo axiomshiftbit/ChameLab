@@ -3615,4 +3615,6 @@
   <data name="Connect_ChooseHint" xml:space="preserve">
     <value>Selecione um dispositivo e prima «Ligar», ou faça duplo clique na respetiva linha.</value>
   </data>
+  <data name="Writer_InspectionCancelled" xml:space="preserve"><value>Verificação cancelada. Nenhum dado foi gravado.</value></data>
+  <data name="Cards_SearchPlaceholder" xml:space="preserve"><value>Buscar cartões</value></data>
 </root>

@@ -102,6 +102,8 @@ public sealed partial class ToolsViewModel : PageViewModelBase
             this.RaisePropertyChanged(nameof(IsCaptureSupported));
             this.RaisePropertyChanged(nameof(IsHfUnsupported));
             this.RaisePropertyChanged(nameof(IsAuthentication));
+            this.RaisePropertyChanged(nameof(HfCaptureHint));
+            this.RaisePropertyChanged(nameof(HfUnsupportedHint));
             this.RaisePropertyChanged(nameof(CurrentToolTitle));
         }
     }

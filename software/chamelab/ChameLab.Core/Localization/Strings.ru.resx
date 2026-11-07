@@ -3443,15 +3443,15 @@
   <data name="Tool_gen4_write_block" xml:space="preserve"><value>Write block</value></data>
   <data name="Tool_gen4_write_setting" xml:space="preserve"><value>Write setting</value></data>
   <data name="Tool_gen4_write_uid" xml:space="preserve"><value>Записать UID</value></data>
-  <data name="Tool_hf_auth_description" xml:space="preserve"><value>Authenticate with a known MIFARE Classic key and inspect the exchange.</value></data>
-  <data name="Tool_hf_auth_trace" xml:space="preserve"><value>Active authentication trace</value></data>
+  <data name="Tool_hf_auth_description" xml:space="preserve"><value>Приложите карту к Chameleon и удерживайте её до завершения проверки. Устройство работает как считыватель: выполняет аутентификацию известным ключом MIFARE Classic и показывает обмен.</value></data>
+  <data name="Tool_hf_auth_trace" xml:space="preserve"><value>Трассировка активной аутентификации</value></data>
   <data name="Tool_hf_sniffing" xml:space="preserve"><value>Перехват ВЧ</value></data>
   <data name="Tool_hf_sniffing_description" xml:space="preserve"><value>Перехват и анализ трафика ISO14443-A когда Chameleon эмулирует метку</value></data>
   <data name="Tool_invalid_configuration" xml:space="preserve"><value>Некорректные параметры конфигурации.</value></data>
   <data name="Tool_invalid_hex" xml:space="preserve"><value>Введите полные шестнадцатеричные байты нужной длины.</value></data>
   <data name="Tool_lf_sniffing" xml:space="preserve"><value>Перехват НЧ</value></data>
   <data name="Tool_lf_sniffing_description" xml:space="preserve"><value>Перехват и анализ сырых образцов НЧ поля</value></data>
-  <data name="Tool_live_value_blocks" xml:space="preserve"><value>Live value blocks</value></data>
+  <data name="Tool_live_value_blocks" xml:space="preserve"><value>Блоки значений на карте</value></data>
   <data name="Tool_lock_sent" xml:space="preserve"><value>Необратимая блокировка подтверждена картой. Эти настройки больше нельзя изменить.</value></data>
   <data name="Tool_max_block_decimal" xml:space="preserve"><value>Последний блок (десятичный: 63 для 1K, 255 для 4K)</value></data>
   <data name="Tool_mifare_classic_gen4" xml:space="preserve"><value>Mifare Classic Gen4</value></data>
@@ -3466,7 +3466,7 @@
   <data name="Tool_raw_check_crc" xml:space="preserve"><value>Check response CRC</value></data>
   <data name="Tool_raw_command" xml:space="preserve"><value>Идентификатор команды</value></data>
   <data name="Tool_raw_device" xml:space="preserve"><value>Команды устройства</value></data>
-  <data name="Tool_raw_device_description" xml:space="preserve"><value>Send numeric firmware commands and inspect status and data.</value></data>
+  <data name="Tool_raw_device_description" xml:space="preserve"><value>Отправка команд прошивке по числовому коду с просмотром статуса и ответа.</value></data>
   <data name="Tool_raw_hf" xml:space="preserve"><value>Необработанные ВЧ команды</value></data>
   <data name="Tool_raw_hf_description" xml:space="preserve"><value>Обменивайтесь необработанными кадрами стандарта ISO 14443-A с картой.</value></data>
   <data name="Tool_raw_keep_rf" xml:space="preserve"><value>Держать RF поле включенным</value></data>
@@ -3482,7 +3482,7 @@
   <data name="Tool_t55_destructive_hint" xml:space="preserve"><value>Содержимое метки заменяется на EM410x ID DEADBEEFFF, пароль изменяется. Используйте тестовую метку; остановка доступна между попытками.</value></data>
   <data name="Tool_t55xx_block_editor" xml:space="preserve"><value>Редактор блоков T55xx</value></data>
   <data name="Tool_t55xx_block_editor_data" xml:space="preserve"><value>Block data (8 hex digits)</value></data>
-  <data name="Tool_t55xx_block_editor_description" xml:space="preserve"><value>Write raw 32-bit blocks to T55xx tags</value></data>
+  <data name="Tool_t55xx_block_editor_description" xml:space="preserve"><value>Запись 32-битных блоков в метки T55xx</value></data>
   <data name="Tool_t55xx_block_editor_page" xml:space="preserve"><value>Page</value></data>
   <data name="Tool_t55xx_block_editor_sent" xml:space="preserve"><value>Запись завершена. Содержимое тега не проверено.</value></data>
   <data name="Tool_t55xx_block_editor_use_password" xml:space="preserve"><value>Authenticate with password</value></data>
@@ -3615,4 +3615,6 @@
   <data name="Connect_ChooseHint" xml:space="preserve">
     <value>Выберите устройство и нажмите «Подключить» или дважды нажмите на его строку.</value>
   </data>
+  <data name="Writer_InspectionCancelled" xml:space="preserve"><value>Проверка отменена. Данные на карту не записывались.</value></data>
+  <data name="Cards_SearchPlaceholder" xml:space="preserve"><value>Поиск карт</value></data>
 </root>

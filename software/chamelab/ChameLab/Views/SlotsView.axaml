@@ -519,7 +519,8 @@
       </Border>
       <!-- Choosing a saved card for a frequency: search, then click one. -->
       <Border Grid.Row="0" Grid.RowSpan="3" Name="PickerDialog" Classes="savebar dialog picker"
-              DataContext="{Binding Editor}" x:DataType="vm:SlotEditorViewModel" IsVisible="{Binding IsPicking}">
+              DataContext="{Binding Editor}" x:DataType="vm:SlotEditorViewModel"
+              IsVisible="{Binding IsPicking, FallbackValue=False, TargetNullValue=False}">
         <Grid RowDefinitions="Auto,Auto,*" RowSpacing="10">
           <Grid ColumnDefinitions="*,Auto">
             <TextBlock Text="{Binding PickerTitle}" FontWeight="SemiBold" VerticalAlignment="Center"
@@ -530,7 +531,8 @@
             </Button>
           </Grid>
           <TextBox Grid.Row="1" Text="{Binding PickerFilter}" Name="PickerSearch"
-                   PlaceholderText="{x:Static loc:Strings.Common_SearchByNameTypeOrUID}">
+                   PlaceholderText="{x:Static loc:Strings.Cards_SearchPlaceholder}"
+                   ToolTip.Tip="{x:Static loc:Strings.Common_SearchByNameTypeOrUID}">
             <TextBox.InnerLeftContent>
               <PathIcon Data="{StaticResource Icon.search}" Width="16" Height="16" Margin="10,0,2,0" Opacity="0.6" />
             </TextBox.InnerLeftContent>

@@ -1043,6 +1043,27 @@
     <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
   </Style>
 
+  <!-- Persistent scan results stay beside the controls that produced them. -->
+  <Style Selector="Border.scanresult">
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="12" />
+    <Setter Property="BorderThickness" Value="2" />
+    <Setter Property="Background" Value="{actipro:ThemeResource Container2BackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{actipro:ThemeResource Container2BorderBrush}" />
+  </Style>
+  <Style Selector="Border.scanresult.success">
+    <Setter Property="Background" Value="{actipro:ThemeResource InfoBarBackgroundBrushSuccess}" />
+    <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+  </Style>
+  <Style Selector="Border.scanresult.warning">
+    <Setter Property="Background" Value="{actipro:ThemeResource InfoBarBackgroundBrushWarning}" />
+    <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}" />
+  </Style>
+  <Style Selector="Border.scanresult.error">
+    <Setter Property="Background" Value="{actipro:ThemeResource InfoBarBackgroundBrushError}" />
+    <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+  </Style>
+
   <!-- A passing confirmation: fades in, never takes clicks or focus. -->
   <Style Selector="Border.notice">
     <Setter Property="CornerRadius" Value="16" />

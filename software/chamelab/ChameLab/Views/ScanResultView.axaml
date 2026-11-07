@@ -1,0 +1,7 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:vm="using:ChameLab.ViewModels" x:Class="ChameLab.Views.ScanResultView" x:DataType="vm:CardsViewModel">
+ <Border Classes="scanresult" Classes.success="{Binding TargetIsSuccess}"
+         Classes.warning="{Binding TargetIsWarning}" Classes.error="{Binding TargetIsError}">
+  <TextBlock Text="{Binding TargetSummary}" TextWrapping="Wrap" FontWeight="SemiBold" />
+ </Border>
+</UserControl>

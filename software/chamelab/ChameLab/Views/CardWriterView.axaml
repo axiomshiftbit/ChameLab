@@ -1,6 +1,6 @@
 <UserControl xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui" xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
  xmlns:loc="using:ChameLab.Localization" xmlns:vm="using:ChameLab.ViewModels" xmlns:b="using:ChameLab.Behaviors"
- xmlns:c="using:ChameLab.Controls" xmlns:conv="using:ChameLab.Converters"
+ xmlns:c="using:ChameLab.Controls" xmlns:conv="using:ChameLab.Converters" xmlns:views="using:ChameLab.Views"
  x:Class="ChameLab.Views.CardWriterView" x:DataType="vm:CardsViewModel">
  <StackPanel Spacing="14">
   <Border Classes="inset">
@@ -12,7 +12,7 @@
      <Button Command="{Binding InspectBlankCommand}"><TextBlock Text="{x:Static loc:Strings.Writer_Inspect}" TextWrapping="Wrap" /></Button>
      <Button Command="{Binding StopInspectionCommand}" IsVisible="{Binding IsInspecting}"><TextBlock Text="{x:Static loc:Strings.Common_Cancel}" TextWrapping="Wrap" /></Button>
     </WrapPanel>
-    <TextBlock Text="{Binding TargetSummary}" TextWrapping="Wrap" />
+    <views:ScanResultView />
     <CheckBox IsVisible="{Binding IsLfWrite}" IsChecked="{Binding LfBlankAcknowledged}">
      <TextBlock Text="{x:Static loc:Strings.Writer_LfBlank}" TextWrapping="Wrap" />
     </CheckBox>
@@ -193,7 +193,7 @@
                 </WrapPanel>
               </StackPanel>
  <Expander Header="{x:Static loc:Strings.Nav_Journal}" HorizontalAlignment="Stretch">
- <ContentControl Height="360" Content="{Binding Journal}" />
+ <views:JournalView Classes="embedded" DataContext="{Binding Journal}" />
  </Expander>
  </StackPanel>
 </UserControl>

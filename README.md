@@ -1,185 +1,141 @@
-<p align="center">
-  <img src="website/chameleon-ultra.png" alt="ChameleonUltra" height="160">
-</p>
+<p align="center"><img src="website/chameleon-ultra.png" alt="ChameleonUltra" height="160"></p>
 
-<h1 align="center">ChameLab</h1>
+# ChameLab
 
-<p align="center">
-  Desktop, mobile and web app for ChameleonUltra and ChameleonLite,<br>
-  together with an extended firmware and the command line client.
-</p>
+**Русский** · [English](README.en.md)
 
-<p align="center">
-  <a href="https://github.com/axiomshiftbit/ChameLab/actions/workflows/ui-quality.yml"><b>Development builds</b></a> ·
-  <a href="https://github.com/axiomshiftbit/ChameLab/releases">Releases</a> ·
-  <a href="CHANGELOG.md">Changelog</a> (<a href="CHANGELOG.ru.md">на русском</a>)
-</p>
+Приложение для ChameleonUltra и ChameleonLite: Android, Windows, Linux, macOS и браузер.
+В репозитории также находятся прошивка ChameLab и консольный клиент.
+Это форк [m0n5ter/ChameLab](https://github.com/m0n5ter/ChameLab), основанный на
+[ChameleonUltra](https://github.com/RfidResearchGroup/ChameleonUltra).
 
-## Расширения текущего форка
+[Релизы](https://github.com/axiomshiftbit/ChameLab/releases) ·
+[Тестовые сборки](https://github.com/axiomshiftbit/ChameLab/actions/workflows/ui-quality.yml) ·
+[Изменения](CHANGELOG.ru.md) · [Авторы и лицензии](AUTHORS.md)
 
-Основные интерфейс и логика на .NET/Avalonia общие для Android и десктопных версий.
-Минимальная версия Android — 7.0 (API 24): используемый рендерер требует
-`AChoreographer_getInstance`, отсутствующий в Android 6.
-Платформенные подключения и разрешения проверяются отдельно. Android-пакет этого
-форка — `io.github.axiomshiftbit.chamelab`; он устанавливается рядом с исходным
-приложением, библиотека переносится через экспорт/импорт. Тестовые APK используют
-суффикс `.dev`. [Релизная подпись APK](docs/android-signing.md) использует отдельные
-секреты окружения `release` только для тегов версий.
+## Какой файл скачать
 
-- **Запись** — отдельный пункт меню, выбор сохранённой карты или импорт, предварительное
-  обнаружение носителя, проверка совместимости и подтверждение перед записью.
-  MIFARE Classic Gen1a/Gen2/Gen3/Gen4; доступные пользовательские страницы Ultralight/NTAG;
-  поддерживаемые LF-форматы. Подтверждение команды и успешное обратное чтение различаются.
-  Для IDTECK доступна отправка записи, но обратное чтение прошивкой не поддерживается:
-  результат требует проверки внешним считывателем.
-  Gen2 нельзя достоверно определить одним универсальным безопасным запросом;
-  нулевые доступные блоки не доказывают заводское состояние карты.
-- **Журнал** — этапы, номера блоков/страниц, статусы команд, время, ошибки и отмена,
-  копирование и экспорт. Ключи, UID и содержимое памяти в технический журнал не включаются.
-- **Инструменты** — встроенная консоль команд, операции с value blocks, Gen4, T55xx,
-  raw HF, словари разных размеров и Lua-плагины с остановкой выполнения.
-- **Поиск ключей** — словарь или ограниченный диапазон, бюджет попыток, скорость,
-  остановка и продолжение в текущем сеансе. Classic, NTAG/Ultralight EV1, Ultralight C,
-  EM4x05; для EM4x05 нужна команда3037 новой прошивки и защита чтения LOGIN.
-  Для NTAG поиск разрешён только при прочитанном AUTHLIM=0. Полный перебор48/128бит
-  практически непригоден; восстановление Classic использует отдельные специализированные методы.
-- **Авторы и лицензии** — автономный раздел настроек и [цепочка происхождения](AUTHORS.md).
-  Actipro сохранён. Уведомления зависимостей обновляются командой
-  `dotnet run --project software/chamelab/ChameLab.Tools -- generate-notices` после restore.
+`<версия>` — версия приложения, `<прошивка>` — отдельная версия прошивки с суффиксом `-cl`.
+Ниже приведены шаблоны имён файлов в **Releases → Assets** этого репозитория.
+Не путайте их с автоматически созданными GitHub архивами **Source code**.
 
-Lua-плагины используют формат ChameleonUltraGUI v1, локальные ресурсы, явные API устройства,
-библиотеки карт/словарей/папок, диалоги и восстановление ключей. Импорт не запускает код.
-Доступа к произвольным файлам, процессам и сети из Lua нет. Настройки GUI через Lua
-пока включают язык, тему и акцент; специфические Flutter-настройки sidebar/autoScan/autoConnect/
-confirmDelete/debug/demo явно отклоняются. Для дополнительных цветов Actipro `themeColor`
-возвращает `nil`, а `accent` — настоящее имя цвета. Папки сохраняют идентификаторы
-и иерархию, отображаются путями длиной до64символов; конфликтующие пути отклоняются.
-Полная совместимость произвольного стороннего плагина не предполагается.
+| Файл | Для чего и как установить |
+| --- | --- |
+| `chamelab-<версия>-android-arm64.apk` | Android 7.0 и новее, большинство современных телефонов. Откройте APK на телефоне и разрешите установку этому источнику. |
+| `chamelab-<версия>-android-arm.apk` | Android с 32-битной ARM-системой. Используйте, если устройство не поддерживает arm64. |
+| `chamelab-<версия>-win-x64.zip` | Windows x64. Распакуйте **весь** архив в отдельную папку и запустите `ChameLab.exe`. Это переносимая сборка без установщика. |
+| `chamelab-<версия>-linux-x64.zip` | Linux x64. Распакуйте, разрешите запуск `chmod +x ChameLab`, запустите `./ChameLab`. |
+| `chamelab-<версия>-osx-arm64.zip` | macOS на Apple Silicon. Распакуйте и запустите `ChameLab`; разрешение запуска загруженного приложения задаётся средствами macOS. |
+| `chamelab-<версия>-osx-x64.zip` | macOS на Intel. Использование аналогично варианту Apple Silicon. |
+| `client-<версия>-windows.zip`, `client-<версия>-linux.zip`, `client-<версия>-macos.zip` | Консольный клиент, не графическое приложение. Распакуйте и запустите `chamelab.exe` / `./chamelab` из терминала. Сборка macOS CLI предназначена для Apple Silicon. |
+| `chamelab-<версия>-web.zip` | Файлы веб-приложения для размещения на веб-сервере; не установщик для телефона. |
+| `ultra-dfu-app-<прошивка>.zip` | Обычное обновление прошивки **ChameleonUltra**. Выберите ZIP в разделе обновления прошивки приложения. |
+| `lite-dfu-app-<прошивка>.zip` | Обычное обновление прошивки **ChameleonLite**. Для Ultra этот файл не подходит. |
 
-## The app
+Десктопные пакеты включают среду .NET — устанавливать SDK для их запуска не нужно.
+Android-пакет форка — `io.github.axiomshiftbit.chamelab`; исходное приложение может оставаться рядом.
+Перенос библиотеки между ними выполняется экспортом и импортом карт.
 
-One app for Windows, macOS, Linux, Android, iOS and the browser. USB on desktop and in
-the browser, Bluetooth on phones and in Chrome / Edge, TCP everywhere.
+**Тестовые сборки Actions:** имена могут не содержать версию. В артефакте
+`android-arm64-debug` находится `ChameLab-arm64-debug.apk`; сборки с
+`-development.apk` также предназначены для тестирования и используют пакет `.dev`.
+`ChameLab-ui-tests.apk` автоматически запускает проверки интерфейса и не предназначен
+для обычной работы. Сначала распакуйте скачанный архив артефакта Actions.
 
-- **Slots** — all eight slots at a glance, with each card's name and LED color. Drag to
-  reorder, tap to activate, edit HF and LF separately.
-- **Multi-card LF** — one LF slot can hold up to eight LF cards of any emulated type, mixed
-  freely, and send the next one on each tap of a reader, so you can walk through them until the
-  right card opens. No other Chameleon firmware or app can do this; see
-  [LF card cycling](docs/lf-card-cycle.md).
-- **Read and dump** — ISO14443-A and LF scans. MIFARE Classic Mini, 1K and 4K dumps with
-  your key dictionaries, edited as hex and emulated in one tap.
-- **Saved cards** — a card library with search and color tags. Imports
-  ChameleonUltraGUI, Proxmark3, Flipper `.nfc` / `.rfid`, MCT, `.bin` and `.eml`.
-- **Cloning** — write LF IDs to T55xx (EM410x also to EM4305) and MIFARE Classic to Gen1a / Gen2 magic cards.
-- **Emulator settings** — Gen1a / Gen2 modes, write modes, nonce detection for mfkey32,
-  Ultralight / NTAG version, signature and counters.
-- **HF sniffing** — answer a reader as the card in the active slot and record both
-  sides, every frame labelled; MIFARE Classic keys come out of the reader's
-  authentications (mfkey32, mfkey64). Proxmark3 `.trace` load and save.
-- **LF sniffing** — record the 125 kHz signal at the antenna, see it as a zoomable
-  waveform with a modulation and clock guess, and decode it as Manchester. Captures
-  load and save as raw `.bin`, the same as the CLI's `lf sniff --out`.
-- **Device settings** — LED animation, button actions, long-press threshold, sleep
-  timeout, BLE pairing, factory reset and firmware updates over USB or Bluetooth.
-- **Stop anything** — every long operation (dumps, key recovery attacks, writing magic
-  cards, sniffing) has a Stop button and leaves the device in a usable state. In
-  ChameleonUltraGUI many of them can only be waited out.
+## Краткая инструкция
 
-Key recovery includes Darkside, Nested, Static nested and mfkey32, plus the
-fully managed C# Hardnested solver on desktop, Android, iOS and the web. Hardnested
-needs a known key and substantial memory. Mobile and web calculations run locally;
-devices with insufficient memory report an error.
+1. **Подключение.** Подключите Ultra кабелем передачи данных. На Android нужны USB Host/OTG
+   и разрешение доступа к USB; можно использовать Bluetooth LE. Разбудите устройство,
+   выберите его в списке и нажмите «Подключить». На компьютере один щелчок выбирает
+   устройство, двойной подключает. Кабель только для зарядки не подходит.
+2. **Карты → Добавить карту.** Предварительно проверьте обнаружение HF/LF-карты.
+   Если карта не найдена, приблизьте её, переверните и повторите сканирование.
+   Прочитайте поддерживаемую карту или импортируйте сохранённый файл, затем сохраните её в библиотеку.
+3. **Слоты.** Загрузите сохранённую карту в нужный слот и активируйте его для эмуляции.
+   Для поддерживаемых LF-карт доступен список до восьми карт на слот: при следующем
+   прикладывании к считывателю выбирается следующая карта списка.
+4. **Запись.** Выберите карту-источник из библиотеки либо импортируйте файл.
+   Приложите целевую заготовку, выполните «Сканировать / определить тип» и при необходимости
+   «Проверить память / заводские ключи». Проверьте результат, совместимость и параметры записи,
+   затем подтвердите заготовку и начните запись. Gen2 нельзя надёжно определить одним
+   универсальным безопасным запросом. Нулевые доступные блоки не доказывают, что карта новая.
+5. **Результаты.** Красная рамка означает отсутствие карты или ошибку, зелёная — успешное
+   обнаружение, жёлтая — ограничение проверки или несовместимость. Текст поясняет результат.
+   Успешная отправка команды не равнозначна проверенному обратному чтению.
+6. **Журнал.** Разверните журнал прямо в разделе записи либо откройте отдельный пункт меню.
+   Новые сообщения появляются автоматически; доступны подробности команд, копирование,
+   сохранение `.log` и очистка. Журнал содержит этапы, статусы, время и номера блоков;
+   содержимое карт и значения ключей в протокольный журнал не записываются.
+7. **Инструменты.** Доступны HF/LF-перехват, активная аутентификация известным ключом,
+   блоки значений, Gen4, T55xx, необработанные команды, консоль, словари, поиск ключей и Lua-плагины.
+   Для HF-перехвата Chameleon подносят к считывателю; для активной аутентификации
+   карту прикладывают к Chameleon, который работает как считыватель.
+8. **Настройки.** Выберите язык и тему; сведения об авторах и лицензиях находятся здесь же.
+   Настройки устройства и обновление прошивки доступны на странице подключённого Chameleon.
 
-The app speaks English, German, Spanish, French, Italian, Portuguese, Russian, Chinese
-(Simplified), Japanese and Korean; pick the language in Settings.
+Интерфейс и основная логика общие для Android и десктопных сборок; подключения,
+разрешения и обновление прошивки зависят от платформы. Lite имеет аппаратные ограничения:
+установка прошивки Ultra не добавляет ему возможностей Ultra.
 
-Not there yet: editing slot data in place, backdoor key recovery and
-QR sharing. The full list is in the
-[roadmap](software/chamelab/ROADMAP.md).
+## Обновление прошивки без путаницы
 
-The web version needs Chrome or Edge: Firefox and Safari support neither Web Serial nor
-Web Bluetooth.
+**Для обычного обновления Ultra выбирайте только `ultra-dfu-app-<прошивка>.zip`.**
+Файл устанавливается в память Chameleon, а не в Android или Windows.
 
-Sources, architecture and build steps: [software/chamelab](software/chamelab).
+1. Сохраните важные карты экспортом. Подключите устройство и откройте его страницу → прошивка.
+2. На Windows/Linux/macOS используйте USB. На Android/iOS обновление в приложении выполняется
+   **по BLE**: сначала переподключитесь по Bluetooth. Поддержка USB/OTG для карт на Android
+   не означает поддержку USB DFU. Веб-версия обновление прошивки не выполняет.
+3. Нажмите установку последней версии либо выберите **файл ZIP** из Releases этого форка,
+   соответствующий модели. DFU ZIP не распаковывайте. Автопроверка использует последний
+   стабильный релиз; тестовые версии можно выбирать вручную.
+4. Проверьте модель и версию, подтвердите установку и дождитесь завершения и переподключения.
+   Не отключайте питание и не закрывайте приложение во время передачи.
+5. Проверьте отображаемую версию и работу слотов. Обычное обновление приложения прошивки
+   сохраняет слоты и настройки; это не заменяет резервную копию важных карт.
 
-## The firmware
+| Файлы прошивки | Назначение |
+| --- | --- |
+| `ultra-dfu-app-…zip` / `lite-dfu-app-…zip` | Только основная прошивка устройства; стандартный выбор для обновления. |
+| `ultra-dfu-full-…zip` / `lite-dfu-full-…zip` | Прошивка, загрузчик и SoftDevice. Для восстановления или специального обновления загрузчика через совместимый DFU-инструмент; не обычное обновление из ChameLab. |
+| `ultra-binaries-…zip` / `lite-binaries-…zip` | Отдельные HEX-образы для разработки и прошивки программатором через SWD. Для штатного обновления не нужны. |
+| `application.hex`, `bootloader.hex`, `softdevice.hex`, `fullimage.hex` | Основная прошивка, загрузчик, стек Nordic и полный объединённый образ соответственно; не APK и не файлы карт. Полная прошивка программатором может стереть данные. |
 
-The ChameLab firmware runs on both ChameleonUltra and ChameleonLite and moves together
-with the app: features are added on both sides and shipped in the same release.
+Если обычная прошивка не запускается, режим DFU можно вызвать, удерживая кнопку B
+при подключении USB. Для восстановления используйте пакет **своей модели** и совместимый
+инструмент Nordic DFU. Скрипты `firmware/flash-dfu-app.sh` и `flash-dfu-full.sh` рассчитаны
+на подготовленное окружение разработчика и файлы в `firmware/objects/`, а не принимают
+произвольный путь к скачанному архиву. Для обычного пользователя предпочтительно обновление из приложения.
 
-- **Multi-card LF** — an LF slot holds up to eight cards of any emulated LF type
-  (EM410x, Electra, HID Prox, ioProx, Viking, PAC, Jablotron, IDTECK, Pyramid), in any mix,
-  and emulates the next one each time the reader's field appears — one steady card per tap,
-  wrapping back to the first. The position is kept across sleep. The list is saved with the
-  slot and follows it when slots are swapped. This is unique to ChameLab: neither the stock
-  firmware nor other apps have it.
-- **Slot LED colors** — each card in a slot can have its own LED color, so you can tell
-  which card is active by looking at the device. A slot that holds both an HF and an LF
-  card alternates between their two colors.
-- **Fixes** — for example, saving no longer fails after many slot switches.
+## Файлы карт и место хранения
 
-The full list is on the [website](https://m0n5ter.github.io/ChameLab/#firmware) and in
-the [changelog](CHANGELOG.md).
+- `.json` — экспорт карт; `.bin` / `.eml` — дампы памяти; `.nfc` / `.rfid` — поддерживаемые форматы Flipper.
+  Открывайте их через импорт карт, а не через обновление прошивки.
+- `.trace` — HF-захват Proxmark3; `.bin` также может быть LF-захватом: открывайте его
+  в соответствующем инструменте, учитывая источник файла.
+- `.log` — текстовый журнал; папку сохранения выбирает пользователь.
+- Библиотека и настройки хранятся отдельно от распакованной программы:
+  `LocalApplicationData/ChameLab` (в Windows — `%LOCALAPPDATA%\ChameLab`),
+  на Android — в закрытом каталоге приложения, в браузере — в хранилище сайта.
+  При удалении приложения или очистке его данных локальная библиотека может быть удалена.
 
-### Updating
+## Для разработчиков
 
-The app on desktop, Android and iOS updates the firmware for you: it offers the newest
-release for your device and flashes it over USB or Bluetooth. To flash by hand:
-
-1. Download `ultra-dfu-app-<version>.zip` or `lite-dfu-app-<version>.zip` from the
-   [releases](https://github.com/m0n5ter/ChameLab/releases). The `-full` packages also
-   contain the bootloader and are only needed for recovery.
-2. Put the device into DFU mode: `hw dfu` in the CLI, or hold button B while plugging in
-   USB.
-3. Flash the package with [`firmware/flash-dfu-app.sh`](firmware/flash-dfu-app.sh),
-   nRF Connect for mobile or nRF Connect for Desktop.
-
-Slots, cards and settings are kept by an application update.
-
-### Building
+Исходники и сборка: [software/chamelab](software/chamelab/README.md).
+Общий клиент — .NET 10 / Avalonia, тема Actipro сохранена.
+`software/chamelab/ChameLab.Cli` — CLI, `firmware` — прошивка,
+`hardware` — схемы, `website` — веб-страница и хостинг приложения.
 
 ```bash
+dotnet run --project software/chamelab/ChameLab.Desktop -c Debug
+dotnet run --project software/chamelab/ChameLab.Cli -c Release
+# В CLI: dump_help; для отдельной команды: COMMAND --help
 cd firmware
 docker compose up --pull=always build-ultra
+# Для Lite: build-lite. Результаты: firmware/objects/
 ```
 
-Use `build-lite` for the ChameleonLite. The packages land in `firmware/objects/`.
-
-## The CLI
-
-The C# command line client shares protocol and recovery engines with the app.
-Build or run it with the .NET 10 SDK:
-
-```bash
-dotnet run --project software/chamelab/ChameLab.Cli -c Release
-# Run several commands in the same connection/session:
-dotnet run --project software/chamelab/ChameLab.Cli -c Release -- -c "hw connect" -c "hw version"
-```
-
-It covers what the app does not have yet, such as raw access to every firmware
-command, for example `hw slot color`.
-
-Use `dump_help` for all commands and `COMMAND --help` for options. Release packages
-include the .NET runtime; launch `chamelab` (`chamelab.exe` on Windows).
-Migration progress and verification are recorded in [docs/cli-migration.md](docs/cli-migration.md).
-
-## Versions
-
-Releases are tagged with the ChameLab version (`v1.0.8`), which goes up with every
-release. The firmware has its own version in [`firmware/VERSION`](firmware/VERSION)
-(`2.3.4-cl`) and changes only when the firmware does.
-
-## Repository
-
-| Folder | What's in it |
-| --- | --- |
-| [`software/chamelab`](software/chamelab) | The ChameLab app (Avalonia, .NET) |
-| [`software/chamelab/ChameLab.Cli`](software/chamelab/ChameLab.Cli) | The C# CLI |
-| [`firmware`](firmware) | Application and bootloader firmware for nRF52840 |
-| [`hardware`](hardware) | Schematics and PCB files for Ultra and Lite |
-| [`website`](website) | The download page and the web app host |
-
-## License
-
-Free software under the [GNU GPL v3](LICENSE).
+Версии приложения и прошивки независимы: см. [CHANGELOG](CHANGELOG.ru.md) и [firmware/VERSION](firmware/VERSION).
+Исходный код распространяется по [GNU GPL v3](LICENSE); отдельные зависимости имеют
+свои условия. Полная цепочка авторства: [AUTHORS.md](AUTHORS.md), лицензии компонентов —
+в приложении «Настройки → Авторы и лицензии». Actipro использует собственную EULA.

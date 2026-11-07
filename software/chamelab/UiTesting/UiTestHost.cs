@@ -86,6 +86,7 @@ public sealed class UiTestHost : ContentControl
                     LayoutScenarios.ScaleText(scene, request.FontScale);
                     UpdateLayout();
                     var errors = LayoutScenarios.FindOverflow(scene);
+                    errors.AddRange(await LayoutScenarios.CheckJournalAsync(scene));
                     if (scene.Bounds.Width < 200 || scene.Bounds.Height < 100) errors.Add("Scene was not rendered at a usable size.");
                     cases.Add(new(page, language, theme.ToString(), scene.Bounds.Width, scene.Bounds.Height, request.FontScale, errors.ToArray()));
                     if (language == "ru" || errors.Count > 0)

@@ -11,9 +11,16 @@ public class AppBarGrid : Grid
 {
     private static readonly string[] Steps =
         ["hide-summary", "hide-disconnect-label", "hide-logo", "hide-connection-label"];
+    private double _lastWidth = double.NaN;
+    private Size _lastContentSize;
 
     protected override Size MeasureOverride(Size availableSize)
     {
+        // Re-probing every collapsed detail on every layout pass changes visibility twice,
+        // invalidating the header and the whole page again even when nothing has changed.
+        var current = base.MeasureOverride(Size.Infinity);
+        if (_lastWidth == availableSize.Width && current == _lastContentSize)
+            return base.MeasureOverride(availableSize);
         foreach (var step in Steps) SetStep(step, false);
         var desired = base.MeasureOverride(Size.Infinity);
         foreach (var step in Steps)
@@ -22,6 +29,8 @@ public class AppBarGrid : Grid
             SetStep(step, true);
             desired = base.MeasureOverride(Size.Infinity);
         }
+        _lastWidth = availableSize.Width;
+        _lastContentSize = desired;
         return base.MeasureOverride(availableSize);
     }
 

@@ -3615,4 +3615,6 @@
   <data name="Connect_ChooseHint" xml:space="preserve">
     <value>Selecciona un dispositivo y pulsa «Conectar», o haz doble clic en su fila.</value>
   </data>
+  <data name="Writer_InspectionCancelled" xml:space="preserve"><value>Comprobación cancelada. No se escribieron datos.</value></data>
+  <data name="Cards_SearchPlaceholder" xml:space="preserve"><value>Buscar tarjetas</value></data>
 </root>

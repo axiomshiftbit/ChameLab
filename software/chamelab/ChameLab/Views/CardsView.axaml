@@ -246,7 +246,8 @@
         <c:FillStack Classes="panestack" Margin="12,0,12,16">
           <StackPanel Spacing="8" IsVisible="{Binding !IsEmpty}">
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-              <TextBox Grid.Column="0" Text="{Binding Filter}" PlaceholderText="{x:Static loc:Strings.Common_SearchByNameTypeOrUID}">
+              <TextBox Grid.Column="0" Text="{Binding Filter}" PlaceholderText="{x:Static loc:Strings.Cards_SearchPlaceholder}"
+                       ToolTip.Tip="{x:Static loc:Strings.Common_SearchByNameTypeOrUID}">
                 <TextBox.InnerLeftContent>
                   <PathIcon Data="{StaticResource Icon.search}" Width="16" Height="16" Margin="10,0,2,0" Opacity="0.6" />
                 </TextBox.InnerLeftContent>
@@ -574,7 +575,7 @@
                     <Button Command="{Binding DetectCommand}"><TextBlock Text="{x:Static loc:Strings.Cards_TestScanHf}" TextWrapping="Wrap" /></Button>
                     <Button Command="{Binding TestScanLfCommand}"><TextBlock Text="{x:Static loc:Strings.Cards_TestScanLf}" TextWrapping="Wrap" /></Button>
                   </WrapPanel>
-                  <TextBlock Text="{Binding TargetSummary}" TextWrapping="Wrap" />
+                  <views:ScanResultView />
                 </StackPanel>
               </Border>
 
@@ -815,20 +816,20 @@
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
 
-              <Grid ColumnDefinitions="3*,4*,8*" ColumnSpacing="10" IsVisible="{Binding Form?.IsHf, TargetNullValue=False}">
+              <c:FlowGrid MinItemWidth="160" ColumnSpacing="10" RowSpacing="10" IsVisible="{Binding Form?.IsHf, TargetNullValue=False}">
                 <StackPanel Spacing="4">
                   <TextBlock Text="SAK" Classes="caption" />
                   <c:HexBox Text="{Binding Form?.Sak}" ByteLengths="1" PlaceholderText="08" />
                 </StackPanel>
-                <StackPanel Grid.Column="1" Spacing="4">
+                <StackPanel Spacing="4">
                   <TextBlock Text="ATQA" Classes="caption" />
                   <c:HexBox Text="{Binding Form?.Atqa}" ByteLengths="2" PlaceholderText="00 04" />
                 </StackPanel>
-                <StackPanel Grid.Column="2" Spacing="4">
+                <StackPanel Spacing="4">
                   <TextBlock Text="ATS" Classes="caption" />
                   <c:HexBox Text="{Binding Form?.Ats}" PlaceholderText="{x:Static loc:Strings.Cards_Optional2}" />
                 </StackPanel>
-              </Grid>
+              </c:FlowGrid>
             </StackPanel>
           </Border>
 

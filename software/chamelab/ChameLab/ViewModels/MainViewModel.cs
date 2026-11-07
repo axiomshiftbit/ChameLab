@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Windows.Input;
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -59,7 +60,7 @@ public sealed class MainViewModel : ViewModelBase
         {
             if (e.PropertyName == nameof(CardsViewModel.CurrentFolder)) RaiseNavSelection();
         };
-        NavPages.CollectionChanged += (_, _) => SyncNavItems();
+        NavPages.CollectionChanged += (_, _) => { if (!_swappingNavPages) SyncNavItems(); };
         Cards.Folders.CollectionChanged += (_, _) => SyncNavItems();
         SyncNavItems();
         _device.StateChanged += OnStateChanged;
@@ -115,7 +116,7 @@ public sealed class MainViewModel : ViewModelBase
     {
         // A firmware install looks for the bootloader itself: a Connect page scan running beside
         // it would cut its BLE scan short, so watching resumes only once the install is over.
-        if (ReferenceEquals(_currentPage, _connect) && _device.State != ConnectionState.Connected && !Firmware.IsInstalling)
+        if (ReferenceEquals(_currentPage, _connect) && _device.State == ConnectionState.Disconnected && !Firmware.IsInstalling)
             _connect.StartWatching();
         else
             _connect.StopWatching();
@@ -337,6 +338,7 @@ public sealed class MainViewModel : ViewModelBase
     /// </summary>
     private void SetNavPages(IReadOnlyList<PageViewModelBase> pages)
     {
+        if (NavPages.SequenceEqual(pages)) return;
         _swappingNavPages = true;
         try
         {
@@ -347,6 +349,7 @@ public sealed class MainViewModel : ViewModelBase
         {
             _swappingNavPages = false;
         }
+        SyncNavItems();
         RaiseNavSelection();
     }
 

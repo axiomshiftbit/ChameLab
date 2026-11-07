@@ -3446,7 +3446,7 @@
   <data name="Tool_gen4_write_block" xml:space="preserve"><value>Write block</value></data>
   <data name="Tool_gen4_write_setting" xml:space="preserve"><value>Write setting</value></data>
   <data name="Tool_gen4_write_uid" xml:space="preserve"><value>Write UID</value></data>
-  <data name="Tool_hf_auth_description" xml:space="preserve"><value>Authenticate with a known MIFARE Classic key and inspect the exchange.</value></data>
+  <data name="Tool_hf_auth_description" xml:space="preserve"><value>Place the card on Chameleon and keep it there until the check completes. Chameleon acts as a reader: authenticate with a known MIFARE Classic key and inspect the exchange.</value></data>
   <data name="Tool_hf_auth_trace" xml:space="preserve"><value>Active authentication trace</value></data>
   <data name="Tool_hf_sniffing" xml:space="preserve"><value>HF sniffing</value></data>
   <data name="Tool_hf_sniffing_description" xml:space="preserve"><value>Capture and analyze ISO14443-A traffic while the Chameleon emulates a tag</value></data>
@@ -3618,4 +3618,6 @@
   <data name="Connect_ChooseHint" xml:space="preserve">
     <value>Select a device and press Connect, or double-click its row.</value>
   </data>
+  <data name="Writer_InspectionCancelled" xml:space="preserve"><value>Inspection cancelled. No data was written.</value></data>
+  <data name="Cards_SearchPlaceholder" xml:space="preserve"><value>Search cards</value></data>
 </root>

@@ -3615,4 +3615,6 @@
   <data name="Connect_ChooseHint" xml:space="preserve">
     <value>Seleziona un dispositivo e premi «Connetti», oppure fai doppio clic sulla sua riga.</value>
   </data>
+  <data name="Writer_InspectionCancelled" xml:space="preserve"><value>Verifica annullata. Nessun dato scritto.</value></data>
+  <data name="Cards_SearchPlaceholder" xml:space="preserve"><value>Cerca carte</value></data>
 </root>

@@ -62,6 +62,8 @@ public sealed partial class ToolsViewModel
 
     public bool? IsCaptureSupported => IsAuthentication ? IsAuthSupported : IsHfSupported;
     public bool IsHfUnsupported => IsCaptureSupported == false;
+    public string HfCaptureHint => IsAuthentication ? Strings.Tool_hf_auth_description : Strings.Tools_TheChameleonAnswersAReaderAs;
+    public string HfUnsupportedHint => IsAuthentication ? Strings.Tool_unsupported_firmware : Strings.Tools_ThisFirmwareHasNoHFSniffing;
 
     public IReadOnlyList<int> HfDurations { get; } = [3, 5, 10, 20, 30];
     public int AuthBlock { get; set; }

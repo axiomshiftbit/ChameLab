@@ -34,6 +34,7 @@ public sealed class DeviceService(IEnumerable<ITransportScanner> scanners)
 
     private void SetState(ConnectionState s)
     {
+        if (State == s) return;
         Journal.Add("INFO", $"{nameof(ConnectionState)}: {s}");
         State = s;
         StateChanged?.Invoke(s);

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -48,7 +49,7 @@ public class LayoutTests
 
     [AvaloniaTheory]
     [MemberData(nameof(Cases))]
-    public void PageLabelsFit(string language, int width, int height, string page, double scale, string theme)
+    public async Task PageLabelsFit(string language, int width, int height, string page, double scale, string theme)
     {
         Application.Current!.RequestedThemeVariant = theme == "Light" ? ThemeVariant.Light : ThemeVariant.Dark;
         var content = LayoutScenarios.Create(page, language);
@@ -63,6 +64,7 @@ public class LayoutTests
             LayoutScenarios.ScaleText(content, scale);
             window.UpdateLayout();
             var errors = LayoutScenarios.FindOverflow(content);
+            errors.AddRange(await LayoutScenarios.CheckJournalAsync(content));
             Assert.True(errors.Count == 0, string.Join(Environment.NewLine, errors));
         }
         finally { window.Close(); }

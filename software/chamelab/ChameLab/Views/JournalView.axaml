@@ -1,8 +1,9 @@
 <UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
  xmlns:vm="using:ChameLab.ViewModels" xmlns:loc="using:ChameLab.Localization" xmlns:b="using:ChameLab.Behaviors"
  x:Class="ChameLab.Views.JournalView" x:DataType="vm:JournalViewModel">
- <Grid RowDefinitions="Auto,*" Margin="20" RowSpacing="12">
-  <StackPanel Spacing="10">
+ <ScrollViewer x:Name="Viewport" HorizontalScrollBarVisibility="Disabled">
+ <Grid x:Name="JournalLayout" RowDefinitions="Auto,Auto" Margin="20" RowSpacing="12">
+  <StackPanel x:Name="Toolbar" Spacing="10">
    <TextBlock Text="{x:Static loc:Strings.Nav_Journal}" Classes="h1" />
    <TextBlock Text="{x:Static loc:Strings.Journal_Hint}" TextWrapping="Wrap" />
    <WrapPanel ItemSpacing="8" LineSpacing="8">
@@ -12,7 +13,8 @@
     <Button Command="{Binding ClearCommand}"><TextBlock Text="{x:Static loc:Strings.Journal_Clear}" TextWrapping="Wrap" /></Button>
    </WrapPanel>
   </StackPanel>
-  <TextBox Grid.Row="1" Text="{Binding Text, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" FontFamily="monospace"
+  <TextBox x:Name="Entries" Grid.Row="1" Height="240" Text="{Binding Text, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" FontFamily="monospace"
            ScrollViewer.VerticalScrollBarVisibility="Auto" />
  </Grid>
+ </ScrollViewer>
 </UserControl>
