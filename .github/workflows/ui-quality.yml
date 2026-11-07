@@ -84,10 +84,10 @@ jobs:
           dotnet build software/chamelab/ChameLab.Android -t:SignAndroidPackage -c Release -r android-x64 -p:ChameLabUiTests=true -p:EmbedAssembliesIntoApk=true -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME"
           mkdir -p "$RUNNER_TEMP/ui-apk"
           cp software/chamelab/ChameLab.Android/bin/Release/net10.0-android/android-x64/*-Signed.apk "$RUNNER_TEMP/ui-apk/ChameLab-ui-tests.apk"
-          aapt=$(rg --files "$ANDROID_HOME/build-tools" | rg '/aapt2$' | sort -V | tail -1)
+          aapt=$(printf '%s\n' "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
           "$aapt" dump badging "$RUNNER_TEMP/ui-apk/ChameLab-ui-tests.apk" > "$RUNNER_TEMP/ui-apk-manifest.txt"
           # run-as must be available in this isolated test package, also under Release/AOT.
-          rg -q '^application-debuggable' "$RUNNER_TEMP/ui-apk-manifest.txt"
+          grep -q '^application-debuggable' "$RUNNER_TEMP/ui-apk-manifest.txt"
       - uses: actions/upload-artifact@v7
         with:
           name: android-ui-test-apk
