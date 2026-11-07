@@ -61,14 +61,18 @@ public sealed class SerialTransport(string portName) : ITransport
 
     public ValueTask DisposeAsync()
     {
+        var port = Interlocked.Exchange(ref _port, null);
+        if (port is null) return ValueTask.CompletedTask;
         // SerialPort.Close flushes first, which throws once the device is unplugged and leaves the
         // handle open (keeping a ghost COM port registered). Disposing the stream itself always
-        // releases the handle, even when its own cleanup fails.
-        try { _port?.BaseStream.Dispose(); } catch { /* ignore: the device may already be gone */ }
-        try { _port?.Close(); } catch { /* ignore */ }
-        try { _port?.Dispose(); } catch { /* ignore */ }
-        _port = null;
-        return ValueTask.CompletedTask;
+        // releases the handle, even when its own cleanup fails. Driver cleanup may
+        // take seconds, so await it without blocking the calling UI thread.
+        return new ValueTask(Task.Run(() =>
+        {
+            try { port.BaseStream.Dispose(); } catch { /* ignore: the device may already be gone */ }
+            try { port.Close(); } catch { /* ignore */ }
+            try { port.Dispose(); } catch { /* ignore */ }
+        }));
     }
 }
 

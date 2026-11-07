@@ -135,12 +135,12 @@ internal sealed class UsbCdcTransport(IUsbCdcHost host, string id, string name) 
     private IUsbCdcConnection Connected() => Volatile.Read(ref _connection) is { IsAttached: true } connection
         ? connection : throw new IOException(Strings.Usb_NotConnected);
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         IUsbCdcConnection? connection;
         lock (_gate)
         {
-            if (_disposed) return ValueTask.CompletedTask;
+            if (_disposed) return;
             _disposed = true;
             connection = _connection;
             _connection = null;
@@ -149,8 +149,9 @@ internal sealed class UsbCdcTransport(IUsbCdcHost host, string id, string name) 
         finally
         {
             _lifetime.Dispose();
-            connection?.Dispose();
+            // Native close waits for any in-flight bulk transfer. Keep that wait off
+            // the UI thread while still awaiting release of the USB handle.
+            if (connection is not null) await Task.Run(connection.Dispose).ConfigureAwait(false);
         }
-        return ValueTask.CompletedTask;
     }
 }

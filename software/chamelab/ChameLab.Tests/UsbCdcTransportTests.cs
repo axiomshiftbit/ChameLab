@@ -99,6 +99,36 @@ public class UsbCdcTransportTests
     }
 
     [Fact]
+    public async Task NativeCloseDoesNotBlockTheCallingThread()
+    {
+        var host = new Host();
+        using var release = new ManualResetEventSlim();
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var returned = new TaskCompletionSource<Task>(TaskCreationOptions.RunContinuationsAsynchronously);
+        host.Connection.OnDispose = () => { entered.SetResult(); release.Wait(); };
+        var transport = new UsbCdcTransport(host, "usb1", "Chameleon");
+        await transport.ConnectAsync();
+        var caller = new Thread(() => returned.SetResult(transport.DisposeAsync().AsTask())) { IsBackground = true };
+        caller.Start();
+        try
+        {
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var closing = await returned.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.False(transport.IsConnected);
+            Assert.False(closing.IsCompleted);
+            release.Set();
+            await closing.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        finally
+        {
+            release.Set();
+            caller.Join(TimeSpan.FromSeconds(5));
+            await (await returned.Task).WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        Assert.Equal(1, host.Connection.Disposals);
+    }
+
+    [Fact]
     public async Task DeniedPermissionAndCanceledPermissionWaitLeaveNoConnection()
     {
         var host = new Host { Open = _ => throw new UnauthorizedAccessException("Denied") };
@@ -185,7 +215,7 @@ public class UsbCdcTransportTests
         public readonly ConcurrentQueue<byte[]> Reads = new();
         public readonly List<byte> Written = new();
         public readonly List<int> WriteSizes = new();
-        public Action? AfterWrite;
+        public Action? AfterWrite, OnDispose;
         public int Read(byte[] buffer, int timeoutMs)
         {
             ReadCalls++;
@@ -204,6 +234,6 @@ public class UsbCdcTransportTests
             AfterWrite?.Invoke();
             return n;
         }
-        public void Dispose() { IsAttached = false; Disposals++; }
+        public void Dispose() { OnDispose?.Invoke(); IsAttached = false; Disposals++; }
     }
 }
