@@ -179,6 +179,23 @@ public sealed class HexBuffer
     public bool CanUndo => _parent?.CanUndo ?? (_undo.Count > 0);
     public bool CanRedo => _parent?.CanRedo ?? (_redo.Count > 0);
 
+    /// <summary>Finds known bytes, wrapping once. Unread/template bytes never match.</summary>
+    public long Find(ReadOnlySpan<byte> pattern, long start = 0)
+    {
+        if (pattern.IsEmpty || pattern.Length > Length) return -1;
+        var positions = Length - pattern.Length + 1;
+        start = Math.Clamp(start, 0, positions);
+        for (long visited = 0; visited < positions; visited++)
+        {
+            var offset = (start + visited) % positions;
+            var matches = true;
+            for (var i = 0; i < pattern.Length; i++)
+                if (!IsRead(offset + i) || this[offset + i] != pattern[i]) { matches = false; break; }
+            if (matches) return offset;
+        }
+        return -1;
+    }
+
     /// <summary>
     /// Overwrites bytes starting at <paramref name="offset"/>; unread rows become read (zero-filled).
     /// Bytes past the end add rows when the buffer <see cref="CanResize"/>, otherwise they are dropped.

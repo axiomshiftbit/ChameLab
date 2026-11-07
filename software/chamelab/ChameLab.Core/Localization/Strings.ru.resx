@@ -3686,4 +3686,24 @@
   <data name="Cards_CompareIdentityDifferent" xml:space="preserve">
     <value>различаются</value>
   </data>
+  <data name="Hex_ClipboardUnavailable" xml:space="preserve"><value>Буфер обмена недоступен.</value></data>
+  <data name="Hex_ReadOnly" xml:space="preserve"><value>Эти данные доступны только для чтения.</value></data>
+  <data name="Hex_BufferChanged" xml:space="preserve"><value>Данные или выделение изменились. Повторите вставку.</value></data>
+  <data name="Hex_InvalidPaste" xml:space="preserve"><value>Введите целые HEX-байты или текст в режиме ASCII. Неизвестные байты вставлять нельзя.</value></data>
+  <data name="Hex_PasteTooLong" xml:space="preserve"><value>Вставка содержит {0} байт, помещается {1}. Данные не изменены.</value></data>
+  <data name="Hex_CopiedCount" xml:space="preserve"><value>Скопировано байт: {0}.</value></data>
+  <data name="Hex_PastedCount" xml:space="preserve"><value>Вставлено байт: {0}.</value></data>
+  <data name="Hex_SelectRow" xml:space="preserve"><value>Выделить строку</value></data>
+  <data name="Hex_Navigation" xml:space="preserve"><value>Навигация и поиск</value></data>
+  <data name="Hex_Address" xml:space="preserve"><value>Адрес байта (десятичный или 0xHEX)</value></data>
+  <data name="Hex_Length" xml:space="preserve"><value>Длина выделения (байты)</value></data>
+  <data name="Hex_GoTo" xml:space="preserve"><value>Перейти</value></data>
+  <data name="Hex_SelectRange" xml:space="preserve"><value>Выделить диапазон</value></data>
+  <data name="Hex_Search" xml:space="preserve"><value>Поиск HEX-байтов или текста ASCII</value></data>
+  <data name="Hex_FindNext" xml:space="preserve"><value>Найти далее</value></data>
+  <data name="Hex_AddressRange" xml:space="preserve"><value>Открытая память: 0x{0}–0x{1}. Поиск идёт по кругу и пропускает непрочитанные байты.</value></data>
+  <data name="Hex_InvalidRange" xml:space="preserve"><value>Адрес или выделение выходит за границы открытой памяти.</value></data>
+  <data name="Hex_NoMatch" xml:space="preserve"><value>В открытой памяти совпадений нет.</value></data>
+  <data name="Hex_MatchAt" xml:space="preserve"><value>Найдено по адресу 0x{0}.</value></data>
+  <data name="Hex_AllMemory" xml:space="preserve"><value>Показать всю память</value></data>
 </root>

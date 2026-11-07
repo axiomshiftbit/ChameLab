@@ -3686,4 +3686,24 @@ Gleiche Bytes: {1}; unterschiedlich: {2}; unbekannt: {3}.</value>
   <data name="Cards_CompareIdentityDifferent" xml:space="preserve">
     <value>unterschiedlich</value>
   </data>
+  <data name="Hex_ClipboardUnavailable" xml:space="preserve"><value>Zwischenablage nicht verfügbar.</value></data>
+  <data name="Hex_ReadOnly" xml:space="preserve"><value>Dieser Puffer ist schreibgeschützt.</value></data>
+  <data name="Hex_BufferChanged" xml:space="preserve"><value>Puffer oder Auswahl geändert. Einfügen wiederholen.</value></data>
+  <data name="Hex_InvalidPaste" xml:space="preserve"><value>Vollständige HEX-Bytes oder Text im ASCII-Modus eingeben. Unbekannte Bytes können nicht eingefügt werden.</value></data>
+  <data name="Hex_PasteTooLong" xml:space="preserve"><value>Einfügen enthält {0} Bytes; nur {1} passen. Nichts wurde geändert.</value></data>
+  <data name="Hex_CopiedCount" xml:space="preserve"><value>{0} Bytes kopiert.</value></data>
+  <data name="Hex_PastedCount" xml:space="preserve"><value>{0} Bytes eingefügt.</value></data>
+  <data name="Hex_SelectRow" xml:space="preserve"><value>Zeile auswählen</value></data>
+  <data name="Hex_Navigation" xml:space="preserve"><value>Navigation und Suche</value></data>
+  <data name="Hex_Address" xml:space="preserve"><value>Byteadresse (dezimal oder 0xHEX)</value></data>
+  <data name="Hex_Length" xml:space="preserve"><value>Auswahllänge (Bytes)</value></data>
+  <data name="Hex_GoTo" xml:space="preserve"><value>Gehe zu</value></data>
+  <data name="Hex_SelectRange" xml:space="preserve"><value>Bereich auswählen</value></data>
+  <data name="Hex_Search" xml:space="preserve"><value>HEX-Bytes oder ASCII-Text suchen</value></data>
+  <data name="Hex_FindNext" xml:space="preserve"><value>Weitersuchen</value></data>
+  <data name="Hex_AddressRange" xml:space="preserve"><value>Geöffneter Puffer: 0x{0}–0x{1}. Die Suche läuft einmal im Kreis und überspringt ungelesene Bytes.</value></data>
+  <data name="Hex_InvalidRange" xml:space="preserve"><value>Adresse oder Auswahl außerhalb des geöffneten Puffers.</value></data>
+  <data name="Hex_NoMatch" xml:space="preserve"><value>Keine Übereinstimmung im geöffneten Puffer.</value></data>
+  <data name="Hex_MatchAt" xml:space="preserve"><value>Gefunden bei 0x{0}.</value></data>
+  <data name="Hex_AllMemory" xml:space="preserve"><value>Gesamten Speicher anzeigen</value></data>
 </root>

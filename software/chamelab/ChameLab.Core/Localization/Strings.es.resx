@@ -3686,4 +3686,24 @@ Bytes iguales: {1}; distintos: {2}; desconocidos: {3}.</value>
   <data name="Cards_CompareIdentityDifferent" xml:space="preserve">
     <value>difieren</value>
   </data>
+  <data name="Hex_ClipboardUnavailable" xml:space="preserve"><value>Portapapeles no disponible.</value></data>
+  <data name="Hex_ReadOnly" xml:space="preserve"><value>Este búfer es de solo lectura.</value></data>
+  <data name="Hex_BufferChanged" xml:space="preserve"><value>El búfer o la selección ha cambiado. Repita el pegado.</value></data>
+  <data name="Hex_InvalidPaste" xml:space="preserve"><value>Introduzca bytes HEX completos o texto en modo ASCII. No se pueden pegar bytes desconocidos.</value></data>
+  <data name="Hex_PasteTooLong" xml:space="preserve"><value>Se intentan pegar {0} bytes; solo caben {1}. No se cambió nada.</value></data>
+  <data name="Hex_CopiedCount" xml:space="preserve"><value>{0} bytes copiados.</value></data>
+  <data name="Hex_PastedCount" xml:space="preserve"><value>{0} bytes pegados.</value></data>
+  <data name="Hex_SelectRow" xml:space="preserve"><value>Seleccionar fila</value></data>
+  <data name="Hex_Navigation" xml:space="preserve"><value>Navegación y búsqueda</value></data>
+  <data name="Hex_Address" xml:space="preserve"><value>Dirección del byte (decimal o 0xHEX)</value></data>
+  <data name="Hex_Length" xml:space="preserve"><value>Longitud de selección (bytes)</value></data>
+  <data name="Hex_GoTo" xml:space="preserve"><value>Ir a</value></data>
+  <data name="Hex_SelectRange" xml:space="preserve"><value>Seleccionar rango</value></data>
+  <data name="Hex_Search" xml:space="preserve"><value>Buscar bytes HEX o texto ASCII</value></data>
+  <data name="Hex_FindNext" xml:space="preserve"><value>Buscar siguiente</value></data>
+  <data name="Hex_AddressRange" xml:space="preserve"><value>Búfer abierto: 0x{0}–0x{1}. La búsqueda es circular y omite bytes no leídos.</value></data>
+  <data name="Hex_InvalidRange" xml:space="preserve"><value>La dirección o selección está fuera del búfer abierto.</value></data>
+  <data name="Hex_NoMatch" xml:space="preserve"><value>No hay coincidencias en el búfer abierto.</value></data>
+  <data name="Hex_MatchAt" xml:space="preserve"><value>Encontrado en 0x{0}.</value></data>
+  <data name="Hex_AllMemory" xml:space="preserve"><value>Mostrar toda la memoria</value></data>
 </root>

@@ -29,6 +29,7 @@
   <ItemGroup>
     <!-- Crypto/ uses internals in tests (the candidate validation pipeline). -->
     <InternalsVisibleTo Include="ChameLab.Tests" />
+    <InternalsVisibleTo Include="ChameLab.UiTests" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ChameLab.Core\ChameLab.Core.csproj" />

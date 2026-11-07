@@ -3686,4 +3686,24 @@
   <data name="Cards_CompareIdentityDifferent" xml:space="preserve">
     <value>不同</value>
   </data>
+  <data name="Hex_ClipboardUnavailable" xml:space="preserve"><value>剪贴板不可用。</value></data>
+  <data name="Hex_ReadOnly" xml:space="preserve"><value>此缓冲区为只读。</value></data>
+  <data name="Hex_BufferChanged" xml:space="preserve"><value>缓冲区或选择范围已改变，请重新粘贴。</value></data>
+  <data name="Hex_InvalidPaste" xml:space="preserve"><value>请输入完整的 HEX 字节，或在 ASCII 模式下输入文本。不能粘贴未知字节。</value></data>
+  <data name="Hex_PasteTooLong" xml:space="preserve"><value>粘贴内容有 {0} 字节，但只能容纳 {1} 字节。未作任何修改。</value></data>
+  <data name="Hex_CopiedCount" xml:space="preserve"><value>已复制 {0} 字节。</value></data>
+  <data name="Hex_PastedCount" xml:space="preserve"><value>已粘贴 {0} 字节。</value></data>
+  <data name="Hex_SelectRow" xml:space="preserve"><value>选择行</value></data>
+  <data name="Hex_Navigation" xml:space="preserve"><value>导航与搜索</value></data>
+  <data name="Hex_Address" xml:space="preserve"><value>字节地址（十进制或 0xHEX）</value></data>
+  <data name="Hex_Length" xml:space="preserve"><value>选择长度（字节）</value></data>
+  <data name="Hex_GoTo" xml:space="preserve"><value>跳转</value></data>
+  <data name="Hex_SelectRange" xml:space="preserve"><value>选择范围</value></data>
+  <data name="Hex_Search" xml:space="preserve"><value>搜索 HEX 字节或 ASCII 文本</value></data>
+  <data name="Hex_FindNext" xml:space="preserve"><value>查找下一个</value></data>
+  <data name="Hex_AddressRange" xml:space="preserve"><value>当前缓冲区：0x{0}–0x{1}。搜索循环一次，并跳过未读取的字节。</value></data>
+  <data name="Hex_InvalidRange" xml:space="preserve"><value>地址或选择范围超出当前缓冲区。</value></data>
+  <data name="Hex_NoMatch" xml:space="preserve"><value>当前缓冲区中没有匹配项。</value></data>
+  <data name="Hex_MatchAt" xml:space="preserve"><value>在 0x{0} 找到。</value></data>
+  <data name="Hex_AllMemory" xml:space="preserve"><value>显示全部内存</value></data>
 </root>

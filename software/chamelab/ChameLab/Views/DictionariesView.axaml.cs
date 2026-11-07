@@ -26,7 +26,7 @@ public partial class DictionariesView : UserControl
             KnownCards.MinHeight = KnownMinRows * row.Bounds.Height + Vertical(KnownList.Padding)
                 + Vertical(KnownList.BorderThickness);
         KnownKeysBox.MinHeight = KnownMinRows * KnownKeysEditor.LineHeight + Vertical(KnownKeysBox.Padding)
-            + Vertical(KnownKeysBox.BorderThickness);
+            + Vertical(KnownKeysBox.BorderThickness) + KnownKeysToolbar.DesiredSize.Height + 8;
     }
 
     private static double Vertical(Thickness t) => t.Top + t.Bottom;

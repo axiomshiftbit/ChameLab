@@ -3686,4 +3686,24 @@ Octets identiques : {1} ; différents : {2} ; inconnus : {3}.</value>
   <data name="Cards_CompareIdentityDifferent" xml:space="preserve">
     <value>différents</value>
   </data>
+  <data name="Hex_ClipboardUnavailable" xml:space="preserve"><value>Presse-papiers indisponible.</value></data>
+  <data name="Hex_ReadOnly" xml:space="preserve"><value>Ce tampon est en lecture seule.</value></data>
+  <data name="Hex_BufferChanged" xml:space="preserve"><value>Le tampon ou la sélection a changé. Répétez le collage.</value></data>
+  <data name="Hex_InvalidPaste" xml:space="preserve"><value>Saisissez des octets HEX complets ou du texte en mode ASCII. Les octets inconnus ne peuvent pas être collés.</value></data>
+  <data name="Hex_PasteTooLong" xml:space="preserve"><value>Le collage contient {0} octets ; seuls {1} tiennent. Rien n’a changé.</value></data>
+  <data name="Hex_CopiedCount" xml:space="preserve"><value>{0} octets copiés.</value></data>
+  <data name="Hex_PastedCount" xml:space="preserve"><value>{0} octets collés.</value></data>
+  <data name="Hex_SelectRow" xml:space="preserve"><value>Sélectionner la ligne</value></data>
+  <data name="Hex_Navigation" xml:space="preserve"><value>Navigation et recherche</value></data>
+  <data name="Hex_Address" xml:space="preserve"><value>Adresse d’octet (décimale ou 0xHEX)</value></data>
+  <data name="Hex_Length" xml:space="preserve"><value>Longueur de sélection (octets)</value></data>
+  <data name="Hex_GoTo" xml:space="preserve"><value>Aller à</value></data>
+  <data name="Hex_SelectRange" xml:space="preserve"><value>Sélectionner la plage</value></data>
+  <data name="Hex_Search" xml:space="preserve"><value>Rechercher des octets HEX ou du texte ASCII</value></data>
+  <data name="Hex_FindNext" xml:space="preserve"><value>Suivant</value></data>
+  <data name="Hex_AddressRange" xml:space="preserve"><value>Tampon ouvert : 0x{0}–0x{1}. La recherche est circulaire et ignore les octets non lus.</value></data>
+  <data name="Hex_InvalidRange" xml:space="preserve"><value>Adresse ou sélection hors du tampon ouvert.</value></data>
+  <data name="Hex_NoMatch" xml:space="preserve"><value>Aucune correspondance dans le tampon ouvert.</value></data>
+  <data name="Hex_MatchAt" xml:space="preserve"><value>Trouvé à 0x{0}.</value></data>
+  <data name="Hex_AllMemory" xml:space="preserve"><value>Afficher toute la mémoire</value></data>
 </root>

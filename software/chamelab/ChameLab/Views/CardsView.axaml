@@ -960,9 +960,15 @@
                           </Grid>
                         </Grid>
                         <Button Grid.Column="1" Classes="danger" Command="{Binding Form?.ClearSectorCommand}"
-                                VerticalAlignment="Center" IsVisible="{Binding Form?.IsMifareClassic, TargetNullValue=False}"
+                                VerticalAlignment="Center"
                                 IsEnabled="{Binding !IsBusy}"
                                 ToolTip.Tip="{x:Static loc:Strings.Cards_ClearTheSelectedSectorAndMark}">
+                          <Button.IsVisible>
+                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                              <Binding Path="Form.IsMifareClassic" FallbackValue="False" />
+                              <Binding Path="!Form.ShowAllMemory" FallbackValue="False" />
+                            </MultiBinding>
+                          </Button.IsVisible>
                           <StackPanel Orientation="Horizontal" Spacing="6">
                             <PathIcon Data="{StaticResource Icon.delete}" />
                             <TextBlock Text="{x:Static loc:Strings.Common_Clear}" VerticalAlignment="Center" />
@@ -970,10 +976,16 @@
                         </Button>
                       </Grid>
                       <ScrollViewer x:Name="MemoryScroll" Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
-                        <c:HexEditor x:Name="MemoryEditor" Buffer="{Binding Form?.SelectedMemory}" ShowGroupHeaders="False" />
+                        <c:HexEditor x:Name="MemoryEditor" Buffer="{Binding Form?.SelectedMemory}"
+                                     ShowGroupHeaders="{Binding Form?.ShowAllMemory, TargetNullValue=False}" />
                       </ScrollViewer>
                     </Grid>
                   </Border>
+                  <CheckBox IsChecked="{Binding Form?.ShowAllMemory}"
+                            IsVisible="{Binding Form?.IsMifareClassic, TargetNullValue=False}">
+                    <TextBlock Text="{x:Static loc:Strings.Hex_AllMemory}" TextWrapping="Wrap" />
+                  </CheckBox>
+                  <c:HexEditorToolbar Editor="{Binding #MemoryEditor}" />
                   <WrapPanel Classes="hexlegend" IsVisible="{Binding Form?.IsMifareClassic, TargetNullValue=False}" Margin="16,0,0,0">
                     <TextBlock Classes="manufacturer" Text="{x:Static loc:Strings.Cards_Block0}" />
                     <TextBlock Classes="keya" Text="{x:Static loc:Strings.Cards_KeyA}" />

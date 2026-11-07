@@ -69,7 +69,10 @@ public sealed class CardEditorViewModel : ViewModelBase, IProtectionSettings
         Ndef = new NdefEditorViewModel(() => (_data, _tag), WriteNdef);
         RebuildRows();
         _baseline = Fingerprint();
-        ClearSectorCommand = ReactiveCommand.Create(() => SelectedMemory?.ClearRows(0, SelectedMemory.RowCount));
+        ClearSectorCommand = ReactiveCommand.Create(() =>
+        {
+            if (IsMifareClassic) Memory?.ClearRows(MifareClassic.SectorFirstBlock(SelectedSector), MifareClassic.BlocksInSector(SelectedSector));
+        });
     }
 
     public string Id => _source.Id;
@@ -370,6 +373,18 @@ public sealed class CardEditorViewModel : ViewModelBase, IProtectionSettings
     }
 
     private int _selectedSector;
+    private bool _showAllMemory;
+    public bool ShowAllMemory
+    {
+        get => _showAllMemory;
+        set
+        {
+            if (_showAllMemory == value) return;
+            this.RaiseAndSetIfChanged(ref _showAllMemory, value);
+            UpdateSelectedMemory();
+        }
+    }
+
     public int SelectedSector
     {
         get => _selectedSector;
@@ -377,8 +392,9 @@ public sealed class CardEditorViewModel : ViewModelBase, IProtectionSettings
         {
             var count = _tag.IsMifareClassic() ? MifareClassic.SectorOfBlock(_tag.MifareClassicBlocks() - 1) + 1 : 0;
             var selected = count > 0 ? Math.Clamp(value, 0, count - 1) : 0;
-            if (_selectedSector == selected) return;
+            if (_selectedSector == selected && !_showAllMemory) return;
             this.RaiseAndSetIfChanged(ref _selectedSector, selected);
+            this.RaiseAndSetIfChanged(ref _showAllMemory, false, nameof(ShowAllMemory));
             UpdateSelectedMemory();
         }
     }
@@ -394,7 +410,8 @@ public sealed class CardEditorViewModel : ViewModelBase, IProtectionSettings
         {
             var count = MifareClassic.SectorOfBlock(_tag.MifareClassicBlocks() - 1) + 1;
             this.RaiseAndSetIfChanged(ref _selectedSector, Math.Clamp(_selectedSector, 0, count - 1), nameof(SelectedSector));
-            memory = memory.Slice(MifareClassic.SectorFirstBlock(_selectedSector), MifareClassic.BlocksInSector(_selectedSector));
+            if (!_showAllMemory)
+                memory = memory.Slice(MifareClassic.SectorFirstBlock(_selectedSector), MifareClassic.BlocksInSector(_selectedSector));
         }
         this.RaiseAndSetIfChanged(ref _selectedMemory, memory, nameof(SelectedMemory));
         RefreshAccess();

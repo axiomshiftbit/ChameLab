@@ -11,6 +11,7 @@ using Avalonia.Data;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.VisualTree;
+using ChameLab.Controls;
 using ChameLab.Services;
 using ChameLab.Models;
 using ChameLab.ViewModels;
@@ -23,7 +24,7 @@ namespace ChameLab.UiTesting;
 // Compiled only into UI test projects/builds. All libraries are synthetic and in memory.
 public static class LayoutScenarios
 {
-    public static readonly string[] Pages = ["connect", "connect-found", "notice", "error", "settings", "device", "slots", "cards", "cards-library", "card-classic", "card-access", "card-compare", "card-ultralight", "card-lf", "dictionaries", "dictionary-download", "dictionary-editor", "tools", "hf", "lf", "auth", "ValueBlocks", "T55Password", "T55Block", "Gen4", "RawHf", "RawDevice", "console", "plugins", "key-search", "writer", "writer-classic", "writer-ultralight", "writer-lf", "cards-add", "journal"];
+    public static readonly string[] Pages = ["connect", "connect-found", "notice", "error", "settings", "device", "slots", "cards", "cards-library", "card-classic", "card-access", "card-compare", "card-hex", "card-ultralight", "card-lf", "dictionaries", "dictionary-download", "dictionary-editor", "dictionary-known", "tools", "hf", "lf", "auth", "ValueBlocks", "T55Password", "T55Block", "Gen4", "RawHf", "RawDevice", "console", "plugins", "key-search", "writer", "writer-classic", "writer-ultralight", "writer-lf", "cards-add", "journal"];
 
     public static Border Create(string page, string language)
     {
@@ -48,10 +49,10 @@ public static class LayoutScenarios
             "writer" or "writer-classic" or "writer-ultralight" or "writer-lf" => WriterScenario(page, device, cards, dictionaries),
             "cards-add" => AddScenario(device, cards, dictionaries),
             "cards" => new CardsView { DataContext = new CardsViewModel(device, cards, dictionaries) },
-            "cards-library" or "card-classic" or "card-access" or "card-compare" or "card-ultralight" or "card-lf" => SavedCardScenario(page, device, cards, dictionaries),
+            "cards-library" or "card-classic" or "card-access" or "card-compare" or "card-hex" or "card-ultralight" or "card-lf" => SavedCardScenario(page, device, cards, dictionaries),
             "dictionaries" => new DictionariesView { DataContext = new DictionariesViewModel(dictionaries, cards) },
             "tools" => new ToolsView { DataContext = new ToolsViewModel(device, dictionaries, cards) },
-            "dictionary-download" or "dictionary-editor" => DictionaryScenario(page, dictionaries, cards),
+            "dictionary-download" or "dictionary-editor" or "dictionary-known" => DictionaryScenario(page, dictionaries, cards),
             _ => ToolScenario(page, device, dictionaries, cards),
         };
         var host = new Border { Child = view, Tag = device.Journal };
@@ -117,7 +118,7 @@ public static class LayoutScenarios
     }
     private static Control SavedCardScenario(string page, DeviceService device, CardLibrary cards, DictionaryLibrary dictionaries)
     {
-        var type = page == "card-access" ? Protocol.TagSpecificType.Mifare4096
+        var type = page is "card-access" or "card-hex" ? Protocol.TagSpecificType.Mifare4096
             : page == "card-ultralight" ? Protocol.TagSpecificType.Ntag213
             : page == "card-lf" ? Protocol.TagSpecificType.Em410x : Protocol.TagSpecificType.Mifare1024;
         var card = new CardSave { Name = "Synthetic card for interface checks", Tag = type,
@@ -125,7 +126,7 @@ public static class LayoutScenarios
             Atqa = [4, 0], Sak = (byte)(page is "card-lf" or "card-ultralight" ? 0 : 8),
             Data = page == "card-lf" ? [] : Enumerable.Range(0, page == "card-ultralight" ? 45 : 64)
                 .Select(_ => new byte[page == "card-ultralight" ? 4 : 16]).ToList() };
-        if (page == "card-access")
+        if (page is "card-access" or "card-hex")
             card.Data = Enumerable.Range(0, 256).Select(MifareClassic.BlankBlock).ToList();
         if (page == "card-compare")
             card.Data = Enumerable.Range(0, 64).Select(MifareClassic.BlankBlock).ToList();
@@ -146,6 +147,7 @@ public static class LayoutScenarios
             reference.Extra.UnknownKeyA.Add(0);
             model.CompareWithCard(reference);
         }
+        if (page == "card-hex") model.Form!.ShowAllMemory = true;
         return view;
     }
     private static Control WriterScenario(string page, DeviceService device, CardLibrary cards, DictionaryLibrary dictionaries)
@@ -163,8 +165,14 @@ public static class LayoutScenarios
 
     private static Control DictionaryScenario(string page, DictionaryLibrary dictionaries, CardLibrary cards)
     {
+        if (page == "dictionary-known") dictionaries.KnownKeys.Remember([1, 2, 3, 4], [new byte[] { 1, 2, 3, 4, 5, 6 }]);
         var vm = new DictionariesViewModel(dictionaries, cards);
         if (page == "dictionary-editor") vm.Selected = vm.Dictionaries.Last();
+        if (page == "dictionary-known")
+        {
+            vm.OpenKnownKeysCommand.Execute(null);
+            vm.KnownEditor.Selected = vm.KnownEditor.Uids.Single();
+        }
         var view = new DictionariesView { DataContext = vm };
         view.Loaded += (_, _) =>
         {
@@ -196,6 +204,10 @@ public static class LayoutScenarios
     public static List<string> FindOverflow(Control root)
     {
         var errors = new List<string>();
+        foreach (var editor in root.GetVisualDescendants().OfType<HexEditor>().Where(e => e.IsEffectivelyVisible))
+            if (editor.GetVisualAncestors().OfType<ScrollViewer>().FirstOrDefault() is { } scroll
+                && scroll.Viewport.Height < Math.Min(16, editor.DesiredSize.Height))
+                errors.Add($"HEX editor viewport is too small: {scroll.Viewport.Height:F0}.");
         foreach (var header in root.GetVisualDescendants().OfType<Panel>()
                      .Where(p => p.Name == "LibraryHeader" && p.IsEffectivelyVisible && p.Children.Count == 2))
             if (header.Children[0].Bounds.Intersects(header.Children[1].Bounds))

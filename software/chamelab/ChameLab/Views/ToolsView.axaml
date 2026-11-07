@@ -499,8 +499,9 @@
                 <TextBlock Classes="caption hint" TextWrapping="Wrap"
                            Text="{x:Static loc:Strings.Tools_OneBytePerCarrierCycleSelect}" />
               </StackPanel>
+              <c:HexEditorToolbar Editor="{Binding #SamplesEditor}" />
               <ScrollViewer Classes="samples" HorizontalScrollBarVisibility="Disabled">
-                <c:HexEditor Buffer="{Binding SamplesBuffer}" ShowGroupHeaders="False" />
+                <c:HexEditor x:Name="SamplesEditor" Buffer="{Binding SamplesBuffer}" ShowGroupHeaders="False" />
               </ScrollViewer>
             </StackPanel>
           </Border>

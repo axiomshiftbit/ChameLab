@@ -60,6 +60,12 @@ Actions artifact archive first.
    This analyzes the editor's data; it does not test possession of keys or write to the card.
    “Compare with file” lists differences from a single Classic dump of the same capacity:
    block addresses and counts of different/unknown bytes. It compares files, not a physical card.
+   The HEX editor has copy/paste, undo/redo and row-selection buttons. “Navigation and search”
+   supports address jumps, exact byte ranges and HEX/ASCII search. Addresses are **byte offsets**
+   in decimal or prefixed with `0x`, not block numbers: Classic block 128 starts at `0x800`.
+   “Show all memory” searches the entire card; picking a sector returns to that sector's view.
+   Desktop shortcuts: `Ctrl+F` searches, `Ctrl+G` jumps to an address, `F3` finds the next match.
+   Edits affect the working copy; writing a physical card is a separate action.
 3. **Slots.** Load a saved card into a slot and activate it for emulation. Supported LF
    formats allow up to eight cards per slot; the next reader tap advances the list.
 4. **Writer.** Select a library card or import a source file. Place the target blank on

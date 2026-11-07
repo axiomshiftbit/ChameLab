@@ -3686,4 +3686,24 @@
   <data name="Cards_CompareIdentityDifferent" xml:space="preserve">
     <value>相違</value>
   </data>
+  <data name="Hex_ClipboardUnavailable" xml:space="preserve"><value>クリップボードを利用できません。</value></data>
+  <data name="Hex_ReadOnly" xml:space="preserve"><value>このバッファは読み取り専用です。</value></data>
+  <data name="Hex_BufferChanged" xml:space="preserve"><value>バッファまたは選択範囲が変わりました。貼り付けをやり直してください。</value></data>
+  <data name="Hex_InvalidPaste" xml:space="preserve"><value>完全な HEX バイト、または ASCII モードでテキストを入力してください。不明なバイトは貼り付けできません。</value></data>
+  <data name="Hex_PasteTooLong" xml:space="preserve"><value>貼り付けは {0} バイトですが、空きは {1} バイトです。変更していません。</value></data>
+  <data name="Hex_CopiedCount" xml:space="preserve"><value>{0} バイトをコピーしました。</value></data>
+  <data name="Hex_PastedCount" xml:space="preserve"><value>{0} バイトを貼り付けました。</value></data>
+  <data name="Hex_SelectRow" xml:space="preserve"><value>行を選択</value></data>
+  <data name="Hex_Navigation" xml:space="preserve"><value>移動と検索</value></data>
+  <data name="Hex_Address" xml:space="preserve"><value>バイトアドレス（10 進数または 0xHEX）</value></data>
+  <data name="Hex_Length" xml:space="preserve"><value>選択範囲の長さ（バイト）</value></data>
+  <data name="Hex_GoTo" xml:space="preserve"><value>移動</value></data>
+  <data name="Hex_SelectRange" xml:space="preserve"><value>範囲を選択</value></data>
+  <data name="Hex_Search" xml:space="preserve"><value>HEX バイトまたは ASCII テキストを検索</value></data>
+  <data name="Hex_FindNext" xml:space="preserve"><value>次を検索</value></data>
+  <data name="Hex_AddressRange" xml:space="preserve"><value>表示中のバッファ: 0x{0}–0x{1}。検索は一周し、未読バイトを除外します。</value></data>
+  <data name="Hex_InvalidRange" xml:space="preserve"><value>アドレスまたは選択範囲が表示中のバッファの範囲外です。</value></data>
+  <data name="Hex_NoMatch" xml:space="preserve"><value>表示中のバッファに一致するデータはありません。</value></data>
+  <data name="Hex_MatchAt" xml:space="preserve"><value>0x{0} で見つかりました。</value></data>
+  <data name="Hex_AllMemory" xml:space="preserve"><value>メモリ全体を表示</value></data>
 </root>

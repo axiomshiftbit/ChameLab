@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
@@ -75,6 +76,23 @@ public sealed class HexEditor : Control
 
     public static readonly DirectProperty<HexEditor, string?> StatusDetailProperty =
         AvaloniaProperty.RegisterDirect<HexEditor, string?>(nameof(StatusDetail), o => o.StatusDetail);
+
+    public static readonly DirectProperty<HexEditor, string?> OperationMessageProperty =
+        AvaloniaProperty.RegisterDirect<HexEditor, string?>(nameof(OperationMessage), o => o.OperationMessage);
+
+    public string? OperationMessage { get; private set => SetAndRaise(OperationMessageProperty, ref field, value); }
+    public bool OperationFailed { get; private set; }
+    public long SelectionStart => HasSelection ? Selection().from : _caret;
+    public int SelectionLength => HasSelection ? (int)(Selection().to - Selection().from + 1) : 0;
+    public bool CanUndo => _buffer is { IsReadOnly: false, CanUndo: true };
+    public bool CanRedo => _buffer is { IsReadOnly: false, CanRedo: true };
+    private long _revision;
+
+    public void ReportOperation(string? message, bool failed = false)
+    {
+        OperationFailed = failed;
+        OperationMessage = message;
+    }
 
     private enum Pane { Hex, Ascii }
 
@@ -239,6 +257,8 @@ public sealed class HexEditor : Control
         base.OnPropertyChanged(change);
         if (change.Property == BufferProperty)
         {
+            _revision++;
+            ReportOperation(null);
             if (_buffer is not null) _buffer.Changed -= OnBufferChanged;
             _buffer = Buffer;
             if (_buffer is not null && VisualRoot is not null) _buffer.Changed += OnBufferChanged;
@@ -271,6 +291,7 @@ public sealed class HexEditor : Control
 
     private void OnBufferChanged(object? sender, EventArgs e)
     {
+        _revision++;
         InvalidateText();
         if (_buffer is { } buf && _lineY.Length != LineCount(buf))
         {
@@ -291,6 +312,31 @@ public sealed class HexEditor : Control
         UpdateLayout();
         _pane = Pane.Hex;
         MoveCaret(offset, false, extend: false);
+    }
+
+    /// <summary>Selects an exact byte range, including a single byte, without editing it.</summary>
+    public bool SelectRange(long offset, int count)
+    {
+        if (_buffer is null || offset < 0 || count < 1 || offset > _buffer.Length - count) return false;
+        UpdateLayout();
+        _pane = Pane.Hex;
+        _anchor = offset;
+        MoveCaret(offset + count - 1, false, extend: true);
+        return true;
+    }
+
+    public void SelectRow()
+    {
+        if (_buffer is not { Length: > 0 } buf) return;
+        SelectRange(_caret - _caret % buf.RowLength, buf.RowLength);
+    }
+
+    public long FindNext(ReadOnlySpan<byte> pattern)
+    {
+        if (_buffer is null) return -1;
+        var found = _buffer.Find(pattern, SelectionLength > 0 ? SelectionStart + 1 : _caret);
+        if (found >= 0) SelectRange(found, pattern.Length);
+        return found;
     }
 
     // ================================================================ Layout
@@ -832,11 +878,12 @@ public sealed class HexEditor : Control
     private (long from, long to) Selection() =>
         _anchor < 0 ? (-1, -2) : (Math.Min(_anchor, _caret), Math.Max(_anchor, _caret));
 
-    private bool HasSelection => _anchor >= 0 && _anchor != _caret;
+    private bool HasSelection => _anchor >= 0;
 
     private void MoveCaret(long offset, bool low, bool extend)
     {
         if (_buffer is not { ViewLength: > 0 }) return;
+        _revision++;
         if (extend) { if (_anchor < 0) _anchor = _caret; }
         else _anchor = -1;
         _caret = Math.Clamp(offset, 0, _buffer.ViewLength - 1);
@@ -1090,7 +1137,7 @@ public sealed class HexEditor : Control
                 MoveCaret(_caret, false, false);
                 break;
             case Key.Escape when HasSelection: MoveCaret(_caret, false, false); break;
-            case Key.A when cmd: _anchor = 0; MoveCaret(last, false, true); break;
+            case Key.A when cmd: SelectAll(); break;
             case Key.C when cmd: Copy(); break;
             case Key.X when cmd: Copy(); break; // fixed size: cut copies only
             case Key.V when cmd: Paste(); break;
@@ -1103,14 +1150,14 @@ public sealed class HexEditor : Control
 
     // ================================================================ Commands
 
-    private void Undo()
+    public void Undo()
     {
-        if (_buffer is { IsReadOnly: false } && _buffer.Undo()) InvalidateCaret();
+        if (_buffer is { IsReadOnly: false } && _buffer.Undo()) { ReportOperation(null); InvalidateCaret(); }
     }
 
-    private void Redo()
+    public void Redo()
     {
-        if (_buffer is { IsReadOnly: false } && _buffer.Redo()) InvalidateCaret();
+        if (_buffer is { IsReadOnly: false } && _buffer.Redo()) { ReportOperation(null); InvalidateCaret(); }
     }
 
     /// <summary>
@@ -1138,13 +1185,17 @@ public sealed class HexEditor : Control
     }
 
     /// <summary>Copies the selection, or the whole row under the caret.</summary>
-    private async void Copy()
+    private void Copy() => _ = CopyAsync();
+
+    public async Task<bool> CopyAsync()
     {
         try
         {
             var buf = _buffer;
             var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
-            if (buf is not { ViewLength: > 0 } || clipboard is null) return;
+            if (buf is not { Length: > 0 } || _caret >= buf.Length)
+            { ReportOperation(Strings.Hex_NotRead, true); return false; }
+            if (clipboard is null) { ReportOperation(Strings.Hex_ClipboardUnavailable, true); return false; }
 
             long from, to;
             if (HasSelection) (from, to) = Selection();
@@ -1168,48 +1219,74 @@ public sealed class HexEditor : Control
                     .Select(i => buf.IsRead(from + i) ? buf[from + i].ToString("X2") : "??"));
             }
 
-            try { await clipboard.SetTextAsync(text); }
-            catch { /* clipboard unavailable (browser without permission) */ }
+            await clipboard.SetTextAsync(text);
+            ReportOperation(string.Format(Strings.Hex_CopiedCount, to - from + 1));
+            return true;
         }
         catch (Exception)
         {
-            // ignore
+            ReportOperation(Strings.Hex_ClipboardUnavailable, true);
+            return false;
         }
     }
 
     /// <summary>Overwrites from the caret (or selection start) with hex / text from the clipboard.</summary>
-    private async void Paste()
+    private void Paste() => _ = PasteAsync();
+
+    public Task<bool> PasteAsync()
+    {
+        var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+        if (clipboard is not null) return PasteAsync(() => clipboard.TryGetTextAsync());
+        ReportOperation(Strings.Hex_ClipboardUnavailable, true);
+        return Task.FromResult(false);
+    }
+
+    internal async Task<bool> PasteAsync(Func<Task<string?>> readClipboard)
     {
         try
         {
-            var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
-            if (_buffer is null or { IsReadOnly: true } || clipboard is null) return;
-
-            string? text;
-            try { text = await clipboard.TryGetTextAsync(); }
-            catch { return; }
-            if (string.IsNullOrEmpty(text) || _buffer is not { } buf) return;
-
-            byte[] bytes;
-            if (_pane == Pane.Ascii) bytes = Encoding.ASCII.GetBytes(text.Replace("\r", "").Replace("\n", ""));
-            else if (!Hex.TryParse(text, out bytes)) return;
-
-            var start = HasSelection ? Selection().from : _caret;
-            if (HasSelection) bytes = bytes.Take((int)(Selection().to - start + 1)).ToArray();
-            var written = buf.Write(start, bytes);
-            if (written > 0) GoTo(Math.Min(start + written, buf.ViewLength - 1));
+            if (_buffer is null or { IsReadOnly: true })
+            { ReportOperation(Strings.Hex_ReadOnly, true); return false; }
+            var buffer = _buffer;
+            var revision = _revision;
+            var text = await readClipboard();
+            // A delayed clipboard read must never paste into another card, sector or selection.
+            if (!ReferenceEquals(buffer, _buffer) || revision != _revision)
+            { ReportOperation(Strings.Hex_BufferChanged, true); return false; }
+            return PasteText(text, _pane == Pane.Ascii);
         }
         catch (Exception)
         {
-            // ignore
+            ReportOperation(Strings.Hex_ClipboardUnavailable, true);
+            return false;
         }
     }
 
-    private void SelectAll()
+    /// <summary>Validates a complete paste before changing any byte; never silently truncates.</summary>
+    public bool PasteText(string? text, bool ascii = false)
     {
-        if (_buffer is not { ViewLength: > 0 }) return;
-        _anchor = 0;
-        MoveCaret(_buffer.ViewLength - 1, false, true);
+        if (_buffer is not { IsReadOnly: false } buf)
+        { ReportOperation(Strings.Hex_ReadOnly, true); return false; }
+        byte[] bytes;
+        if (ascii && !string.IsNullOrEmpty(text) && text.All(c => c <= 127))
+            bytes = Encoding.ASCII.GetBytes(text.Replace("\r", "").Replace("\n", ""));
+        else if (ascii || !Hex.TryParse(text ?? "", out bytes))
+        { ReportOperation(Strings.Hex_InvalidPaste, true); return false; }
+        if (bytes.Length == 0) { ReportOperation(Strings.Hex_InvalidPaste, true); return false; }
+        var start = SelectionStart;
+        var available = HasSelection ? SelectionLength : buf.CanResize ? int.MaxValue : buf.Length - start;
+        if (bytes.Length > available)
+        { ReportOperation(string.Format(Strings.Hex_PasteTooLong, bytes.Length, available), true); return false; }
+        var written = buf.Write(start, bytes);
+        if (written == 0) { ReportOperation(Strings.Hex_InvalidPaste, true); return false; }
+        GoTo(Math.Min(start + written, buf.ViewLength - 1));
+        ReportOperation(string.Format(Strings.Hex_PastedCount, written));
+        return true;
+    }
+
+    public void SelectAll()
+    {
+        if (_buffer is { Length: > 0 } buf) SelectRange(0, buf.Length);
     }
 
     private ContextMenu BuildContextMenu()

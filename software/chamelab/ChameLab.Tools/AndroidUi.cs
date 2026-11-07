@@ -52,9 +52,9 @@ internal static class AndroidUi
                 var elapsed = Stopwatch.StartNew();
                 var lastProgress = TimeSpan.Zero;
                 var completed = -1;
-                // Software rendering on CI can need over six minutes for 540
-                // scenarios. Allow steady progress, but fail stalled runners early.
-                for (var i = 0; elapsed.Elapsed < TimeSpan.FromMinutes(12); i++)
+                // The full matrix now exceeds 700 scenarios per profile. Slow software-rendered
+                // emulators need more wall time; the two-minute no-progress watchdog stays strict.
+                for (var i = 0; elapsed.Elapsed < TimeSpan.FromMinutes(20); i++)
                 {
                     var raw = await Adb(["exec-out", "run-as", Package, "cat", "files/ui-results/result.json"], false);
                     try { if (raw.Length > 0) report = JsonNode.Parse(raw); } catch (System.Text.Json.JsonException) { }

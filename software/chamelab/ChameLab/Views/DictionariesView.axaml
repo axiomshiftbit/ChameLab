@@ -251,13 +251,16 @@
                     b:DialogKeys.IsBack="True">
               <PathIcon Data="{StaticResource Icon.back}" />
             </Button>
-            <TextBlock Grid.Column="1" Text="{x:Static loc:Strings.Dictionaries_KnownCardKeys}" Classes="h1" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="{x:Static loc:Strings.Dictionaries_KnownCardKeys}" Classes="h1" VerticalAlignment="Center" TextWrapping="Wrap" />
           </Grid>
-          <TextBox Grid.Row="1" Text="{Binding KnownEditor.Filter}" PlaceholderText="{x:Static loc:Strings.Dictionaries_SearchByUIDOrCardName}">
+          <StackPanel Grid.Row="1" Spacing="4">
+          <TextBlock Text="{x:Static loc:Strings.Dictionaries_SearchByUIDOrCardName}" Classes="caption" TextWrapping="Wrap" />
+          <TextBox Text="{Binding KnownEditor.Filter}" PlaceholderText="UID">
             <TextBox.InnerLeftContent>
               <PathIcon Data="{StaticResource Icon.search}" Width="16" Height="16" Margin="10,0,2,0" Opacity="0.6" />
             </TextBox.InnerLeftContent>
           </TextBox>
+          </StackPanel>
           <ScrollViewer Grid.Row="2" Name="KnownScroll" Classes="reservebar" VerticalScrollBarVisibility="Auto"
                         HorizontalScrollBarVisibility="Disabled">
           <c:BalancedSplit MinHeight="{Binding #KnownScroll.Bounds.Height}">
@@ -279,27 +282,30 @@
               </ListBox.ItemTemplate>
             </ListBox>
             <TextBlock Text="{x:Static loc:Strings.Dictionaries_NoCardsMatchTheSearch}" Classes="caption" Margin="8"
-                       IsVisible="{Binding KnownEditor.NoMatches}" />
+                       IsVisible="{Binding KnownEditor.NoMatches}" TextWrapping="Wrap" />
           </Grid>
-          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"
+          <c:FlowGrid MinItemWidth="180" ColumnSpacing="12" RowSpacing="8"
                 IsVisible="{Binding KnownEditor.Selected, Converter={x:Static ObjectConverters.IsNotNull}}">
               <StackPanel Spacing="2" VerticalAlignment="Center">
                 <TextBlock Text="{Binding KnownEditor.Selected?.DisplayUid}" FontWeight="Bold" TextWrapping="Wrap" />
-                <TextBlock Text="{Binding KnownEditor.Selected?.KnownKeyCountText}" Classes="caption" />
+                <TextBlock Text="{Binding KnownEditor.Selected?.KnownKeyCountText}" Classes="caption" TextWrapping="Wrap" />
               </StackPanel>
-              <Button Grid.Column="1" Classes="danger" Command="{Binding KnownEditor.DeleteUidCommand}"
+              <Button Classes="danger" Command="{Binding KnownEditor.DeleteUidCommand}"
                       HorizontalAlignment="Right" VerticalAlignment="Center">
-                <StackPanel Orientation="Horizontal" Spacing="6">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
                   <PathIcon Data="{StaticResource Icon.delete}" />
-                  <TextBlock Text="{x:Static loc:Strings.Dictionaries_ForgetCard}" VerticalAlignment="Center" />
-                </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{x:Static loc:Strings.Dictionaries_ForgetCard}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                </Grid>
               </Button>
-          </Grid>
+          </c:FlowGrid>
           <Border Name="KnownKeysBox" Classes="inset" Padding="8,6" MinHeight="80"
                   IsVisible="{Binding KnownEditor.Selected, Converter={x:Static ObjectConverters.IsNotNull}}">
-            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <Grid RowDefinitions="Auto,*" RowSpacing="8">
+            <c:HexEditorToolbar x:Name="KnownKeysToolbar" Editor="{Binding #KnownKeysEditor}" />
+            <ScrollViewer Grid.Row="1" MinHeight="120" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
               <c:HexEditor Name="KnownKeysEditor" Buffer="{Binding KnownEditor.Selected?.Form.Keys}" />
             </ScrollViewer>
+            </Grid>
           </Border>
         </c:BalancedSplit>
         </ScrollViewer>
@@ -321,7 +327,7 @@
                     HorizontalScrollBarVisibility="Disabled">
         <c:FillStack>
           <Border Classes="card" c:FillStack.Fill="True" MinHeight="260">
-            <Grid RowDefinitions="Auto,Auto,Auto,*" RowSpacing="6">
+            <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="6">
               <StackPanel Grid.Row="0" Spacing="2">
                 <TextBlock Text="{x:Static loc:Strings.Dictionaries_KeysHeader}" Classes="overline" />
                 <TextBlock Classes="caption hint" TextWrapping="Wrap"
@@ -339,7 +345,8 @@
                 <Run Text="  " />
                 <Run Text="{Binding #KeysEditor.StatusDetail}" />
               </TextBlock>
-              <Border Grid.Row="3" Classes="inset" Padding="8,6">
+              <c:HexEditorToolbar Grid.Row="3" Editor="{Binding #KeysEditor}" />
+              <Border Grid.Row="4" Classes="inset" Padding="8,6" MinHeight="120">
                 <ScrollViewer HorizontalScrollBarVisibility="Disabled">
                   <c:HexEditor x:Name="KeysEditor" Buffer="{Binding Form?.Keys}" />
                 </ScrollViewer>

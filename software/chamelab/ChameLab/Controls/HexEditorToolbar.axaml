@@ -1,0 +1,76 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:ChameLab.Controls"
+             xmlns:loc="using:ChameLab.Localization"
+             xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
+             x:Class="ChameLab.Controls.HexEditorToolbar">
+  <StackPanel Spacing="8">
+    <WrapPanel ItemSpacing="6" LineSpacing="6">
+      <Button x:Name="CopyButton" Click="OnCopy">
+        <TextBlock Text="{x:Static loc:Strings.Hex_Copy}" TextWrapping="Wrap" />
+      </Button>
+      <Button x:Name="PasteButton" Click="OnPaste">
+        <TextBlock Text="{x:Static loc:Strings.Hex_Paste}" TextWrapping="Wrap" />
+      </Button>
+      <Button x:Name="UndoButton" Click="OnUndo">
+        <TextBlock Text="{x:Static loc:Strings.Hex_Undo}" TextWrapping="Wrap" />
+      </Button>
+      <Button x:Name="RedoButton" Click="OnRedo">
+        <TextBlock Text="{x:Static loc:Strings.Hex_Redo}" TextWrapping="Wrap" />
+      </Button>
+      <Button x:Name="RowButton" Click="OnSelectRow">
+        <TextBlock Text="{x:Static loc:Strings.Hex_SelectRow}" TextWrapping="Wrap" />
+      </Button>
+      <Button x:Name="AllButton" Click="OnSelectAll">
+        <TextBlock Text="{x:Static loc:Strings.Hex_SelectAll}" TextWrapping="Wrap" />
+      </Button>
+    </WrapPanel>
+    <Expander x:Name="Navigation" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+      <Expander.Header>
+        <TextBlock Text="{x:Static loc:Strings.Hex_Navigation}" TextWrapping="Wrap" />
+      </Expander.Header>
+      <StackPanel Spacing="8">
+        <TextBlock x:Name="RangeText" Classes="caption" TextWrapping="Wrap" />
+        <c:FlowGrid MinItemWidth="130" ColumnSpacing="8" RowSpacing="8">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{x:Static loc:Strings.Hex_Address}" Classes="caption" TextWrapping="Wrap" />
+            <TextBox x:Name="AddressBox" Text="0" MaxLength="18" KeyDown="OnAddressKeyDown" />
+          </StackPanel>
+          <StackPanel Spacing="4">
+            <TextBlock Text="{x:Static loc:Strings.Hex_Length}" Classes="caption" TextWrapping="Wrap" />
+            <TextBox x:Name="CountBox" Text="1" MaxLength="9" />
+          </StackPanel>
+        </c:FlowGrid>
+        <WrapPanel ItemSpacing="6" LineSpacing="6">
+          <Button x:Name="GoToButton" Click="OnGoTo">
+            <TextBlock Text="{x:Static loc:Strings.Hex_GoTo}" TextWrapping="Wrap" />
+          </Button>
+          <Button x:Name="SelectRangeButton" Click="OnSelectRange">
+            <TextBlock Text="{x:Static loc:Strings.Hex_SelectRange}" TextWrapping="Wrap" />
+          </Button>
+        </WrapPanel>
+        <TextBlock Text="{x:Static loc:Strings.Hex_Search}" Classes="caption" TextWrapping="Wrap" />
+        <TextBox x:Name="SearchBox" MaxLength="512" KeyDown="OnSearchKeyDown" />
+        <WrapPanel ItemSpacing="8" LineSpacing="6">
+          <ComboBox x:Name="SearchMode" SelectedIndex="0" MinWidth="100">
+            <ComboBoxItem Content="HEX" />
+            <ComboBoxItem Content="ASCII" />
+          </ComboBox>
+          <Button x:Name="FindButton" Click="OnFind">
+            <TextBlock Text="{x:Static loc:Strings.Hex_FindNext}" TextWrapping="Wrap" />
+          </Button>
+        </WrapPanel>
+      </StackPanel>
+    </Expander>
+    <TextBlock x:Name="OperationStatus" TextWrapping="Wrap" Classes="caption">
+      <TextBlock.Styles>
+        <Style Selector="TextBlock">
+          <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushOutlineSuccess}" />
+        </Style>
+        <Style Selector="TextBlock.error">
+          <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}" />
+        </Style>
+      </TextBlock.Styles>
+    </TextBlock>
+  </StackPanel>
+</UserControl>
