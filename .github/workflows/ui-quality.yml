@@ -145,3 +145,8 @@ jobs:
     uses: ./.github/workflows/build_firmware.yml
     with:
       publish-builder: false
+
+  release-builds:
+    uses: ./.github/workflows/build_gui.yml
+    with:
+      build-ios: false

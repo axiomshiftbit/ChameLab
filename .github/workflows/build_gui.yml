@@ -3,6 +3,11 @@ name: GUI build
 on:
   workflow_call:
     inputs:
+      build-ios:
+        description: Include iOS builds when validating all supported platforms
+        required: false
+        type: boolean
+        default: true
       checkout-sha:
         required: false
         type: string
@@ -212,6 +217,7 @@ jobs:
           path: chamelab-android-*.apk
 
   build_ios:
+    if: ${{ inputs.build-ios }}
     name: Build GUI (iOS, ${{ matrix.rid }})
     runs-on: macos-26
     needs: version
