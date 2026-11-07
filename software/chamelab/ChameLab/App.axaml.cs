@@ -9,7 +9,7 @@ namespace ChameLab;
 
 public partial class App : Application
 {
-    private MainViewModel? _mainViewModel;
+    private MainViewModel? _mainViewModel = null; // The isolated UI test host does not create one.
 
     public System.Threading.Tasks.Task SetForegroundAsync(bool foreground) =>
         _mainViewModel?.SetForegroundAsync(foreground) ?? System.Threading.Tasks.Task.CompletedTask;
