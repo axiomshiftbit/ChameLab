@@ -16,15 +16,6 @@ on:
       checkout-sha:
         required: false
         type: string
-    secrets:
-      ANDROID_KEYSTORE_BASE64:
-        required: false
-      ANDROID_KEYSTORE_PASSWORD:
-        required: false
-      ANDROID_KEY_ALIAS:
-        required: false
-      ANDROID_KEY_PASSWORD:
-        required: false
     outputs:
       version:
         description: The app version, e.g. 1.0.7, or 1.0.7-dev.N with N commits after the release
@@ -169,6 +160,7 @@ jobs:
           path: chamelab-web.zip
 
   build_android:
+    if: ${{ !inputs.sign-android }}
     name: Build GUI (android)
     runs-on: ubuntu-latest
     needs: version
@@ -191,8 +183,49 @@ jobs:
           java-version: '17'
       - name: Install the Android workload
         run: dotnet workload install android
+      - name: Publish development APKs without release credentials
+        run: |
+          for rid in android-arm64 android-arm; do
+            dotnet publish software/chamelab/ChameLab.Android/ChameLab.Android.csproj \
+              -c Release -f net10.0-android -r "$rid" \
+              -p:ApplicationId=io.github.axiomshiftbit.chamelab.dev \
+              -p:Version=${{ needs.version.outputs.version }} \
+              -p:ApplicationDisplayVersion=${{ needs.version.outputs.version }} \
+              -p:ApplicationVersion=${{ needs.version.outputs.code }} -o "publish/$rid"
+            cp publish/"$rid"/*-Signed.apk "chamelab-$rid-development.apk"
+          done
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-artifacts-gui-android
+          path: chamelab-android-*.apk
+
+  build_android_release:
+    if: ${{ inputs.sign-android && startsWith(github.ref, 'refs/tags/v') }}
+    environment: release
+    name: Sign GUI release (android)
+    runs-on: ubuntu-latest
+    needs: version
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.checkout-sha == null && github.sha || inputs.checkout-sha }}
+          persist-credentials: false
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install the Android workload
+        run: dotnet workload install android
       - name: Prepare the release signing key
-        if: ${{ inputs.sign-android }}
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -208,20 +241,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/chamelab-signing"
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/chamelab-signing/release.p12"
           chmod 600 "$RUNNER_TEMP/chamelab-signing/release.p12"
-      - name: Publish development APKs without release credentials
-        if: ${{ !inputs.sign-android }}
-        run: |
-          for rid in android-arm64 android-arm; do
-            dotnet publish software/chamelab/ChameLab.Android/ChameLab.Android.csproj \
-              -c Release -f net10.0-android -r "$rid" \
-              -p:ApplicationId=io.github.axiomshiftbit.chamelab.dev \
-              -p:Version=${{ needs.version.outputs.version }} \
-              -p:ApplicationDisplayVersion=${{ needs.version.outputs.version }} \
-              -p:ApplicationVersion=${{ needs.version.outputs.code }} -o "publish/$rid"
-            cp publish/"$rid"/*-Signed.apk "chamelab-$rid-development.apk"
-          done
       - name: Publish release APKs
-        if: ${{ inputs.sign-android }}
         env:
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
@@ -241,7 +261,7 @@ jobs:
             cp publish/"$rid"/*-Signed.apk "chamelab-$rid.apk"
           done
       - name: Delete temporary signing material
-        if: ${{ always() && inputs.sign-android }}
+        if: ${{ always() }}
         run: rm -f "$RUNNER_TEMP/chamelab-signing/release.p12"
       - name: Upload release artifacts
         uses: actions/upload-artifact@v7

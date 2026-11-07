@@ -35,6 +35,8 @@ public class SettingRow : Panel
     public double MinTextWidth { get => GetValue(MinTextWidthProperty); set => SetValue(MinTextWidthProperty, value); }
 
     private bool _stacked;
+    private Control? _wideControl;
+    private double _wideControlWidth;
 
     private void SetStacked(bool stacked)
     {
@@ -58,15 +60,29 @@ public class SettingRow : Panel
     {
         var width = availableSize.Width;
         var icon = Measure(Child(0), double.PositiveInfinity);
-        // The decision is made with the control at its wide size, so styles that shrink it when
-        // stacked cannot flip the row back.
-        SetStacked(false);
-        var control = Measure(Child(3), double.PositiveInfinity);
+        var input = Child(3);
+        // Keep the intrinsic wide width while stacked. Removing and reapplying the
+        // stacked class on every measure continually invalidates the same layout.
+        if (!_stacked || !ReferenceEquals(input, _wideControl))
+        {
+            SetStacked(false);
+            _wideControl = input;
+            _wideControlWidth = Measure(input, double.PositiveInfinity).Width;
+        }
         var lead = icon.Width > 0 ? icon.Width + Spacing : 0;
-        var trail = control.Width > 0 ? control.Width + Spacing : 0;
-
+        var trail = _wideControlWidth > 0 ? _wideControlWidth + Spacing : 0;
         var textWidth = width - lead - trail;
+        if (_stacked && (double.IsInfinity(width) || textWidth >= MinTextWidth))
+        {
+            // On expansion, refresh the width in case its content changed while narrow.
+            SetStacked(false);
+            _wideControlWidth = Measure(input, double.PositiveInfinity).Width;
+            trail = _wideControlWidth > 0 ? _wideControlWidth + Spacing : 0;
+            textWidth = width - lead - trail;
+        }
         _stacked = !double.IsInfinity(width) && textWidth < MinTextWidth;
+        SetStacked(_stacked);
+        var control = Measure(input, _stacked ? width : double.PositiveInfinity);
         if (!_stacked)
         {
             var title = Measure(Child(1), textWidth);
@@ -76,8 +92,6 @@ public class SettingRow : Panel
                 Math.Max(Math.Max(icon.Height, title.Height + description.Height), control.Height));
         }
 
-        SetStacked(true);
-        control = Measure(Child(3), width);
         var stackedTitle = Measure(Child(1), width - lead);
         var stackedDescription = Measure(Child(2), width);
         return new Size(width, Math.Max(icon.Height, stackedTitle.Height)

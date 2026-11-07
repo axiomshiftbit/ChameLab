@@ -40,6 +40,7 @@ public sealed class UiTestHost : ContentControl
     {
         Directory.CreateDirectory(OutputDirectory);
         var cases = new List<Case>();
+        var scenes = new List<WeakReference>();
         try
         {
             var path = Path.Combine(OutputDirectory, "request.json");
@@ -61,10 +62,12 @@ public sealed class UiTestHost : ContentControl
                     File.WriteAllText(Path.Combine(OutputDirectory, "progress.json"), JsonSerializer.Serialize(new
                     {
                         Page = page, Language = language, Theme = theme.ToString(), Completed = cases.Count,
-                        ManagedBytes = GC.GetTotalMemory(false), WorkingSetBytes = Environment.WorkingSet
+                        ManagedBytes = GC.GetTotalMemory(false), WorkingSetBytes = Environment.WorkingSet,
+                        RetainedScenes = scenes.Count(s => s.IsAlive)
                     }));
                     Application.Current!.RequestedThemeVariant = theme;
                     var scene = LayoutScenarios.Create(page, language);
+                    scenes.Add(new WeakReference(scene));
                     scene.Background = TopLevel.GetTopLevel(this)?.Background
                         ?? (theme == ThemeVariant.Light ? Brushes.White : new SolidColorBrush(Color.FromRgb(32, 32, 32)));
                     Content = scene;
