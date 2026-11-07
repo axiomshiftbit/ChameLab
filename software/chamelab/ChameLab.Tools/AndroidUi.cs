@@ -23,6 +23,7 @@ internal static class AndroidUi
                 Console.WriteLine($"Starting UI profile: {p.Name}");
                 var folder = Path.Combine(output, p.Name); Directory.CreateDirectory(folder);
                 await Adb(["shell", "am", "force-stop", Package]);
+                await Adb(["logcat", "-c"]);
                 await Adb(["shell", "wm", "size", $"{p.Width}x{p.Height}"]);
                 await Adb(["shell", "wm", "density", "160"]);
                 await Adb(["shell", "settings", "put", "system", "font_scale", p.Scale.ToString(CultureInfo.InvariantCulture)]);
@@ -46,6 +47,15 @@ internal static class AndroidUi
                     var raw = await Adb(["exec-out", "run-as", Package, "cat", "files/ui-results/result.json"], false);
                     try { if (raw.Length > 0) report = JsonNode.Parse(raw); } catch (System.Text.Json.JsonException) { }
                     if (report is not null) break;
+                    if (i > 5 && i % 10 == 0)
+                    {
+                        var processes = Encoding.UTF8.GetString(await Adb(["shell", "ps -A 2>/dev/null || ps"], false));
+                        if (!processes.Contains(Package, StringComparison.Ordinal))
+                        {
+                            Console.WriteLine($"{p.Name}: UI process exited before producing its report.");
+                            break;
+                        }
+                    }
                     await Task.Delay(2000);
                 }
                 var names = Encoding.UTF8.GetString(await Adb(["shell", "run-as", Package, "ls", "files/ui-results"], false));
@@ -56,8 +66,9 @@ internal static class AndroidUi
                 if (report is null || (bool?)report["Complete"] != true || (int?)report["Failed"] != 0 || (int?)report["Passed"] != (int?)report["Expected"])
                 {
                     failures.Add(p.Name);
-                    await File.WriteAllBytesAsync(Path.Combine(folder,"logcat.txt"), await Adb(["logcat", "-d", "-s", "AndroidRuntime:E", "monodroid:E", "*:S"], false));
+                    await File.WriteAllBytesAsync(Path.Combine(folder,"logcat.txt"), await Adb(["logcat", "-d", "-b", "main", "-b", "system", "-b", "crash", "-s", "AndroidRuntime:E", "monodroid:E", "mono-rt:F", "libc:F", "DEBUG:F", "ActivityManager:I", "lmkd:I", "*:S"], false));
                     Console.WriteLine($"{p.Name}: {report?.ToJsonString() ?? "UI runner timed out"}");
+                    if (report is null) break; // Diagnose a missing/crashed runner before starting more profiles.
                 }
                 else Console.WriteLine($"{p.Name}: {report["Passed"]} UI scenarios passed");
             }

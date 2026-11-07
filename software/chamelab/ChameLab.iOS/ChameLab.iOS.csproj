@@ -23,6 +23,6 @@
   </ItemGroup>
   <ItemGroup>
     <!-- Lua built-ins are discovered by MoonSharp at runtime. -->
-    <TrimmerRootAssembly Include="MoonSharp.Interpreter" />
+    <TrimmerRootAssembly Include="MoonSharp.Interpreter" RootMode="All" />
   </ItemGroup>
 </Project>

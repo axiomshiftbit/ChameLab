@@ -9,6 +9,6 @@
   <ItemGroup>
     <ProjectReference Include="../ChameLab.Commands/ChameLab.Commands.csproj" />
     <!-- The Lua library discovers its built-in functions through reflection. -->
-    <TrimmerRootAssembly Include="MoonSharp.Interpreter" />
+    <TrimmerRootAssembly Include="MoonSharp.Interpreter" RootMode="All" />
   </ItemGroup>
 </Project>

@@ -58,6 +58,10 @@ public sealed class UiTestHost : ContentControl
                 foreach (var language in request.Languages)
                 foreach (var page in LayoutScenarios.Pages)
                 {
+                    File.WriteAllText(Path.Combine(OutputDirectory, "progress.json"), JsonSerializer.Serialize(new
+                    {
+                        Page = page, Language = language, Theme = theme.ToString(), Completed = cases.Count
+                    }));
                     Application.Current!.RequestedThemeVariant = theme;
                     var scene = LayoutScenarios.Create(page, language);
                     scene.Background = TopLevel.GetTopLevel(this)?.Background

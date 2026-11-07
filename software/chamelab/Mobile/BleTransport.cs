@@ -272,7 +272,7 @@ public sealed class BleScanner : ITransportScanner, ITransportWatcher
                 {
                     // Permission may still be pending on first launch; Bluetooth may be toggled
                     // during a window. Keep watching so granting/enabling it recovers automatically.
-                    Console.WriteLine($"[BLE] Scan failed, retrying: {ex}");
+                    Console.WriteLine($"[BLE] Scan failed, retrying: {ex.GetType().Name}");
                     await Task.Delay(WatchPause, ct);
                     continue;
                 }
@@ -287,7 +287,7 @@ public sealed class BleScanner : ITransportScanner, ITransportWatcher
             }
         }
         catch (OperationCanceledException) { /* stopped */ }
-        catch (Exception ex) { Console.WriteLine($"[BLE] Watch failed: {ex}"); }
+        catch (Exception ex) { Console.WriteLine($"[BLE] Watch failed: {ex.GetType().Name}"); }
     }
 
     private void Seen(TransportCandidate candidate, Guid id)
