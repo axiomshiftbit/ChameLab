@@ -30,6 +30,7 @@ static nrf_pwm_sequence_t m_idteck_pwm_seq = {
 
 static idteck_codec *idteck_alloc(void) {
     idteck_codec *d = malloc(sizeof(idteck_codec));
+    if (!d) return NULL;
     memset(d->data, 0, IDTECK_DATA_SIZE);
     return d;
 }

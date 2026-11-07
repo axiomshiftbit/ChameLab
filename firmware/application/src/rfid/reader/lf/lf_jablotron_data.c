@@ -42,9 +42,13 @@ static void uninit_jablotron_hw(void) {
 
 bool jablotron_read(uint8_t *data, uint32_t timeout_ms) {
     void *codec = jablotron.alloc();
+    if (!codec) return false;
     jablotron.decoder.start(codec, 0);
 
-    cb_init(&cb, JABLOTRON_BUFFER_SIZE, sizeof(uint16_t));
+    if (!cb_init(&cb, JABLOTRON_BUFFER_SIZE, sizeof(uint16_t))) {
+        jablotron.free(codec);
+        return false;
+    }
     init_jablotron_hw();
     start_lf_125khz_radio();
 

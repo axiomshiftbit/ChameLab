@@ -61,7 +61,7 @@ static bool m_is_a_btn_press = false;
 static bool m_is_b_btn_release = false;
 static bool m_is_a_btn_release = false;
 
-static bool m_system_off_processing = false;
+static volatile bool m_system_off_processing = false;
 static bool m_battery_status_display_active = false;
 static uint32_t m_battery_status_display_started_at = 0;
 static uint8_t m_battery_status_display_leds = 0;
@@ -332,26 +332,37 @@ static void system_off_enter(void) {
             }
         }
         if (animation_config == SettingsAnimationModeFull) {
-            if (m_system_off_processing) rgb_marquee_sweep_from_to(color, slot, dir ? 7 : 0);
-            if (m_system_off_processing) rgb_marquee_sweep_fade(color, dir, 7, 99, 75);
-            if (m_system_off_processing) rgb_marquee_sweep_fade(color, !dir, 7, 75, 50);
-            if (m_system_off_processing) rgb_marquee_sweep_fade(color, dir, 7, 50, 25);
-            if (m_system_off_processing) rgb_marquee_sweep_fade(color, !dir, 7, 25, 0);
+            if (m_system_off_processing && sleep_system_off_pending()) rgb_marquee_sweep_from_to(color, slot, dir ? 7 : 0);
+            if (m_system_off_processing && sleep_system_off_pending()) rgb_marquee_sweep_fade(color, dir, 7, 99, 75);
+            if (m_system_off_processing && sleep_system_off_pending()) rgb_marquee_sweep_fade(color, !dir, 7, 75, 50);
+            if (m_system_off_processing && sleep_system_off_pending()) rgb_marquee_sweep_fade(color, dir, 7, 50, 25);
+            if (m_system_off_processing && sleep_system_off_pending()) rgb_marquee_sweep_fade(color, !dir, 7, 25, 0);
         } else if (animation_config == SettingsAnimationModeMinimal) {
-            if (m_system_off_processing) rgb_marquee_sweep_from_to(color, slot, !dir ? 7 : 0);
+            if (m_system_off_processing && sleep_system_off_pending()) rgb_marquee_sweep_from_to(color, slot, !dir ? 7 : 0);
         } else if (animation_config == SettingsAnimationModeSymmetric) {
-            if (m_system_off_processing) rgb_marquee_symmetric_in(color, slot);
+            if (m_system_off_processing && sleep_system_off_pending()) rgb_marquee_symmetric_in(color, slot);
         }
         rgb_marquee_stop();
         hw_rgb_pwm_release();
-        if (!m_system_off_processing) {
-            for (uint8_t i = 0; i < RGB_LIST_NUM; i++) {
-                nrf_gpio_pin_clear(p_led_array[i]);
-            }
-            light_up_by_slot();
-            sleep_timer_start(settings_get_sleep_timeout());
-            return;
+    }
+
+    // Stop accepting connections before irreversible GPIO teardown. A queued
+    // BLE connection event can still cancel shutdown when advertising stops.
+    bool restart_advertising = false;
+    if (m_system_off_processing && sleep_system_off_pending()) {
+        restart_advertising = advertising_is_requested();
+        advertising_stop();
+    }
+    if (!m_system_off_processing || !sleep_system_off_pending()) {
+        if (restart_advertising) advertising_start(false);
+        uint32_t *p_led_array = hw_get_led_array();
+        for (uint8_t i = 0; i < RGB_LIST_NUM; i++) {
+            nrf_gpio_pin_clear(p_led_array[i]);
         }
+        light_up_by_slot();
+        m_system_off_processing = false;
+        sleep_timer_start(settings_get_sleep_timeout());
+        return;
     }
 
     // Disable the HF NFC event first
@@ -376,7 +387,7 @@ static void system_off_enter(void) {
         HF_SPI_SELECT,
         HF_SPI_MISO,
         HF_SPI_MOSI,
-        HF_SPI_MOSI,
+        HF_SPI_SCK,
         LF_OA_OUT,
 #endif
         BAT_SENSE_PIN,

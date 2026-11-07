@@ -1,4 +1,5 @@
 #include "circular_buffer.h"
+#include "app_util_platform.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -24,28 +25,36 @@ void cb_free(circular_buffer *cb) {
     }
 }
 
+// SAADC/GPIOTE produces samples in an IRQ while the main loop consumes them.
+// Protect the shared count and publish each item as one complete operation.
 bool cb_push_back(circular_buffer *cb, const void *item) {
-    if (cb->buffer == NULL || cb->count == cb->capacity) {
-        return false;
+    bool pushed = false;
+    CRITICAL_REGION_ENTER();
+    if (cb->buffer != NULL && cb->count < cb->capacity) {
+        memcpy(cb->head, item, cb->sz);
+        cb->head = (char *)cb->head + cb->sz;
+        if (cb->head == cb->buffer_end) {
+            cb->head = cb->buffer;
+        }
+        cb->count++;
+        pushed = true;
     }
-    memcpy(cb->head, item, cb->sz);
-    cb->head = (char *)cb->head + cb->sz;
-    if (cb->head == cb->buffer_end) {
-        cb->head = cb->buffer;
-    }
-    cb->count++;
-    return true;
+    CRITICAL_REGION_EXIT();
+    return pushed;
 }
 
 bool cb_pop_front(circular_buffer *cb, void *item) {
-    if (cb->buffer == NULL || cb->count == 0) {
-        return false;
+    bool popped = false;
+    CRITICAL_REGION_ENTER();
+    if (cb->buffer != NULL && cb->count != 0) {
+        memcpy(item, cb->tail, cb->sz);
+        cb->tail = (char *)cb->tail + cb->sz;
+        if (cb->tail == cb->buffer_end) {
+            cb->tail = cb->buffer;
+        }
+        cb->count--;
+        popped = true;
     }
-    memcpy(item, cb->tail, cb->sz);
-    cb->tail = (char *)cb->tail + cb->sz;
-    if (cb->tail == cb->buffer_end) {
-        cb->tail = cb->buffer;
-    }
-    cb->count--;
-    return true;
+    CRITICAL_REGION_EXIT();
+    return popped;
 }

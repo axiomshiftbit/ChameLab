@@ -86,9 +86,13 @@ bool ioprox_read(uint8_t *data, uint8_t format_hint, uint32_t timeout_ms) {
     bool       ok    = false;
 
     codec = ioprox.alloc();
+    if (!codec) return false;
     ioprox.decoder.start(codec, format_hint);
 
-    cb_init(&cb, IOPROX_BUFFER_SIZE, sizeof(uint16_t));
+    if (!cb_init(&cb, IOPROX_BUFFER_SIZE, sizeof(uint16_t))) {
+        ioprox.free(codec);
+        return false;
+    }
     init_ioprox_hw();
 
     p_at = bsp_obtain_timer(0);

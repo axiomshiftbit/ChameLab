@@ -37,6 +37,7 @@ const uint8_t tecom27_cn_map[16] = {21, 22, 15, 18, 19, 1, 5, 9, 10, 6, 0, 17, 1
 
 wiegand_card_t *wiegand_card_alloc() {
     wiegand_card_t *card = (wiegand_card_t *)malloc(sizeof(wiegand_card_t));
+    if (!card) return NULL;
     memset(card, 0, sizeof(wiegand_card_t));
     return card;
 }
@@ -68,6 +69,7 @@ static wiegand_card_t *unpack_nonlinear(
     const uint8_t *fc_map, size_t fc_map_size,
     const uint8_t *cn_map, size_t cn_map_size) {
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     for (int i = fc_map_size - 1; i >= 0; i--) {
         d->facility_code <<= 1;
         if (IS_SET(lo, fc_map[i])) {
@@ -104,6 +106,7 @@ static wiegand_card_t *unpack_h10301(uint64_t hi, uint64_t lo) {
         return NULL;
     }
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->facility_code = (lo >> 17) & 0xff;
     d->card_number = (lo >> 1) & 0xffff;
     return d;
@@ -137,6 +140,7 @@ static wiegand_card_t *unpack_ind26(uint64_t hi, uint64_t lo) {
         return NULL;
     }
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->card_number = (lo >> 1) & 0xfff;
     d->facility_code = (lo >> 13) & 0xfff;
     return d;
@@ -151,6 +155,7 @@ static uint64_t pack_ind27(wiegand_card_t *card) {
 
 static wiegand_card_t *unpack_ind27(uint64_t hi, uint64_t lo) {
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->facility_code = (lo >> 14) & 0x1fff;
     d->card_number = (lo >> 0) & 0x3fff;
     return d;
@@ -197,6 +202,7 @@ static wiegand_card_t *unpack_2804w(uint64_t hi, uint64_t lo) {
         return NULL;
     }
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->facility_code = (lo >> 16) & 0xff;
     d->card_number = (lo >> 1) & 0x7fff;
     return d;
@@ -211,6 +217,7 @@ static uint64_t pack_ind29(wiegand_card_t *card) {
 
 static wiegand_card_t *unpack_ind29(uint64_t hi, uint64_t lo) {
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->card_number = (lo >> 0) & 0xffff;
     d->facility_code = (lo >> 16) & 0x1fff;
     return d;
@@ -237,6 +244,7 @@ static wiegand_card_t *unpack_atsw30(uint64_t hi, uint64_t lo) {
         return NULL;
     }
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->facility_code = (lo >> 17) & 0xfff;
     d->card_number = (lo >> 1) & 0xffff;
     return d;
@@ -253,6 +261,7 @@ static uint64_t pack_adt31(wiegand_card_t *card) {
 
 static wiegand_card_t *unpack_adt31(uint64_t hi, uint64_t lo) {
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->facility_code = (lo >> 26) & 0xf;
     d->card_number = (lo >> 3) & 0x7fffff;
     return d;
@@ -268,6 +277,7 @@ static uint64_t pack_hcp32(wiegand_card_t *card) {
 
 static wiegand_card_t *unpack_hcp32(uint64_t hi, uint64_t lo) {
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->card_number = (lo >> 7) & 0xffffff;
     return d;
 }
@@ -282,6 +292,7 @@ static uint64_t pack_hpp32(wiegand_card_t *card) {
 
 static wiegand_card_t *unpack_hpp32(uint64_t hi, uint64_t lo) {
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->facility_code = (lo >> 19) & 0xfff;
     d->card_number = (lo >> 0) & 0x7ffff;
     return d;
@@ -312,6 +323,7 @@ static wiegand_card_t *unpack_kastle(uint64_t hi, uint64_t lo) {
         return NULL;
     }
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->issue_level = (lo >> 25) & 0x1f;
     d->facility_code = (lo >> 17) & 0xff;
     d->card_number = (lo >> 1) & 0xffff;
@@ -329,6 +341,7 @@ static uint64_t pack_kantech(wiegand_card_t *card) {
 
 static wiegand_card_t *unpack_kantech(uint64_t hi, uint64_t lo) {
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->facility_code = (lo >> 17) & 0xff;
     d->card_number = (lo >> 1) & 0xffff;
     return d;
@@ -344,6 +357,7 @@ static uint64_t pack_wie32(wiegand_card_t *card) {
 
 static wiegand_card_t *unpack_wie32(uint64_t hi, uint64_t lo) {
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->facility_code = (lo >> 16) & 0xfff;
     d->card_number = (lo >> 0) & 0xffff;
     return d;
@@ -370,6 +384,7 @@ static wiegand_card_t *unpack_d10202(uint64_t hi, uint64_t lo) {
         return NULL;
     }
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->facility_code = (lo >> 25) & 0x7f;
     d->card_number = (lo >> 1) & 0xffffff;
     return d;
@@ -396,6 +411,7 @@ static wiegand_card_t *unpack_h10306(uint64_t hi, uint64_t lo) {
         return NULL;
     }
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->facility_code = (lo >> 17) & 0xffff;
     d->card_number = (lo >> 1) & 0xffff;
     return d;
@@ -422,6 +438,7 @@ static wiegand_card_t *unpack_n10002(uint64_t hi, uint64_t lo) {
         return NULL;
     }
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->facility_code = (lo >> 17) & 0xffff;
     d->card_number = (lo >> 1) & 0xffff;
     return d;
@@ -439,6 +456,7 @@ static uint64_t pack_optus(wiegand_card_t *card) {
 
 static wiegand_card_t *unpack_optus(uint64_t hi, uint64_t lo) {
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->card_number = (lo >> 17) & 0xffff;
     d->facility_code = (lo >> 1) & 0x7ff;
     return d;
@@ -456,6 +474,7 @@ static uint64_t pack_smartpass(wiegand_card_t *card) {
 
 static wiegand_card_t *unpack_smartpass(uint64_t hi, uint64_t lo) {
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->facility_code = (lo >> 20) & 0x1fff;
     d->issue_level = (lo >> 17) & 0x7;
     d->card_number = (lo >> 1) & 0xffff;
@@ -483,6 +502,7 @@ static wiegand_card_t *unpack_bqt34(uint64_t hi, uint64_t lo) {
         return NULL;
     }
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->facility_code = (lo >> 25) & 0xff;
     d->card_number = (lo >> 1) & 0xffffff;
     return d;
@@ -513,6 +533,7 @@ static wiegand_card_t *unpack_c1k35s(uint64_t hi, uint64_t lo) {
         return NULL;
     }
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->card_number = (lo >> 1) & 0xfffff;
     d->facility_code = (lo >> 21) & 0xfff;
     return d;
@@ -543,6 +564,7 @@ static wiegand_card_t *unpack_c15001(uint64_t hi, uint64_t lo) {
         return NULL;
     }
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->oem = (lo >> 25) & 0x3ff;
     d->facility_code = (lo >> 17) & 0xff;
     d->card_number = (lo >> 1) & 0xffff;
@@ -574,6 +596,7 @@ static wiegand_card_t *unpack_actprox(uint64_t hi, uint64_t lo) {
         return NULL;
     }
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->oem = (lo >> 25) & 0x3ff;
     d->facility_code = (lo >> 17) & 0xff;
     d->card_number = (lo >> 1) & 0xffff;
@@ -602,6 +625,7 @@ static wiegand_card_t *unpack_s12906(uint64_t hi, uint64_t lo) {
         return NULL;
     }
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->facility_code = (lo >> 27) & 0xff;
     d->issue_level = (lo >> 25) & 0x3;
     d->card_number = (lo >> 1) & 0xffffff;
@@ -629,6 +653,7 @@ static wiegand_card_t *unpack_sie36(uint64_t hi, uint64_t lo) {
         return NULL;
     }
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->facility_code = (lo >> 17) & 0x3ffff;
     d->card_number = (lo >> 1) & 0xffff;
     return d;
@@ -683,6 +708,7 @@ static wiegand_card_t *unpack_h10320(uint64_t hi, uint64_t lo) {
         n *= 10;
     }
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->card_number = cn;
     return d;
 }
@@ -707,6 +733,7 @@ static wiegand_card_t *unpack_h10302(uint64_t hi, uint64_t lo) {
         return NULL;
     }
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->card_number = (lo >> 1) & 0x7ffffffff;
     return d;
 }
@@ -732,6 +759,7 @@ static wiegand_card_t *unpack_h10304(uint64_t hi, uint64_t lo) {
         return NULL;
     }
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->facility_code = (lo >> 20) & 0xffff;
     d->card_number = (lo >> 1) & 0x7ffff;
     return d;
@@ -750,6 +778,7 @@ static uint64_t pack_p10004(wiegand_card_t *card) {
 static wiegand_card_t *unpack_p10004(uint64_t hi, uint64_t lo) {
     // unknown parity scheme
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->facility_code = (lo >> 23) & 0x1fff;
     d->card_number = (lo >> 5) & 0x3ffff;
     return d;
@@ -785,6 +814,7 @@ static wiegand_card_t *unpack_hgeneric37(uint64_t hi, uint64_t lo) {
         return NULL;
     }
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->card_number = (lo >> 1) & 0xffffffff;
     return d;
 }
@@ -810,6 +840,7 @@ static wiegand_card_t *unpack_mdi37(uint64_t hi, uint64_t lo) {
         return NULL;
     }
     wiegand_card_t *d = wiegand_card_alloc();
+    if (!d) return NULL;
     d->facility_code = (lo >> 30) & 0xf;
     d->card_number = (lo >> 1) & 0x1fffffff;
     return d;

@@ -98,7 +98,12 @@ static uint8_t jablotron_period(uint8_t interval) {
 
 static jablotron_codec *jablotron_alloc(void) {
     jablotron_codec *codec = malloc(sizeof(jablotron_codec));
+    if (!codec) return NULL;
     codec->modem = malloc(sizeof(diphase));
+    if (!codec->modem) {
+        free(codec);
+        return NULL;
+    }
     codec->modem->rp = jablotron_period;
     return codec;
 }

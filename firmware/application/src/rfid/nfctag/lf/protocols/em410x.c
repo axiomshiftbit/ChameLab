@@ -140,21 +140,36 @@ uint8_t em410x_16_period(uint8_t interval) {
 
 em410x_codec *em410x_64_alloc(void) {
     em410x_codec *codec = malloc(sizeof(em410x_codec));
+    if (!codec) return NULL;
     codec->modem = malloc(sizeof(manchester));
+    if (!codec->modem) {
+        free(codec);
+        return NULL;
+    }
     codec->modem->rp = em410x_64_period;
     return codec;
 };
 
 em410x_codec *em410x_32_alloc(void) {
     em410x_codec *codec = malloc(sizeof(em410x_codec));
+    if (!codec) return NULL;
     codec->modem = malloc(sizeof(manchester));
+    if (!codec->modem) {
+        free(codec);
+        return NULL;
+    }
     codec->modem->rp = em410x_32_period;
     return codec;
 };
 
 em410x_codec *em410x_16_alloc(void) {
     em410x_codec *codec = malloc(sizeof(em410x_codec));
+    if (!codec) return NULL;
     codec->modem = malloc(sizeof(manchester));
+    if (!codec->modem) {
+        free(codec);
+        return NULL;
+    }
     codec->modem->rp = em410x_16_period;
     return codec;
 };

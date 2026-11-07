@@ -70,6 +70,13 @@ jobs:
           python3 firmware/tests/test_fds_completion.py
           python3 firmware/tests/test_ble_reply.py
           python3 firmware/tests/test_link_sessions.py
+      - name: Test allocation failures, slot metadata and shutdown cancellation
+        run: |
+          python3 firmware/tests/test_slot_metadata.py
+          python3 firmware/tests/test_lf_allocations.py
+          python3 firmware/tests/test_lf_circular_buffer.py
+          python3 firmware/tests/test_sleep_cancellation.py
+          python3 firmware/tests/test_hf_selection.py
       - name: Work out the firmware version
         id: version
         # firmware/VERSION is bumped only when the firmware changes; commits to firmware/ after

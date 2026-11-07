@@ -81,7 +81,12 @@ static uint8_t viking_period(uint8_t interval) {
 
 static viking_codec *viking_alloc(void) {
     viking_codec *codec = malloc(sizeof(viking_codec));
+    if (!codec) return NULL;
     codec->modem = malloc(sizeof(manchester));
+    if (!codec->modem) {
+        free(codec);
+        return NULL;
+    }
     codec->modem->rp = viking_period;
     return codec;
 };

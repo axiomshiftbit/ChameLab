@@ -8,9 +8,27 @@ The firmware has its own version in `firmware/VERSION` (v2.3.2-cl on), bumped on
 Each release (v1.4.35 on) opens with `### Summary`, up to three of its most important changes, followed by `### Details`, the full list. The release announcements in Telegram and Discord and the download page show the summary with a link to this file.
 
 ## [unreleased][unreleased]
- - ChameLab: on a short window the Cards and Dictionaries lists and the dictionary keys scroll under the page title: the list (or the key editor) fills the page while it can, and once the window is too short for it the whole area under the title scrolls
+
+## [v1.5.2][2026-11-07] · firmware v2.3.17-cl
+### Summary
+ - Android: smoother page navigation, BLE recovery after returning to the app, and an unclipped startup logo.
+ - Cards: one scrollable details area, adaptive save buttons and explanations of Gen detection results.
+ - Reliability: DFU package and transfer validation, interrupted update recovery, and firmware memory, slot, LF queue and sleep cancellation fixes.
+
+### Details
+- ChameLab: on a short window the Cards and Dictionaries lists and the dictionary keys scroll under the page title: the list (or the key editor) fills the page while it can, and once the window is too short for it the whole area under the title scrolls
  - ChameLab: long explanatory captions (Tools, the key editor, Add card, Settings, device settings) shrink to one line when the page is short of height, such as a phone in landscape or with the keyboard up; the tooltip shows the whole text
  - ChameLab: when the page is short of height, the gaps between its blocks and the padding above and below their content are smaller
+ - Android: heavy panels are created on first use, device refreshes avoid blocking the UI, and battery status is requested on connection. Stale GATT sessions are released, scanning includes system BLE connections, and a missing disconnect callback has a bounded wait.
+ - Android 12+ uses a separate splash drawable with safe padding for the system mask. The colorful launcher icon is preserved.
+ - Card details scroll as one area; Discard and Save UID only buttons adapt to narrow screens. Full Gen explanations are restored, with unconfirmed generations clearly identified.
+ - Dictionaries accept 4-, 6- and 16-byte keys; applicability depends on the card protocol. MIFARE Classic access conditions and value block handling have been checked.
+ - App and firmware updates use axiomshiftbit/ChameLab releases. DFU validates the model, ZIP structure, image and release-package SHA-256, and each transferred object's CRC32 and offset. Success requires reconnection to the original device and version verification. Saved recovery jobs and encrypted slot/settings backups are available.
+ - Firmware isolates commands and replies across USB/BLE sessions and resets MTU between connections; HF/APDU buffer bounds, CRC/WTX and flash completion handling are corrected.
+ - Firmware 2.3.17-cl safely handles LF codec/buffer allocation failures and frees partial allocations; LF sample queue access is protected between interrupts and the main loop.
+ - Firmware 2.3.17-cl validates corrupt slot names and UID sizes, fixes a response overflow with 255-byte ATS data, and safely ends HF selection when slot data is unavailable.
+ - Firmware 2.3.17-cl cancels pending sleep when BLE, USB or a field becomes active during the shutdown animation; BLE advertising stops before final hardware shutdown.
+ - Regression checks cover allocation failures, corrupt metadata, concurrent LF queue access and sleep cancellation. README clarifies downloads and DFU recovery.
 
 ## [v1.4.35][2026-11-05] · firmware v2.3.12-cl
 ### Summary

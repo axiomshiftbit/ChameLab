@@ -432,6 +432,10 @@ void nfc_tag_14a_data_process(uint8_t *p_data) {
         }
         // Preparation status, processing news related to anti -collision
         case NFC_TAG_STATE_14A_READY: {
+            if (auto_coll_res == NULL) {
+                m_tag_state_14a = NFC_TAG_STATE_14A_IDLE;
+                return;
+            }
             static uint8_t uid[5] = { 0x00 };
             nfc_tag_14a_cascade_level_t level;
             // Extract cascade level
@@ -510,6 +514,9 @@ void nfc_tag_14a_data_process(uint8_t *p_data) {
                         }
                         break;
                     }
+                    default:
+                        m_tag_state_14a = NFC_TAG_STATE_14A_IDLE;
+                        return;
                 }
                 // BCC calculation, complete the final anti -collision data preparation
                 nfc_tag_14a_append_bcc(uid, 4);
@@ -569,6 +576,10 @@ void nfc_tag_14a_data_process(uint8_t *p_data) {
                 }
                 // RATS instruction
                 if (p_data[0] == NFC_TAG_14A_CMD_RATS && nfc_tag_14a_checks_crc(p_data, 4)) {
+                    if (auto_coll_res == NULL) {
+                        m_tag_state_14a = NFC_TAG_STATE_14A_IDLE;
+                        return;
+                    }
                     // Reset T=CL layer state for the new session
                     if (m_tag_handler.cb_reset != NULL) {
                         m_tag_handler.cb_reset();

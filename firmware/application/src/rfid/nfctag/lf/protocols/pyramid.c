@@ -42,6 +42,10 @@ static void *pyramid_codec_alloc(void) {
     // running DC baseline tracker: the raw 14-bit ADC DC otherwise swamps the
     // fc/8 Goertzel bin and pins every bit to 0.
     d->modem = fsk_alloc(FSK_BITRATE_HID);
+    if (!d->modem) {
+        free(d);
+        return NULL;
+    }
     if (d->modem) {
         d->modem->dc_block = true;
     }

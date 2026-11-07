@@ -2,6 +2,7 @@
 #define SYS_SLEEP_H__
 
 #include <stdint.h>
+#include <stdbool.h>
 
 // Fixed delays for special cases; everything else uses settings_get_sleep_timeout()
 #define SLEEP_DELAY_MS_FIRST_POWER              1000    // The sleep delay of the first power supply (access to the battery)
@@ -11,6 +12,7 @@
 void sleep_timer_init(void);
 void sleep_timer_start(uint32_t time_ms);
 void sleep_timer_stop(void);
+bool sleep_system_off_pending(void);
 void sleep_system_run(void (*sysOffSleep)(), void (*sysOnSleep)());
 
 #endif

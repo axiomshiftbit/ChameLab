@@ -79,12 +79,16 @@ static void uninit_em410x_hw(void) {
 
 bool em410x_read(uint8_t *data, uint32_t timeout_ms) {
     void **codecs = malloc(em410x_protocols_size * sizeof(void *));
+    if (!codecs) return false;
+    size_t allocated = 0;
     for (size_t i = 0; i < em410x_protocols_size; i++) {
         codecs[i] = em410x_protocols[i]->alloc();
+        if (!codecs[i]) goto allocation_failed;
+        allocated++;
         em410x_protocols[i]->decoder.start(codecs[i], 0);
     }
 
-    cb_init(&cb, EM410X_BUFFER_SIZE, sizeof(uint16_t));
+    if (!cb_init(&cb, EM410X_BUFFER_SIZE, sizeof(uint16_t))) goto allocation_failed;
     init_em410x_hw();
     start_lf_125khz_radio();
 
@@ -138,4 +142,11 @@ bool em410x_read(uint8_t *data, uint32_t timeout_ms) {
     }
     free(codecs);
     return ok;
+
+allocation_failed:
+    for (size_t i = 0; i < allocated; i++) {
+        em410x_protocols[i]->free(codecs[i]);
+    }
+    free(codecs);
+    return false;
 }

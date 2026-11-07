@@ -86,9 +86,13 @@ bool pyramid_read(uint8_t *data, uint32_t timeout_ms) {
     bool       ok    = false;
 
     codec = pyramid.alloc();
+    if (!codec) return false;
     pyramid.decoder.start(codec, 0);
 
-    cb_init(&cb, PYRAMID_BUFFER_SIZE, sizeof(uint16_t));
+    if (!cb_init(&cb, PYRAMID_BUFFER_SIZE, sizeof(uint16_t))) {
+        pyramid.free(codec);
+        return false;
+    }
     init_pyramid_hw();
 
     p_at = bsp_obtain_timer(0);

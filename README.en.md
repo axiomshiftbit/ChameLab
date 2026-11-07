@@ -17,6 +17,13 @@ command-line client.
 [Development builds](https://github.com/axiomshiftbit/ChameLab/actions/workflows/ui-quality.yml) ·
 [Changelog](CHANGELOG.md) · [Authors and licenses](AUTHORS.md)
 
+## Version 1.5.2
+
+App **1.5.2** ships with firmware **2.3.17-cl**. This release fixes the Android splash,
+BLE recovery and card details layout, and restores Gen explanations. Firmware improves
+handling of memory allocation failures, slot metadata, LF samples and sleep cancellation
+on connection. See the [changelog](CHANGELOG.md) for details.
+
 ## Choose a download
 
 `<version>` is the app version; `<firmware>` is the separate firmware version ending
@@ -116,6 +123,13 @@ This file goes into the Chameleon device, not into Android or Windows.
 | `ultra-dfu-full-…zip` / `lite-dfu-full-…zip` | Application, bootloader and SoftDevice. For recovery or a specific bootloader upgrade through a compatible DFU tool, not a regular ChameLab update. |
 | `ultra-binaries-…zip` / `lite-binaries-…zip` | Separate HEX images for development and SWD programming. Not needed for normal updates. |
 | `application.hex`, `bootloader.hex`, `softdevice.hex`, `fullimage.hex` | Application, bootloader, Nordic stack and combined full image respectively; not APKs or card files. Full programming can erase device data. |
+
+Validation runs before writing and during transfer: Ultra/Lite model, package structure,
+image and downloaded-package SHA-256, and each DFU object's CRC32 and offset. The
+bootloader verifies the update signature. The app reports success after reconnecting to
+the same device and checking its version. These checks still require stable power.
+After interruption, a saved job offers recovery; a retry transfers from the beginning.
+An encrypted backup of slots and settings can be created before updating.
 
 If application firmware does not start, hold button B while connecting USB to enter
 DFU. Use a package for **your device model** and a compatible Nordic DFU tool for

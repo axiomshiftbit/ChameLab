@@ -672,6 +672,14 @@ void advertising_start(bool erase_bonds) {
 /**
  * @brief Function for stop advertising.
  */
+bool advertising_is_requested(void) {
+    bool requested;
+    CRITICAL_REGION_ENTER();
+    requested = m_radio_policy.requested;
+    CRITICAL_REGION_EXIT();
+    return requested;
+}
+
 void advertising_stop(void) {
     ble_radio_apply(BLE_RADIO_REQUEST_STOP);
 }

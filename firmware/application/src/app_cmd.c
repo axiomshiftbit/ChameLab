@@ -1695,10 +1695,11 @@ static data_frame_tx_t *cmd_processor_hf14a_get_anti_coll_data(uint16_t cmd, uin
     nfc_tag_14a_coll_res_reference_t *info = get_coll_res_data(false);
 
     if (info == NULL) return data_frame_make(cmd, STATUS_SUCCESS, 0, NULL);
+    if (!is_valid_uid_size(*info->size)) return data_frame_make(cmd, STATUS_PAR_ERR, 0, NULL);
 
     // uidlen[1]|uid[uidlen]|atqa[2]|sak[1]|atslen[1]|ats[atslen]
     // dynamic length, so no struct
-    uint8_t payload[1 + *info->size + 2 + 1 + 1 + 254];
+    uint8_t payload[1 + *info->size + 2 + 1 + 1 + sizeof(info->ats->data)];
     uint16_t offset = 0;
     payload[offset++] = *info->size;
     memcpy(&payload[offset], info->uid, *info->size);
@@ -1961,6 +1962,7 @@ static data_frame_tx_t *cmd_processor_hf14a_set_anti_coll_data(uint16_t cmd, uin
         return data_frame_make(cmd, STATUS_PAR_ERR, 0, NULL);
     }
     nfc_tag_14a_coll_res_reference_t *info = get_coll_res_data(true);
+    if (info == NULL) return data_frame_make(cmd, STATUS_INVALID_SLOT_TYPE, 0, NULL);
 
     uint16_t offset = 0;
     *(info->size) = (nfc_tag_14a_uid_size)data[offset];
@@ -1990,7 +1992,7 @@ static data_frame_tx_t *cmd_processor_set_slot_tag_nick(uint16_t cmd, uint16_t s
     }
     get_fds_map_by_slot_sense_type_for_nick(slot, sense_type, &map_info);
 
-    uint8_t buffer[36];
+    uint8_t buffer[36] = {0};
     buffer[0] = length - 2;
     memcpy(buffer + 1, data + 2, buffer[0]);
 
@@ -2016,7 +2018,7 @@ static data_frame_tx_t *cmd_processor_get_slot_tag_nick(uint16_t cmd, uint16_t s
     get_fds_map_by_slot_sense_type_for_nick(slot, sense_type, &map_info);
     uint16_t buffer_length = sizeof(buffer);
     bool ret = fds_read_sync(map_info.id, map_info.key, &buffer_length, buffer);
-    if (!ret) {
+    if (!ret || buffer_length == 0 || buffer[0] > 32 || buffer[0] >= buffer_length) {
         return data_frame_make(cmd, STATUS_FLASH_READ_FAIL, 0, NULL);
     }
     return data_frame_make(cmd, STATUS_SUCCESS, buffer[0], &buffer[1]);
@@ -2033,7 +2035,7 @@ static data_frame_tx_t *cmd_processor_get_all_slot_nicks(uint16_t cmd, uint16_t 
         uint16_t hf_buffer_length = sizeof(hf_buffer);
         bool hf_ret = fds_read_sync(hf_map_info.id, hf_map_info.key, &hf_buffer_length, hf_buffer);
 
-        if (hf_ret && hf_buffer_length > 0) {
+        if (hf_ret && hf_buffer_length > 0 && hf_buffer[0] <= 32 && hf_buffer[0] < hf_buffer_length) {
             response_buffer[response_length++] = hf_buffer[0];
             for (uint8_t i = 1; i <= hf_buffer[0] && i < hf_buffer_length; i++) {
                 response_buffer[response_length++] = hf_buffer[i];
@@ -2048,7 +2050,7 @@ static data_frame_tx_t *cmd_processor_get_all_slot_nicks(uint16_t cmd, uint16_t 
         uint16_t lf_buffer_length = sizeof(lf_buffer);
         bool lf_ret = fds_read_sync(lf_map_info.id, lf_map_info.key, &lf_buffer_length, lf_buffer);
 
-        if (lf_ret && lf_buffer_length > 0) {
+        if (lf_ret && lf_buffer_length > 0 && lf_buffer[0] <= 32 && lf_buffer[0] < lf_buffer_length) {
             response_buffer[response_length++] = lf_buffer[0];
             for (uint8_t i = 1; i <= lf_buffer[0] && i < lf_buffer_length; i++) {
                 response_buffer[response_length++] = lf_buffer[i];
