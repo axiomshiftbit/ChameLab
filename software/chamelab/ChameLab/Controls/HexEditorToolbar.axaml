@@ -25,7 +25,8 @@
         <TextBlock Text="{x:Static loc:Strings.Hex_SelectAll}" TextWrapping="Wrap" />
       </Button>
     </WrapPanel>
-    <Expander x:Name="Navigation" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+    <Expander x:Name="Navigation" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+              Expanded="OnNavigationExpanded" Collapsed="OnNavigationCollapsed">
       <Expander.Header>
         <TextBlock Text="{x:Static loc:Strings.Hex_Navigation}" TextWrapping="Wrap" />
       </Expander.Header>

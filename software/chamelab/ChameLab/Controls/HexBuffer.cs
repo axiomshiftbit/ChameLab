@@ -184,14 +184,31 @@ public sealed class HexBuffer
     {
         if (pattern.IsEmpty || pattern.Length > Length) return -1;
         var positions = Length - pattern.Length + 1;
-        start = Math.Clamp(start, 0, positions);
-        for (long visited = 0; visited < positions; visited++)
+        var first = (int)Math.Clamp(start, 0, positions);
+        // Repeated bytes are common in dumps. Avoid rescanning a long matching prefix
+        // at every offset, which stalls the UI on large dictionaries.
+        var prefixes = new int[pattern.Length];
+        for (int i = 1, matched = 0; i < pattern.Length; i++)
         {
-            var offset = (start + visited) % positions;
-            var matches = true;
-            for (var i = 0; i < pattern.Length; i++)
-                if (!IsRead(offset + i) || this[offset + i] != pattern[i]) { matches = false; break; }
-            if (matches) return offset;
+            while (matched > 0 && pattern[i] != pattern[matched]) matched = prefixes[matched - 1];
+            if (pattern[i] == pattern[matched]) matched++;
+            prefixes[i] = matched;
+        }
+        var found = FindRange(pattern, prefixes, first, positions);
+        return found >= 0 ? found : FindRange(pattern, prefixes, 0, first);
+    }
+
+    private long FindRange(ReadOnlySpan<byte> pattern, ReadOnlySpan<int> prefixes, int first, int limit)
+    {
+        if (first >= limit) return -1;
+        var matched = 0;
+        for (long offset = first; offset < (long)limit + pattern.Length - 1; offset++)
+        {
+            if (!IsRead(offset)) { matched = 0; continue; }
+            var value = this[offset];
+            while (matched > 0 && value != pattern[matched]) matched = prefixes[matched - 1];
+            if (value == pattern[matched]) matched++;
+            if (matched == pattern.Length) return offset - pattern.Length + 1;
         }
         return -1;
     }

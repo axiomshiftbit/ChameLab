@@ -11,6 +11,27 @@ namespace ChameLab.Tests;
 public class HexNavigationTests
 {
     [Fact]
+    public void SearchMatchesKnownWindowsIncludingOverlapsAndWrapBoundaries()
+    {
+        var random = new Random(731);
+        for (var trial = 0; trial < 1000; trial++)
+        {
+            var rows = Enumerable.Range(0, 12).Select(_ => random.Next(5) == 0
+                ? Array.Empty<byte>() : Enumerable.Range(0, 4).Select(_ => (byte)random.Next(3)).ToArray()).ToList();
+            var buffer = new HexBuffer(rows, 4);
+            var pattern = Enumerable.Range(0, random.Next(1, 10)).Select(_ => (byte)random.Next(3)).ToArray();
+            var start = random.Next(buffer.Length + 5);
+            var positions = buffer.Length - pattern.Length + 1;
+            var split = Math.Min(start, positions);
+            var expected = Enumerable.Range(split, positions - split).Concat(Enumerable.Range(0, split))
+                .Where(offset => pattern.Select((value, index) => buffer.IsRead((long)offset + index)
+                    && buffer[(long)offset + index] == value).All(matches => matches))
+                .Select(offset => (long)offset).DefaultIfEmpty(-1).First();
+            Assert.Equal(expected, buffer.Find(pattern, start));
+        }
+    }
+
+    [Fact]
     public void SearchSkipsUnreadAndTemplateBytesAndWrapsAcrossRows()
     {
         var buffer = new HexBuffer([new byte[] { 1, 2, 3, 4 }, Array.Empty<byte>(), new byte[] { 3, 4, 1, 2 }], 4)

@@ -6,7 +6,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ChameLab.Localization;
 using ChameLab.Models;
@@ -21,6 +20,7 @@ public partial class HexEditorToolbar : UserControl
     public HexEditor? Editor { get => GetValue(EditorProperty); set => SetValue(EditorProperty, value); }
     private HexEditor? _observed;
     private HexBuffer? _buffer;
+    private TextBox? _pendingNavigationInput;
     private bool _attached;
 
     public HexEditorToolbar() => InitializeComponent();
@@ -41,6 +41,7 @@ public partial class HexEditorToolbar : UserControl
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         _attached = false;
+        _pendingNavigationInput = null;
         Observe();
         base.OnDetachedFromVisualTree(e);
     }
@@ -144,21 +145,28 @@ public partial class HexEditorToolbar : UserControl
     { if (e.Key == Key.Enter) { OnGoTo(sender, e); e.Handled = true; } }
     private void OnSearchKeyDown(object? sender, KeyEventArgs e)
     { if (e.Key is Key.Enter or Key.F3) { OnFind(sender, e); e.Handled = true; } }
+    private void OnNavigationExpanded(object? sender, RoutedEventArgs e) => FocusNavigationInput();
+    private void OnNavigationCollapsed(object? sender, RoutedEventArgs e) => _pendingNavigationInput = null;
+    private void FocusNavigationInput()
+    {
+        if (!_attached || !Navigation.IsExpanded || _pendingNavigationInput is not { } input) return;
+        UpdateLayout();
+        if (input.Focus())
+        {
+            _pendingNavigationInput = null;
+            input.BringIntoView();
+        }
+    }
     private void OnEditorKeyDown(object? sender, KeyEventArgs e)
     {
         var command = e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.KeyModifiers.HasFlag(KeyModifiers.Meta);
         if (command && e.Key is Key.F or Key.G)
         {
+            _pendingNavigationInput = e.Key == Key.F ? SearchBox : AddressBox;
+            var alreadyExpanded = Navigation.IsExpanded;
             Navigation.IsExpanded = true;
-            var input = e.Key == Key.F ? SearchBox : AddressBox;
-            // The expander creates/shows its content after the current input event.
-            Dispatcher.UIThread.Post(() =>
-            {
-                if (!_attached || !Navigation.IsExpanded) return;
-                UpdateLayout();
-                input.Focus();
-                input.BringIntoView();
-            }, DispatcherPriority.Loaded);
+            // Expanded fires after the transition has made the input visible.
+            if (alreadyExpanded) FocusNavigationInput();
             e.Handled = true;
         }
         else if (e.Key == Key.F3 && e.KeyModifiers == KeyModifiers.None) { OnFind(sender, e); e.Handled = true; }

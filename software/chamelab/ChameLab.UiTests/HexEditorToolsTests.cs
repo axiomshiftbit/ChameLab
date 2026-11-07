@@ -1,7 +1,9 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
+using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
@@ -18,6 +20,25 @@ namespace ChameLab.UiTests;
 
 public class HexEditorToolsTests
 {
+    private sealed class DeferredExpansion : IPageTransition
+    {
+        private readonly TaskCompletionSource _completion = new();
+        private Visual? _content;
+
+        public Task Start(Visual? from, Visual? to, bool forward, CancellationToken cancellationToken)
+        {
+            _content = to!;
+            _content.IsVisible = false;
+            return _completion.Task;
+        }
+
+        public void Complete()
+        {
+            _content!.IsVisible = true;
+            _completion.SetResult();
+        }
+    }
+
     private static Window Show(HexEditor editor)
     {
         var window = new Window { Width = 360, Height = 800, Content = editor };
@@ -102,6 +123,44 @@ public class HexEditorToolsTests
     }
 
     [AvaloniaTheory]
+    [InlineData(Key.F, "SearchBox")]
+    [InlineData(Key.G, "AddressBox")]
+    public async Task KeyboardNavigationFocusesAfterExpansionCompletes(Key key, string inputName)
+    {
+        var editor = new HexEditor { Buffer = new HexBuffer([new byte[4]], 4), Height = 200 };
+        var toolbar = new HexEditorToolbar { Editor = editor };
+        var window = new Window { Width = 360, Height = 800,
+            Content = new StackPanel { Children = { toolbar, editor } } };
+        window.Show();
+        try
+        {
+            Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
+            var navigation = toolbar.FindControl<Expander>("Navigation")!;
+            var transition = new DeferredExpansion();
+            navigation.ContentTransition = transition;
+            var expanded = new TaskCompletionSource();
+            navigation.Expanded += (_, _) => expanded.TrySetResult();
+            Assert.True(editor.Focus());
+            editor.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent,
+                Key = key, KeyModifiers = KeyModifiers.Control });
+            Dispatcher.UIThread.RunJobs();
+            var input = toolbar.FindControl<TextBox>(inputName)!;
+            Assert.False(input.IsFocused);
+            transition.Complete();
+            await expanded.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.True(input.IsFocused);
+
+            // The shortcut must also work when the panel is already open.
+            Assert.True(editor.Focus());
+            editor.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent,
+                Key = key, KeyModifiers = KeyModifiers.Control });
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(input.IsFocused);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaTheory]
     [InlineData(320, 1.5, true)]
     [InlineData(360, 1.0, false)]
     [InlineData(800, 1.5, false)]
@@ -121,7 +180,10 @@ public class HexEditorToolsTests
             editor.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.F, KeyModifiers = KeyModifiers.Control });
             Dispatcher.UIThread.RunJobs();
             Assert.True(toolbar.FindControl<Expander>("Navigation")!.IsExpanded);
-            Assert.True(toolbar.FindControl<TextBox>("SearchBox")!.IsFocused);
+            var search = toolbar.FindControl<TextBox>("SearchBox")!;
+            Assert.True(search.IsFocused, $"Search focus: visible={search.IsEffectivelyVisible}, "
+                + $"enabled={search.IsEffectivelyEnabled}, loaded={search.IsLoaded}, bounds={search.Bounds}; "
+                + $"focused={window.FocusManager?.GetFocusedElement()?.GetType().Name}");
             window.UpdateLayout();
             LayoutScenarios.ScaleText(scene, scale); window.UpdateLayout();
             Assert.Contains("800", toolbar.FindControl<TextBlock>("RangeText")!.Text);
