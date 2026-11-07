@@ -35,7 +35,9 @@ public partial class App : Application
         }
         else if (ApplicationLifetime is IActivityApplicationLifetime activityLifetime)
         {
-            activityLifetime.MainViewFactory = () => new MainView { DataContext = new MainViewModel(AppServices.Device, AppServices.Cards, AppServices.Dictionaries, AppServices.Firmware) };
+            // Activity recreation replaces the view, while connection and unsaved edits
+            // belong to the application and must keep the same model.
+            activityLifetime.MainViewFactory = () => new MainView { DataContext = vm };
         }
         else if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewPlatform)
         {

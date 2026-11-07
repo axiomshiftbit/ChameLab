@@ -56,7 +56,8 @@ public class PageHost : Panel
         else if (change.Property == PreloadProperty)
         {
             if (change.OldValue is INotifyCollectionChanged old) old.CollectionChanged -= OnPreloadChanged;
-            if (change.NewValue is INotifyCollectionChanged now) now.CollectionChanged += OnPreloadChanged;
+            if (change.NewValue is INotifyCollectionChanged now && VisualRoot is not null)
+                now.CollectionChanged += OnPreloadChanged;
             QueuePreload();
         }
     }
@@ -64,7 +65,19 @@ public class PageHost : Panel
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        if (Preload is INotifyCollectionChanged pages)
+        {
+            pages.CollectionChanged -= OnPreloadChanged;
+            pages.CollectionChanged += OnPreloadChanged;
+        }
         QueuePreload();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        if (Preload is INotifyCollectionChanged pages) pages.CollectionChanged -= OnPreloadChanged;
+        EndWarming();
+        base.OnDetachedFromVisualTree(e);
     }
 
     private void OnPreloadChanged(object? sender, NotifyCollectionChangedEventArgs e) => QueuePreload();

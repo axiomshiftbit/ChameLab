@@ -22,6 +22,7 @@ public partial class MainView : UserControl
     private (bool Compact, bool Overlay)? _was;
     private MainViewModel? _vm;
     private TopLevel? _topLevel;
+    private readonly Func<TopLevel?> _topLevelAccessor;
     private IInputPane? _inputPane;
     private IInsetsManager? _insets;
     /// <summary>Size of the top level while the keyboard is closed.</summary>
@@ -33,8 +34,7 @@ public partial class MainView : UserControl
         InitializeComponent();
         // React to size so the nav pane overlays on phones and docks on desktop.
         this.GetObservable(BoundsProperty).Subscribe(new AnonymousObserver(OnBoundsChanged));
-        // Let view models reach the file dialogs through the hosting window.
-        StorageService.TopLevelAccessor = () => TopLevel.GetTopLevel(this);
+        _topLevelAccessor = () => _topLevel;
     }
 
     protected override void OnDataContextChanged(EventArgs e)
@@ -42,7 +42,7 @@ public partial class MainView : UserControl
         base.OnDataContextChanged(e);
         if (_vm is not null) _vm.PropertyChanged -= OnViewModelPropertyChanged;
         _vm = DataContext as MainViewModel;
-        if (_vm is not null) _vm.PropertyChanged += OnViewModelPropertyChanged;
+        if (_vm is not null && _topLevel is not null) _vm.PropertyChanged += OnViewModelPropertyChanged;
         _was = null;
         Adapt(Bounds);
     }
@@ -52,6 +52,8 @@ public partial class MainView : UserControl
         base.OnAttachedToVisualTree(e);
         _topLevel = TopLevel.GetTopLevel(this);
         if (_topLevel is null) return;
+        if (_vm is not null) _vm.PropertyChanged += OnViewModelPropertyChanged;
+        StorageService.TopLevelAccessor = _topLevelAccessor;
         _topLevel.BackRequested += OnBackRequested;
         _inputPane = _topLevel.InputPane;
         if (_inputPane is not null) _inputPane.StateChanged += OnInputPaneChanged;
@@ -64,6 +66,9 @@ public partial class MainView : UserControl
     {
         base.OnDetachedFromVisualTree(e);
         LocalizationService.LanguageChanged -= OnLanguageChanged;
+        if (_vm is not null) _vm.PropertyChanged -= OnViewModelPropertyChanged;
+        if (ReferenceEquals(StorageService.TopLevelAccessor, _topLevelAccessor))
+            StorageService.TopLevelAccessor = null;
         if (_topLevel is not null) _topLevel.BackRequested -= OnBackRequested;
         if (_inputPane is not null) _inputPane.StateChanged -= OnInputPaneChanged;
         if (_insets is not null) _insets.SafeAreaChanged -= OnSafeAreaChanged;

@@ -137,7 +137,8 @@ public class SectorKeyGrid : Control
     private void OnSectorsChanged(AvaloniaPropertyChangedEventArgs e)
     {
         if (e.OldValue is INotifyCollectionChanged oldColl) oldColl.CollectionChanged -= OnCollectionChanged;
-        if (e.NewValue is INotifyCollectionChanged newColl) newColl.CollectionChanged += OnCollectionChanged;
+        if (e.NewValue is INotifyCollectionChanged newColl && VisualRoot is not null)
+            newColl.CollectionChanged += OnCollectionChanged;
         Resync();
     }
 
@@ -165,7 +166,11 @@ public class SectorKeyGrid : Control
             var s = sectors[i];
             _anims[2 * i] = new KeyAnim { State = s.KeyAState, Shown = Math.Max(0, s.KeyAProgress) };
             _anims[2 * i + 1] = new KeyAnim { State = s.KeyBState, Shown = Math.Max(0, s.KeyBProgress) };
-            if (s is INotifyPropertyChanged npc) { npc.PropertyChanged += OnItemChanged; _tracked.Add(npc); }
+            if (VisualRoot is not null && s is INotifyPropertyChanged npc)
+            {
+                npc.PropertyChanged += OnItemChanged;
+                _tracked.Add(npc);
+            }
         }
         EnsureAnimating();
     }
@@ -198,6 +203,12 @@ public class SectorKeyGrid : Control
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        if (Sectors is INotifyCollectionChanged sectors)
+        {
+            sectors.CollectionChanged -= OnCollectionChanged;
+            sectors.CollectionChanged += OnCollectionChanged;
+        }
+        Resync();
         _tipHost = TopLevel.GetTopLevel(this);
         _tipHost?.AddHandler(PointerPressedEvent, OnHostPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
         _tipHost?.AddHandler(PointerWheelChangedEvent, OnHostPointerWheelChanged, RoutingStrategies.Tunnel, handledEventsToo: true);
@@ -207,6 +218,9 @@ public class SectorKeyGrid : Control
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        if (Sectors is INotifyCollectionChanged sectors) sectors.CollectionChanged -= OnCollectionChanged;
+        foreach (var item in _tracked) item.PropertyChanged -= OnItemChanged;
+        _tracked.Clear();
         DismissTip();
         _tipHost?.RemoveHandler(PointerPressedEvent, OnHostPointerPressed);
         _tipHost?.RemoveHandler(PointerWheelChangedEvent, OnHostPointerWheelChanged);

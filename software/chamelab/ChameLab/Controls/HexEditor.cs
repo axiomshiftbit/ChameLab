@@ -241,7 +241,7 @@ public sealed class HexEditor : Control
         {
             if (_buffer is not null) _buffer.Changed -= OnBufferChanged;
             _buffer = Buffer;
-            if (_buffer is not null) _buffer.Changed += OnBufferChanged;
+            if (_buffer is not null && VisualRoot is not null) _buffer.Changed += OnBufferChanged;
             _caret = 0;
             _lowNibble = false;
             _anchor = -1;
@@ -926,9 +926,21 @@ public sealed class HexEditor : Control
         _caretLayer.InvalidateVisual();
     }
 
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        if (_buffer is not null)
+        {
+            _buffer.Changed -= OnBufferChanged;
+            _buffer.Changed += OnBufferChanged;
+            OnBufferChanged(_buffer, EventArgs.Empty);
+        }
+    }
+
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnDetachedFromVisualTree(e);
+        if (_buffer is not null) _buffer.Changed -= OnBufferChanged;
         _blink.Stop();
     }
 

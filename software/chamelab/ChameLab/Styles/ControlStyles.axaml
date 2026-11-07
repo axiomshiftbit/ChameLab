@@ -1149,13 +1149,16 @@
   <Style Selector=".compact UniformGrid.cols2, .compact UniformGrid.cols3">
     <Setter Property="Columns" Value="1" />
   </Style>
-  <Style Selector=".compact :is(Control).wide-only">
+  <!-- Target the actual label/panel types. A catch-all Control selector also styles
+       Viewbox's internal visual-only container, whose ancestor subscriptions survive
+       logical detachment in Avalonia 12.1.4 and retain entire closed pages. -->
+  <Style Selector=".compact TextBlock.wide-only">
     <Setter Property="IsVisible" Value="False" />
   </Style>
-  <Style Selector=":is(Control).compact-only">
+  <Style Selector="Panel.compact-only">
     <Setter Property="IsVisible" Value="False" />
   </Style>
-  <Style Selector=".compact :is(Control).compact-only">
+  <Style Selector=".compact Panel.compact-only">
     <Setter Property="IsVisible" Value="True" />
   </Style>
   <!-- The tab bar makes way for the on-screen keyboard. -->

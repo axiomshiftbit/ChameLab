@@ -10,15 +10,15 @@
 
   <UserControl.Styles>
     <!-- One setting: icon, title + description, and its control (SettingRow stacks them when narrow). -->
-    <Style Selector=":is(Control).setting > :is(Control).control">
+    <Style Selector="c|SettingRow.setting > :is(TemplatedControl).control">
       <Setter Property="Width" Value="220" />
       <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
-    <Style Selector=".compact :is(Control).setting > :is(Control).control">
+    <Style Selector=".compact c|SettingRow.setting > :is(TemplatedControl).control">
       <Setter Property="Width" Value="160" />
     </Style>
     <!-- Stacked rows give the selected value its own full-width line. -->
-    <Style Selector=":is(Control).setting.stacked > :is(Control).control">
+    <Style Selector="c|SettingRow.setting.stacked > :is(TemplatedControl).control">
       <Setter Property="Width" Value="NaN" />
       <Setter Property="HorizontalAlignment" Value="Stretch" />
     </Style>

@@ -28,15 +28,7 @@ public sealed class SettingsViewModel : PageViewModelBase
         ExportBackupCommand = ReactiveCommand.CreateFromTask(ExportBackupAsync);
         ImportBackupCommand = ReactiveCommand.CreateFromTask(ImportBackupAsync);
         OpenLinkCommand = ReactiveCommand.CreateFromTask<string>(OpenLinkAsync);
-        LocalizationService.LanguageChanged += OnLanguageChanged;
     }
-
-    /// <summary>
-    /// The list is rebuilt in the new language and the choice moves to its new entry. Nothing is
-    /// raised: the views are rebuilt over this view model and read both afresh, while the old
-    /// picker must not react (it would write its stale selection back).
-    /// </summary>
-    private void OnLanguageChanged() => _language = Languages.First(l => l.Code == _language.Code);
 
     public bool CanUseFiles => StorageService.IsAvailable;
 
@@ -82,7 +74,9 @@ public sealed class SettingsViewModel : PageViewModelBase
     /// </summary>
     public LanguageOption Language
     {
-        get => _language;
+        // The option list is rebuilt after a language change. Resolve the new entry
+        // when read, without a static event retaining this page and its libraries.
+        get => Languages.First(l => l.Code == _language.Code);
         set
         {
             if (value is null || value.Code == _language.Code) return;
