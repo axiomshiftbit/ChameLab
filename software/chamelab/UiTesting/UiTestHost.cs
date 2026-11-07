@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -35,6 +36,9 @@ public sealed class UiTestHost : ContentControl
         public int[][] Sizes { get; set; } = [];
     }
     public sealed record Case(string Page, string Language, string Theme, double Width, double Height, double FontScale, string[] Errors);
+    public sealed record ProgressReport(string Page, string Language, string Theme, string Stage,
+        int Completed, long ManagedBytes, long WorkingSetBytes, int RetainedScenes);
+    public sealed record ResultReport(bool Complete, int Expected, int Passed, int Failed, List<Case> Cases, string? Error = null);
 
     private async Task RunAsync()
     {
@@ -44,7 +48,7 @@ public sealed class UiTestHost : ContentControl
         try
         {
             var path = Path.Combine(OutputDirectory, "request.json");
-            var request = File.Exists(path) ? JsonSerializer.Deserialize<Request>(File.ReadAllText(path))! : new Request();
+            var request = File.Exists(path) ? JsonSerializer.Deserialize(File.ReadAllText(path), UiTestJsonContext.Default.Request)! : new Request();
 
             await Task.Delay(500);
             var sizes = request.Sizes.Length == 0 ? new[] { new[] { 0, 0 } } : request.Sizes;
@@ -59,12 +63,10 @@ public sealed class UiTestHost : ContentControl
                 foreach (var language in request.Languages)
                 foreach (var page in LayoutScenarios.Pages)
                 {
-                    void Progress(string stage) => File.WriteAllText(Path.Combine(OutputDirectory, "progress.json"), JsonSerializer.Serialize(new
-                    {
-                        Page = page, Language = language, Theme = theme.ToString(), Stage = stage, Completed = cases.Count,
-                        ManagedBytes = GC.GetTotalMemory(false), WorkingSetBytes = Environment.WorkingSet,
-                        RetainedScenes = scenes.Count(s => s.IsAlive)
-                    }));
+                    void Progress(string stage) => File.WriteAllText(Path.Combine(OutputDirectory, "progress.json"),
+                        JsonSerializer.Serialize(new ProgressReport(page, language, theme.ToString(), stage, cases.Count,
+                            GC.GetTotalMemory(false), Environment.WorkingSet, scenes.Count(s => s.IsAlive)),
+                            UiTestJsonContext.Default.ProgressReport));
                     Progress("creating");
                     Application.Current!.RequestedThemeVariant = theme;
                     var scene = LayoutScenarios.Create(page, language);
@@ -114,15 +116,15 @@ public sealed class UiTestHost : ContentControl
                     if (cases.Count % LayoutScenarios.Pages.Length == 0) GC.Collect();
                 }
             }
-            File.WriteAllText(Path.Combine(OutputDirectory, "result.json"), JsonSerializer.Serialize(new
-            {
-                Complete = true, Expected = sizes.Length * 2 * request.Languages.Length * LayoutScenarios.Pages.Length,
-                Passed = cases.Count(c => c.Errors.Length == 0), Failed = cases.Count(c => c.Errors.Length != 0), Cases = cases
-            }));
+            File.WriteAllText(Path.Combine(OutputDirectory, "result.json"), JsonSerializer.Serialize(new ResultReport(
+                true, sizes.Length * 2 * request.Languages.Length * LayoutScenarios.Pages.Length,
+                cases.Count(c => c.Errors.Length == 0), cases.Count(c => c.Errors.Length != 0), cases),
+                UiTestJsonContext.Default.ResultReport));
         }
         catch (Exception ex)
         {
-            File.WriteAllText(Path.Combine(OutputDirectory, "result.json"), JsonSerializer.Serialize(new { Complete = false, Error = ex.ToString(), Cases = cases }));
+            File.WriteAllText(Path.Combine(OutputDirectory, "result.json"), JsonSerializer.Serialize(
+                new ResultReport(false, 0, 0, 0, cases, ex.ToString()), UiTestJsonContext.Default.ResultReport));
         }
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) desktop.Shutdown();
     }
@@ -134,3 +136,8 @@ public sealed class UiTestHost : ContentControl
         bitmap.Save(path, PngBitmapEncoderOptions.Default);
     }
 }
+
+[JsonSerializable(typeof(UiTestHost.Request))]
+[JsonSerializable(typeof(UiTestHost.ProgressReport))]
+[JsonSerializable(typeof(UiTestHost.ResultReport))]
+internal partial class UiTestJsonContext : JsonSerializerContext;

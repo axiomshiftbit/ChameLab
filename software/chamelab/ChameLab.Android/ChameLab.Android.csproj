@@ -55,7 +55,8 @@
   </ItemGroup>
   <PropertyGroup Condition="'$(ChameLabUiTests)' == 'true'">
     <ApplicationId>io.github.axiomshiftbit.chamelab.uitests</ApplicationId>
-    <AndroidLinkMode>None</AndroidLinkMode>
+    <!-- Keep Release's linker: AOT with AndroidLinkMode=None can compile the
+         original binding assemblies but package their rewritten counterparts. -->
   </PropertyGroup>
   <ItemGroup>
     <!-- Lua built-ins are discovered by MoonSharp at runtime. -->
