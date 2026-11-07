@@ -29,7 +29,7 @@
     <Style Selector="StackPanel.legend > TextBlock">
       <Setter Property="FontSize" Value="12" />
       <Setter Property="VerticalAlignment" Value="Center" />
-      <Setter Property="Foreground" Value="{DynamicResource DefaultForegroundBrushSecondary}" />
+      <Setter Property="Foreground" Value="{actipro:ThemeResource DefaultForegroundBrushSecondary}" />
     </Style>
 
     <!-- Short of room: icon only (the tooltip names the action), as in the card editor. -->
@@ -44,8 +44,8 @@
 
     <!-- A recovered key. -->
     <Style Selector="Border.keybadge">
-      <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrushSolidSuccess}" />
-      <Setter Property="TextElement.Foreground" Value="{DynamicResource ControlForegroundBrushSolidSuccess}" />
+      <Setter Property="Background" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+      <Setter Property="TextElement.Foreground" Value="{actipro:ThemeResource ControlForegroundBrushSolidSuccess}" />
       <Setter Property="CornerRadius" Value="6" />
       <Setter Property="Padding" Value="10,5" />
       <Setter Property="HorizontalAlignment" Value="Left" />
@@ -62,7 +62,7 @@
       <Setter Property="Foreground" Value="{DynamicResource BrandBlueBrush}" />
     </Style>
     <Style Selector="TextBlock.dir.card">
-      <Setter Property="Foreground" Value="{DynamicResource ControlForegroundBrushOutlineSuccess}" />
+      <Setter Property="Foreground" Value="{actipro:ThemeResource ControlForegroundBrushOutlineSuccess}" />
     </Style>
     <Style Selector="ListBox.frames">
       <Setter Property="Height" Value="460" />
@@ -425,21 +425,21 @@
               <TextBlock Classes="caption" Text="{Binding CursorText}" TextWrapping="Wrap" />
               <WrapPanel ItemSpacing="16" LineSpacing="4">
                 <StackPanel Classes="legend" Orientation="Horizontal" Spacing="6">
-                  <Border Width="14" Height="8" CornerRadius="2" Background="{DynamicResource ControlBackgroundBrushSolidAccent}" />
+                  <Border Width="14" Height="8" CornerRadius="2" Background="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
                   <TextBlock Text="{x:Static loc:Strings.Tools_Signal}" />
                 </StackPanel>
                 <StackPanel Classes="legend" Orientation="Horizontal" Spacing="6">
                   <Line StartPoint="0,0" EndPoint="16,0" StrokeThickness="1.5" StrokeDashArray="2,2"
-                        Stroke="{DynamicResource DefaultForegroundBrushTertiary}" VerticalAlignment="Center" />
+                        Stroke="{actipro:ThemeResource DefaultForegroundBrushTertiary}" VerticalAlignment="Center" />
                   <TextBlock Text="{Binding Summary?.Threshold, StringFormat={x:Static loc:Strings.Tools_DecodeThreshold}, TargetNullValue=''}" />
                 </StackPanel>
                 <StackPanel Classes="legend" Orientation="Horizontal" Spacing="6">
                   <Line StartPoint="0,0" EndPoint="16,0" StrokeThickness="1.5" StrokeDashArray="1,2"
-                        Stroke="{DynamicResource ControlBackgroundBrushSolidDanger}" VerticalAlignment="Center" />
+                        Stroke="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" VerticalAlignment="Center" />
                   <TextBlock Text="{Binding Summary?.GapThreshold, StringFormat={x:Static loc:Strings.Tools_GapThreshold}, TargetNullValue=''}" />
                 </StackPanel>
                 <StackPanel Classes="legend" Orientation="Horizontal" Spacing="6">
-                  <Border Width="14" Height="10" CornerRadius="2" Background="{DynamicResource ControlBackgroundBrushSolidDanger}" Opacity="0.3" />
+                  <Border Width="14" Height="10" CornerRadius="2" Background="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" Opacity="0.3" />
                   <TextBlock Text="{x:Static loc:Strings.Tools_FieldGap}" />
                 </StackPanel>
                 <StackPanel Classes="legend" Orientation="Horizontal" Spacing="6">
@@ -448,7 +448,7 @@
                 </StackPanel>
                 <StackPanel Classes="legend" Orientation="Horizontal" Spacing="6">
                   <Border Width="14" Height="10" CornerRadius="2" BorderThickness="1.5"
-                          BorderBrush="{DynamicResource ControlBackgroundBrushSolidAccent}" />
+                          BorderBrush="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
                   <TextBlock Text="{x:Static loc:Strings.Tools_ViewInTheCapture}" />
                 </StackPanel>
               </WrapPanel>

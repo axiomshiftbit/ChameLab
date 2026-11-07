@@ -42,7 +42,7 @@
                 <PathIcon Data="{StaticResource Icon.upload}" Width="12" Height="12"
                           VerticalAlignment="Center" IsVisible="{Binding AppUpdate.IsUpdateAvailable}"
                           Classes.pulse="{Binding AppUpdate.IsUpdateAvailable}"
-                          Foreground="{DynamicResource ControlBackgroundBrushSolidAccent}" />
+                          Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
               </StackPanel>
               <TextBlock Text="{Binding Settings.AppVersion}" Classes="caption" FontSize="11"
                          Foreground="{actipro:ThemeResource DefaultForegroundBrush}" />
@@ -60,9 +60,9 @@
                 Background="{actipro:ThemeResource Container2BackgroundBrush}">
           <StackPanel Orientation="Horizontal" Spacing="7">
             <Ellipse Width="8" Height="8" VerticalAlignment="Center"
-                     Fill="{DynamicResource ControlBackgroundBrushSolidSuccess}" IsVisible="{Binding IsConnected}" />
+                     Fill="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" IsVisible="{Binding IsConnected}" />
             <Ellipse Width="8" Height="8" VerticalAlignment="Center"
-                     Fill="{DynamicResource DefaultForegroundBrushTertiary}" IsVisible="{Binding !IsConnected}" />
+                     Fill="{actipro:ThemeResource DefaultForegroundBrushTertiary}" IsVisible="{Binding !IsConnected}" />
             <Panel Classes="header-connection-label">
               <TextBlock Text="{x:Static loc:Strings.Main_Online}" FontSize="12" IsVisible="{Binding IsConnected}" VerticalAlignment="Center" />
               <TextBlock Text="{x:Static loc:Strings.Main_Offline}" FontSize="12" IsVisible="{Binding !IsConnected}" VerticalAlignment="Center" />
@@ -259,7 +259,7 @@
 
           <!-- Thin activity bar while the current page talks to the device. -->
           <ProgressBar Grid.Row="0" VerticalAlignment="Top" IsIndeterminate="True" Height="3" MinHeight="3"
-                       CornerRadius="0" Foreground="{DynamicResource ControlBackgroundBrushSolidAccent}" Background="Transparent"
+                       CornerRadius="0" Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" Background="Transparent"
                        IsVisible="{Binding CurrentPage.IsBusy}" />
 
           <!-- A passing confirmation at the top of the page: clears itself, and clicks go through it. -->

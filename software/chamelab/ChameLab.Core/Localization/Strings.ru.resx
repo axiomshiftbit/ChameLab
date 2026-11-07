@@ -3612,4 +3612,7 @@
   <data name="Search_BudgetReached" xml:space="preserve"><value>Достигнут лимит попыток за запуск. Продолжите с следующего кандидата.</value></data>
   <data name="Search_Stopped" xml:space="preserve"><value>Поиск остановлен. Прогресс сохранён в текущем сеансе.</value></data>
   <data name="Device_T55xxVerificationUnsupported" xml:space="preserve"><value>Команда записи IDTECK отправлена, но эта прошивка не поддерживает обратное чтение IDTECK. Запись НЕ подтверждена; проверьте карту внешним считывателем.</value></data>
+  <data name="Connect_ChooseHint" xml:space="preserve">
+    <value>Выберите устройство и нажмите «Подключить» или дважды нажмите на его строку.</value>
+  </data>
 </root>

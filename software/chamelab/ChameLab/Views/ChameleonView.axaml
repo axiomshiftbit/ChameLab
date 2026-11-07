@@ -16,7 +16,7 @@
       <Setter Property="Stroke" Value="Transparent" />
     </Style>
     <Style Selector="Ellipse.ledring.active">
-      <Setter Property="Stroke" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
+      <Setter Property="Stroke" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
     </Style>
     <Style Selector="Border.led">
       <Setter Property="Opacity" Value="0.55" />
@@ -252,7 +252,7 @@
                     <TextBlock>
                       <Run Text="{Binding HfNick}" FontWeight="Bold" />
                       <Run Text="{Binding HfTypeLabel}" FontSize="12"
-                           Foreground="{DynamicResource DefaultForegroundBrushSecondary}" />
+                           Foreground="{actipro:ThemeResource DefaultForegroundBrushSecondary}" />
                     </TextBlock>
                   </c:Marquee>
                   <TextBlock Grid.Column="2" Classes="caption" Text="{x:Static loc:Strings.Common_Empty}" VerticalAlignment="Center"
@@ -268,7 +268,7 @@
                     <TextBlock>
                       <Run Text="{Binding LfNames}" FontWeight="Bold" />
                       <Run Text="{Binding LfTypeLabel}" FontSize="12"
-                           Foreground="{DynamicResource DefaultForegroundBrushSecondary}" />
+                           Foreground="{actipro:ThemeResource DefaultForegroundBrushSecondary}" />
                     </TextBlock>
                   </c:Marquee>
                   <TextBlock Grid.Column="2" Classes="caption" Text="{x:Static loc:Strings.Common_Empty}" VerticalAlignment="Center"
@@ -523,7 +523,7 @@
         </Border>
 
         <!-- Danger zone: rows laid out like settings, without icons (hidden placeholders). -->
-        <Border Classes="card" BorderBrush="{DynamicResource ControlBackgroundBrushSoftDanger}">
+        <Border Classes="card" BorderBrush="{actipro:ThemeResource ControlBackgroundBrushSoftDanger}">
           <StackPanel>
             <!-- Bonded BLE devices -->
             <c:SettingRow IsVisible="{Binding SupportsBle}">

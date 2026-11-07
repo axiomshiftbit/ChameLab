@@ -4,6 +4,8 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.VisualTree;
+using ChameLab.Transport;
 using ChameLab.ViewModels;
 
 namespace ChameLab.Views;
@@ -27,8 +29,14 @@ public partial class ConnectView : UserControl
 
     private void OnDeviceDoubleTapped(object? sender, TappedEventArgs e)
     {
-        if (DataContext is ConnectViewModel { Selected: not null } vm && vm.ConnectCommand.CanExecute(null))
+        var row = (e.Source as Visual)?.FindAncestorOfType<ListBoxItem>(includeSelf: true);
+        if (row?.DataContext is TransportCandidate candidate && DataContext is ConnectViewModel vm)
+        {
+            vm.Selected = candidate;
+            if (!vm.ConnectCommand.CanExecute(null)) return;
             vm.ConnectCommand.Execute(null);
+            e.Handled = true;
+        }
     }
 
     /// <summary>

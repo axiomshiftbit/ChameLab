@@ -27,7 +27,7 @@
       <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
     <Style Selector="Button.ledpick:pointerover > Border.swatch">
-      <Setter Property="BorderBrush" Value="{DynamicResource DefaultForegroundBrushSecondary}" />
+      <Setter Property="BorderBrush" Value="{actipro:ThemeResource DefaultForegroundBrushSecondary}" />
       <Setter Property="BorderThickness" Value="2" />
     </Style>
     <!-- Slot number in the list rows and the editor header. -->

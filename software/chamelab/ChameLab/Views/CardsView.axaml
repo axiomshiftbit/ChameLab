@@ -84,7 +84,7 @@
       <Setter Property="CornerRadius" Value="8" />
     </Style>
     <Style Selector="Button.colorpick:pointerover > Border">
-      <Setter Property="BorderBrush" Value="{DynamicResource DefaultForegroundBrushSecondary}" />
+      <Setter Property="BorderBrush" Value="{actipro:ThemeResource DefaultForegroundBrushSecondary}" />
       <Setter Property="BorderThickness" Value="2" />
     </Style>
     <!-- Header name: reads as a title, turns into a field on hover / focus. -->
@@ -112,7 +112,7 @@
       <Setter Property="BorderBrush" Value="{actipro:ThemeResource Container1BorderBrush}" />
     </Style>
     <Style Selector="TextBox.titlebox:focus-within">
-      <Setter Property="BorderBrush" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
+      <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
     </Style>
     <!-- Frequency filter beside the combos: shorter than they are, then stretched to their height,
          so it never makes the row (and the combos) taller. -->
@@ -145,7 +145,7 @@
       <Setter Property="IsHitTestVisible" Value="False" />
       <Setter Property="CornerRadius" Value="12" />
       <Setter Property="BorderThickness" Value="3" />
-      <Setter Property="BorderBrush" Value="{DynamicResource ControlBackgroundBrushSolidAccent}" />
+      <Setter Property="BorderBrush" Value="{actipro:ThemeResource ControlBackgroundBrushSolidAccent}" />
     </Style>
     <Style Selector="ListBox.cards ListBoxItem.dragging Border.dragframe">
       <Setter Property="IsVisible" Value="True" />
@@ -630,7 +630,7 @@
               </UniformGrid>
 
               <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding ScanMissText}"
-                         Foreground="{DynamicResource ControlForegroundBrushOutlineDanger}"
+                         Foreground="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}"
                          IsVisible="{Binding ScanMissText, Converter={x:Static ObjectConverters.IsNotNull}}" />
 
               <TextBlock Classes="caption" TextWrapping="Wrap" IsVisible="{Binding !IsConnected}"
@@ -841,7 +841,7 @@
                        One TextBlock so the 11px heading and the 12px summary share a baseline. -->
                   <TextBlock Classes="caption" TextWrapping="NoWrap" VerticalAlignment="Center">
                     <Run Text="{x:Static loc:Strings.Cards_MemoryHeader}" FontSize="11" FontWeight="SemiBold" LetterSpacing="0.6"
-                         Foreground="{DynamicResource DefaultForegroundBrushTertiary}" />
+                         Foreground="{actipro:ThemeResource DefaultForegroundBrushTertiary}" />
                     <Run Text=" " />
                     <Run Text="{Binding Form?.DataSummary}" />
                   </TextBlock>
@@ -871,7 +871,7 @@
                   </TextBlock>
                 </Grid>
                 <TextBlock Classes="caption" Text="{Binding Form?.MemoryWarning}" TextWrapping="Wrap"
-                           Foreground="{DynamicResource ControlForegroundBrushOutlineDanger}"
+                           Foreground="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}"
                            IsVisible="{Binding Form?.MemoryWarning, Converter={x:Static ObjectConverters.IsNotNull}, FallbackValue=False}" />
                 <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding DumpHint}"
                            IsVisible="{Binding ShowDumpHint}" />
@@ -898,7 +898,7 @@
                 </c:KeyRecoveryPanel>
 
                 <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding DumpPasswordError}"
-                           Foreground="{DynamicResource ControlForegroundBrushOutlineDanger}">
+                           Foreground="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}">
                   <TextBlock.IsVisible>
                     <MultiBinding Converter="{x:Static BoolConverters.And}">
                       <Binding Path="ShowDumpPassword" />
@@ -1003,7 +1003,7 @@
                                Classes.overcapacity="{Binding IsOverCapacity}" />
                   </Grid>
                   <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding Error}" Margin="4,0"
-                             Foreground="{DynamicResource ControlForegroundBrushOutlineDanger}"
+                             Foreground="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}"
                              IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
 
                   <!-- Dragged into place by any spot of a tile that isn't an input. -->
@@ -1100,7 +1100,7 @@
                               </StackPanel>
 
                               <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding Error}"
-                                         Foreground="{DynamicResource ControlForegroundBrushOutlineDanger}"
+                                         Foreground="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}"
                                          IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
                             </StackPanel>
                           </Grid>
@@ -1110,7 +1110,7 @@
                   </ListBox>
 
                   <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding EditError}" Margin="4,0"
-                             Foreground="{DynamicResource ControlForegroundBrushOutlineDanger}"
+                             Foreground="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}"
                              IsVisible="{Binding EditError, Converter={x:Static ObjectConverters.IsNotNull}}" />
 
                   <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12" IsVisible="{Binding CanEdit}">

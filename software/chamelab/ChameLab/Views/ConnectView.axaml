@@ -94,6 +94,8 @@
           </Border>
 
           <StackPanel Grid.Row="2" Spacing="10">
+            <TextBlock Classes="caption" IsVisible="{Binding HasCandidates}"
+                       Text="{x:Static loc:Strings.Connect_ChooseHint}" TextWrapping="Wrap" />
             <!-- Web Bluetooth: a new device can only be picked in the browser's own chooser. -->
             <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                     Command="{Binding PickCommand}" IsVisible="{Binding CanPick}"

@@ -3612,4 +3612,7 @@
   <data name="Search_BudgetReached" xml:space="preserve"><value>Attempt budget reached. Resume to continue with the next candidate.</value><comment>English fallback for this locale.</comment></data>
   <data name="Search_Stopped" xml:space="preserve"><value>Search stopped. Progress retained for this session.</value><comment>English fallback for this locale.</comment></data>
   <data name="Device_T55xxVerificationUnsupported" xml:space="preserve"><value>IDTECK write command sent, but this firmware cannot read IDTECK back. The write is NOT verified; check the tag with an external reader.</value></data>
+  <data name="Connect_ChooseHint" xml:space="preserve">
+    <value>デバイスを選択して「接続」を押すか、デバイスの行をダブルクリックしてください。</value>
+  </data>
 </root>

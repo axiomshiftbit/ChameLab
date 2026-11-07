@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
@@ -10,13 +12,14 @@ using ChameLab.Services;
 using ChameLab.Models;
 using ChameLab.ViewModels;
 using ChameLab.Views;
+using ChameLab.Transport;
 
 namespace ChameLab.UiTesting;
 
 // Compiled only into UI test projects/builds. All libraries are synthetic and in memory.
 public static class LayoutScenarios
 {
-    public static readonly string[] Pages = ["connect", "settings", "device", "slots", "cards", "dictionaries", "dictionary-download", "dictionary-editor", "tools", "hf", "lf", "auth", "ValueBlocks", "T55Password", "T55Block", "Gen4", "RawHf", "RawDevice", "console", "plugins", "key-search", "writer", "writer-classic", "writer-ultralight", "writer-lf", "cards-add", "journal"];
+    public static readonly string[] Pages = ["connect", "connect-found", "settings", "device", "slots", "cards", "dictionaries", "dictionary-download", "dictionary-editor", "tools", "hf", "lf", "auth", "ValueBlocks", "T55Password", "T55Block", "Gen4", "RawHf", "RawDevice", "console", "plugins", "key-search", "writer", "writer-classic", "writer-ultralight", "writer-lf", "cards-add", "journal"];
 
     public static Border Create(string page, string language)
     {
@@ -32,6 +35,7 @@ public static class LayoutScenarios
         Control view = page switch
         {
             "connect" => new ConnectView { DataContext = new ConnectViewModel(device) },
+            "connect-found" => ConnectScenario(),
             "settings" => new SettingsView { DataContext = new SettingsViewModel(cards, dictionaries, new AppUpdateViewModel()) },
             "device" => new ChameleonView { DataContext = new ChameleonViewModel(device, cards, firmware) },
             "slots" => new SlotsView { DataContext = new SlotsViewModel(device, cards) },
@@ -47,6 +51,24 @@ public static class LayoutScenarios
         var host = new Border { Child = view };
         host.SizeChanged += (_, _) => host.Classes.Set("compact", host.Bounds.Width < 760);
         return host;
+    }
+
+    private static Control ConnectScenario()
+    {
+        var vm = new ConnectViewModel(new DeviceService([new FixtureScanner()]));
+        vm.ScanCommand.Execute(null);
+        return new ConnectView { DataContext = vm };
+    }
+
+    private sealed class FixtureScanner : ITransportScanner
+    {
+        public TransportKind Kind => TransportKind.Serial;
+        public string DisplayName => "UI fixture";
+        public Task<IReadOnlyList<TransportCandidate>> ScanAsync(CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<TransportCandidate>>([
+                new(Kind, "test-a", "Chameleon Ultra", "USB — test device A"),
+                new(Kind, "test-b", "Chameleon Ultra with a long device name", "USB — test device B")]);
+        public ITransport Create(TransportCandidate candidate) => throw new InvalidOperationException("UI fixture cannot connect.");
     }
 
     private static Control AddScenario(DeviceService device, CardLibrary cards, DictionaryLibrary dictionaries)
