@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Android 12+ masks a 288dp icon to a circle 192dp across. Keep the
+       entire rounded-square artwork inside that circle, including its corners. -->
+  <item android:width="288dp" android:height="288dp">
+    <shape android:shape="rectangle">
+      <solid android:color="@android:color/transparent" />
+    </shape>
+  </item>
+  <item android:drawable="@drawable/splash_icon"
+        android:width="144dp"
+        android:height="144dp"
+        android:gravity="center" />
+</layer-list>

@@ -1646,7 +1646,8 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
             SetScanMatches(card);
             FormSource = string.Format(Strings.Cards_SourceTypeUid, card.Tag.DisplayName(), t.UidHex);
             ScanGeneration = classic ? string.Format(Strings.Cards_Generation,
-                generation?.GenerationSummary ?? Strings.Cards_GenerationUnknown) : null;
+                generation?.GenerationSummary ?? Strings.Cards_GenerationUnknown)
+                + "\n" + (generation?.GenerationExplanation ?? Strings.Cards_GenerationNotProven) : null;
         });
 
         Notify(Loc.Plural(Strings.Plural_FoundHfTags, tags.Count));

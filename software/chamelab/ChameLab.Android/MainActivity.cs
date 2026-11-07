@@ -30,6 +30,7 @@ public class MainActivity : AvaloniaMainActivity
     {
 #if CHAMELAB_UI_TESTS
         UiTesting.UiTestHost.OutputDirectory = System.IO.Path.Combine(FilesDir!.AbsolutePath, "ui-results");
+        SplashScreenCheck.Run(this, UiTesting.UiTestHost.OutputDirectory);
 #endif
         base.OnCreate(savedInstanceState);
         // Back on the start screen would only move the task to the background (Android 12+).

@@ -115,7 +115,8 @@ public class DeviceRefreshTests
             Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
             LayoutScenarios.ScaleText(root, scale); window.UpdateLayout();
             Assert.True(model.NeedsDump);
-            Assert.Equal(string.Format(Strings.Cards_Generation, Strings.Cards_GenerationUnknown), model.ScanGeneration);
+            Assert.Equal(string.Format(Strings.Cards_Generation, Strings.Cards_GenerationUnknown)
+                + "\n" + Strings.Cards_GenerationNotProven, model.ScanGeneration);
             Assert.Contains(view.GetVisualDescendants().OfType<TextBlock>(), b => b.Text == Strings.Cards_CardDetailsHeader);
             Assert.Contains(view.GetVisualDescendants().OfType<TextBlock>(), b => b.Text == Strings.Cards_SaveUidOnly);
             var scroll = view.FindControl<ScrollViewer>("PaneScroll")!;
@@ -256,7 +257,8 @@ public class DeviceRefreshTests
             Dispatcher.UIThread.RunJobs();
             Assert.NotNull(model.Form);
             Assert.Contains(generation switch { 1 => "Gen1a", 4 => "Gen4", _ => Strings.Cards_GenerationUnknown }, model.ScanGeneration);
-            Assert.DoesNotContain("\n", model.ScanGeneration);
+            Assert.Contains(generation == 0 ? Strings.Cards_GenerationNotProven
+                : Strings.Cards_GenerationProtocolConfirmed, model.ScanGeneration);
             Assert.DoesNotContain(transport.Requests, r => r.Command == Command.Mf1WriteOneBlock);
             Assert.DoesNotContain(transport.Requests.Where(r => r.Command == Command.Hf14aRaw && r.Data.Length > 5),
                 r => r.Data[5] is 0xA0 or 0xA2 or 0x90 || r.Data[5] == 0xCF && r.Data[10] != 0xC6);
