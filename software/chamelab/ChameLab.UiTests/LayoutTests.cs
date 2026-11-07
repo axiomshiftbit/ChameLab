@@ -39,7 +39,7 @@ public class LayoutTests
         foreach (var width in new[] { 320, 360, 600, 1280 })
         foreach (var page in LayoutScenarios.Pages)
             yield return [language, width, 800, page, 1.0, "Dark"];
-        foreach (var language in new[] { "ru", "en" })
+        foreach (var language in new[] { "en", "ru", "de", "fr", "es", "it", "pt", "ja", "ko", "zh-Hans" })
         foreach (var theme in new[] { "Light", "Dark" })
         foreach (var size in new[] { (320, 640), (800, 360) })
         foreach (var page in LayoutScenarios.Pages)

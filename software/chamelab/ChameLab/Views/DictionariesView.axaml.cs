@@ -34,7 +34,12 @@ public partial class DictionariesView : UserControl
     private void OnListPaneSizeChanged(object? sender, SizeChangedEventArgs e)
     {
         if (sender is Grid list && e.WidthChanged)
-            list.Classes.Set("narrow", list.Bounds.Width < 520);
+        {
+            var narrow = list.Bounds.Width < 520;
+            if (list.Classes.Contains("narrow") == narrow) return;
+            list.Classes.Set("narrow", narrow);
+            LibraryHeader.ColumnDefinitions = new ColumnDefinitions(narrow ? "*" : "Auto,*");
+        }
     }
 
     // Picking a swatch closes the palette flyout it lives in.

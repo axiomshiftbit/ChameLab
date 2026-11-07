@@ -178,9 +178,10 @@
                       IsVisible="{Binding AppUpdate.IsUpdateAvailable}" ToolTip.Tip="{x:Static loc:Strings.Settings_OpenTheReleasePage}" />
               <Button Command="{Binding AppUpdate.CheckCommand}"
                       ToolTip.Tip="{x:Static loc:Strings.Common_CheckGitHubForANewerRelease}">
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                  <PathIcon Data="{StaticResource Icon.refresh}" /><TextBlock Text="{x:Static loc:Strings.Settings_CheckForUpdates}" VerticalAlignment="Center" />
-                </StackPanel>
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                  <PathIcon Data="{StaticResource Icon.refresh}" Width="16" Height="16" />
+                  <TextBlock Grid.Column="1" Text="{x:Static loc:Strings.Settings_CheckForUpdates}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                </Grid>
               </Button>
             </WrapPanel>
           </StackPanel>

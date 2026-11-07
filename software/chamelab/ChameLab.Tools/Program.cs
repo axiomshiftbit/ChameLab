@@ -23,6 +23,7 @@ internal static class Program
                 case ["pr-review", var mode]: await PrReviewCycle.FromEnvironment(mode); break;
                 case ["read-mfc4k", .. var rest]: await Mfc4kReader.Run(rest); break;
                 case ["android-ui", var apk, var output]: await AndroidUi.RunAsync(apk, output); break;
+                case ["android-ui", var apk, var output, var profile]: await AndroidUi.RunAsync(apk, output, profile); break;
                 case ["generate-notices"]: await DependencyNotices.GenerateAsync(); break;
                 case ["check-languages"]: await CheckLanguages(); break;
                 case ["announce-release", var tag]: await ReleaseAnnouncer.Run(tag, false); break;

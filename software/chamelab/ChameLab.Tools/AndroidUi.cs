@@ -8,14 +8,19 @@ namespace ChameLab.Tools;
 internal static class AndroidUi
 {
     private const string Package = "io.github.axiomshiftbit.chamelab.uitests";
-    public static async Task RunAsync(string apk, string output)
+    public static async Task RunAsync(string apk, string output, string? profile = null)
     {
+        (string Name, int Width, int Height, double Scale)[] profiles =
+            [("small",320,640,1), ("phone",360,800,1), ("large-text",360,800,1.5), ("landscape",800,360,1), ("tablet",1280,800,1)];
+        if (profile is not null)
+        {
+            profiles = profiles.Where(p => p.Name == profile).ToArray();
+            if (profiles.Length == 0) throw new ArgumentException("Unknown Android UI profile.", nameof(profile));
+        }
         Directory.CreateDirectory(output);
         Console.WriteLine("Installing UI test APK...");
         await Adb(["install", "--no-streaming", "-r", apk], timeoutMinutes: 5);
         var failures = new List<string>();
-        (string Name, int Width, int Height, double Scale)[] profiles =
-            [("small",320,640,1), ("phone",360,800,1), ("large-text",360,800,1.5), ("landscape",800,360,1), ("tablet",1280,800,1)];
         try
         {
             foreach (var p in profiles)

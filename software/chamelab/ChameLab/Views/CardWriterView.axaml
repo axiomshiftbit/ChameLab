@@ -38,9 +38,11 @@
                       </ComboBox.ItemTemplate>
                     </ComboBox>
                   </StackPanel>
-                  <CheckBox Content="{x:Static loc:Strings.Cards_WriteBlock0UID}" IsChecked="{Binding WriteGen2Block0}"
+                  <CheckBox IsChecked="{Binding WriteGen2Block0}"
                             IsVisible="{Binding IsGen2Write}" IsEnabled="{Binding CanChangeWriteOptions}"
-                            ToolTip.Tip="{x:Static loc:Strings.Cards_WriteTheSourceDumpsManufacturerBlock}" />
+                            ToolTip.Tip="{x:Static loc:Strings.Cards_WriteTheSourceDumpsManufacturerBlock}">
+                    <TextBlock Text="{x:Static loc:Strings.Cards_WriteBlock0UID}" TextWrapping="Wrap" />
+                  </CheckBox>
                 </StackPanel>
 
                 <StackPanel Spacing="6" IsVisible="{Binding IsGen4Write}">

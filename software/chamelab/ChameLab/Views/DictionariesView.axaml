@@ -31,6 +31,11 @@
     <Style Selector="Grid.dictionary-list.narrow Button.library-clear">
       <Setter Property="Grid.Row" Value="1" />
     </Style>
+    <Style Selector="Grid.dictionary-list.narrow c|ActionRow.library-actions">
+      <Setter Property="Grid.Column" Value="0" />
+      <Setter Property="Grid.Row" Value="1" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
   </UserControl.Styles>
 
   <!-- Laid out like the Cards page; the shared styles are under "Library pages" in ControlStyles. -->
@@ -43,10 +48,10 @@
           SizeChanged="OnListPaneSizeChanged"
           IsEnabled="{Binding !IsNew}">
       <!-- Measure the title first; give actions the remaining finite width so they collapse by priority. -->
-      <Grid Grid.Row="0" ColumnDefinitions="Auto,*" ColumnSpacing="12">
+      <Grid x:Name="LibraryHeader" Grid.Row="0" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="8">
         <StackPanel Grid.Column="0" Spacing="2">
-          <TextBlock Text="{x:Static loc:Strings.Common_KeyDictionaries}" Classes="h1" TextWrapping="NoWrap" />
-          <TextBlock Classes="caption" Text="{Binding CountText}" TextWrapping="NoWrap" />
+          <TextBlock Text="{x:Static loc:Strings.Common_KeyDictionaries}" Classes="h1" TextWrapping="Wrap" />
+          <TextBlock Classes="caption" Text="{Binding CountText}" TextWrapping="Wrap" />
         </StackPanel>
         <c:ActionRow Grid.Column="1" Classes="library-actions" HorizontalAlignment="Right" VerticalAlignment="Center">
         <Button Command="{Binding ImportCommand}" IsEnabled="{Binding CanUseFiles}"
@@ -71,7 +76,10 @@
            the column like the list used to, so a dragged row's shadow is not clipped. -->
       <ScrollViewer Grid.Row="1" Name="ListPaneScroll" Margin="-12,0,-12,-16" HorizontalScrollBarVisibility="Disabled">
         <c:FillStack Classes="panestack" Margin="12,0,12,16">
-          <Expander Header="{x:Static loc:Strings.Dictionaries_Download}" HorizontalAlignment="Stretch">
+          <Expander HorizontalAlignment="Stretch">
+            <Expander.Header>
+              <TextBlock Text="{x:Static loc:Strings.Dictionaries_Download}" TextWrapping="Wrap" />
+            </Expander.Header>
             <ItemsControl ItemsSource="{Binding DownloadSources}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="svc:DictionarySource">

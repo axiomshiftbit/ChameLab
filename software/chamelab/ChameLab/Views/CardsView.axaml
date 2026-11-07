@@ -299,7 +299,7 @@
             <StackPanel Spacing="10" HorizontalAlignment="Center" Margin="0,12">
               <PathIcon Data="{StaticResource Icon.cards}" Width="40" Height="40" Opacity="0.4"
                         HorizontalAlignment="Center" />
-              <TextBlock Text="{x:Static loc:Strings.Cards_NoCardsYet}" FontWeight="SemiBold" HorizontalAlignment="Center" />
+              <TextBlock Text="{x:Static loc:Strings.Cards_NoCardsYet}" FontWeight="SemiBold" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
               <TextBlock Classes="caption" TextAlignment="Center" MaxWidth="360" TextWrapping="Wrap"
                          Text="{x:Static loc:Strings.Cards_PressToScanACardImport}" />
             </StackPanel>

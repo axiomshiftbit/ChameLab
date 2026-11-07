@@ -31,6 +31,19 @@ public class ActionRow : Panel
     {
         AffectsMeasure<ActionRow>(SpacingProperty, WrapProperty);
         PriorityProperty.Changed.AddClassHandler<Control>((c, _) => (c.GetVisualParent() as ActionRow)?.InvalidateMeasure());
+        // Hidden labels may change without changing their button's current icon width.
+        foreach (var property in new AvaloniaProperty[]
+        {
+            TextBlock.TextProperty, TextBlock.FontSizeProperty, TextBlock.FontFamilyProperty,
+            TextBlock.FontWeightProperty, TextBlock.FontStyleProperty, TextBlock.FontStretchProperty,
+            ContentControl.ContentProperty, ContentControl.ContentTemplateProperty
+        })
+            property.Changed.AddClassHandler<Control>((control, _) =>
+            {
+                if (control.FindAncestorOfType<ActionRow>() is not { } row) return;
+                row._widths.Clear();
+                row.InvalidateMeasure();
+            });
     }
 
     public double Spacing
@@ -48,6 +61,9 @@ public class ActionRow : Panel
     public double IconicWidth { get; private set; }
 
     private readonly List<Visual> _ancestors = new();
+    private readonly Dictionary<Control, (double Full, double Icon)> _widths = new();
+
+    public ActionRow() => Children.CollectionChanged += (_, _) => _widths.Clear();
 
     private List<Control> Visible() => Children.Where(c => c.IsVisible).ToList();
 
@@ -68,6 +84,7 @@ public class ActionRow : Panel
     {
         foreach (var ancestor in _ancestors) ancestor.PropertyChanged -= OnAncestorPropertyChanged;
         _ancestors.Clear();
+        _widths.Clear();
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -93,8 +110,8 @@ public class ActionRow : Panel
         .ToList();
 
     /// <remarks>
-    /// Every pass measures each button both with and without its label, so the choice depends
-    /// only on the width offered: no state carried between passes, nothing to oscillate.
+    /// Measure both appearances when the button's content changes, then reuse those widths.
+    /// Toggling styles during every measure invalidates layout again and can starve idle work.
     /// </remarks>
     protected override Size MeasureOverride(Size availableSize)
     {
@@ -102,17 +119,16 @@ public class ActionRow : Panel
         foreach (var child in Children.Where(c => !c.IsVisible)) SetIconic(child, false);
 
         var order = CollapseOrder(Visible());
-        var full = order.Select(c => WidthOf(c, iconic: false)).ToArray();
-        var icon = order.Select(c => WidthOf(c, iconic: true)).ToArray();
+        var sizes = order.Select(WidthsOf).ToArray();
 
         var limit = availableSize.Width;
         var gaps = Math.Max(0, order.Count - 1) * Spacing;
-        IconicWidth = icon.Sum() + gaps;
-        var width = full.Sum() + gaps;
+        IconicWidth = sizes.Sum(s => s.Icon) + gaps;
+        var width = sizes.Sum(s => s.Full) + gaps;
         var collapsed = 0;
         while (width > limit && collapsed < order.Count)
         {
-            width += icon[collapsed] - full[collapsed];
+            width += sizes[collapsed].Icon - sizes[collapsed].Full;
             collapsed++;
         }
 
@@ -124,6 +140,18 @@ public class ActionRow : Panel
             height = Math.Max(height, order[i].DesiredSize.Height);
         }
         return new Size(Math.Min(width, limit), Wrap ? LayoutRows(limit, arrange: false) : height);
+    }
+
+    private (double Full, double Icon) WidthsOf(Control child)
+    {
+        if (_widths.TryGetValue(child, out var size) && child.IsMeasureValid
+            && Math.Abs(child.DesiredSize.Width - (child.Classes.Contains(IconicClass) ? size.Icon : size.Full)) < 0.5)
+            return size;
+        foreach (var layoutable in child.GetSelfAndVisualDescendants().OfType<Layoutable>())
+            layoutable.InvalidateMeasure();
+        size = (WidthOf(child, iconic: false), WidthOf(child, iconic: true));
+        _widths[child] = size;
+        return size;
     }
 
     private static double WidthOf(Control child, bool iconic)

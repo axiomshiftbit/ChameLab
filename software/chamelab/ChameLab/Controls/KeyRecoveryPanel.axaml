@@ -35,13 +35,13 @@
   <StackPanel Spacing="8">
     <TextBlock Classes="caption" Text="{Binding RecoveryIdentity}" TextWrapping="Wrap"
                IsVisible="{Binding RecoveryIdentity, Converter={x:Static ObjectConverters.IsNotNull}}" />
-    <Grid Classes="memorytoolbar" Height="48" IsVisible="{Binding ShowRecoveryTools}"
+    <Grid Classes="memorytoolbar" MinHeight="48" IsVisible="{Binding ShowRecoveryTools}"
           SizeChanged="OnMemoryToolbarSizeChanged">
       <!-- The host's extra controls (the Ultralight password) take the room right of the buttons. -->
       <DockPanel IsVisible="{Binding ShowDumpActions}" VerticalAlignment="Center">
         <c:ActionRow DockPanel.Dock="Left" Classes="attackactions" Spacing="6"
                     VerticalAlignment="Center" IsEnabled="{Binding !IsBusy}">
-          <Grid Height="40" c:ActionRow.Priority="3">
+          <Grid MinHeight="40" c:ActionRow.Priority="3">
             <Grid.Styles>
               <Style Selector="Button.dump-main">
                 <Setter Property="CornerRadius" Value="8,0,0,8" />
@@ -53,7 +53,7 @@
             <StackPanel Orientation="Horizontal" Spacing="0">
               <Button x:Name="TryKeysButton" Command="{Binding DumpCommand}" Classes="dump-main responsive accent theme-outline"
                       Classes.ultralight="{Binding IsUltralightDump}"
-                      Height="40" BorderThickness="0"
+                      MinHeight="40" BorderThickness="0"
                       ToolTip.Tip="{Binding TryKeysTip}">
                 <StackPanel Orientation="Horizontal" Spacing="6">
                   <PathIcon Data="{StaticResource Icon.dump}" />
@@ -61,7 +61,7 @@
                 </StackPanel>
               </Button>
               <Button IsVisible="{Binding !IsUltralightDump}" ToolTip.Tip="{Binding DumpKeyCountText}"
-                      Height="40" Width="40" Padding="0" CornerRadius="0,8,8,0" BorderThickness="1,0,0,0"
+                      MinHeight="40" Width="40" VerticalAlignment="Stretch" Padding="0" CornerRadius="0,8,8,0" BorderThickness="1,0,0,0"
                       BorderBrush="{Binding #TryKeysButton.BorderBrush}"
                       AutomationProperties.Name="{x:Static loc:Strings.Common_KeyDictionaries}">
                 <PathIcon Data="{StaticResource Icon.key}" Width="14" Height="14" />

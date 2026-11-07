@@ -15,12 +15,17 @@ on:
         type: choice
         options: ['all', '24', '29', '33', '35', '36']
         default: all
+      android-profile:
+        description: Screen profile to test (manual Android runs)
+        type: choice
+        options: ['all', 'small', 'phone', 'large-text', 'landscape', 'tablet']
+        default: all
 
 permissions:
   contents: read
 
 concurrency:
-  group: ui-quality-${{ github.ref }}-${{ inputs.android-only && inputs.android-api || 'full' }}
+  group: ui-quality-${{ github.ref }}-${{ inputs.android-only && format('{0}-{1}', inputs.android-api, inputs.android-profile) || 'full' }}
   cancel-in-progress: true
 
 jobs:
@@ -93,11 +98,12 @@ jobs:
   android-ui:
     needs: android-build
     runs-on: ubuntu-24.04
-    timeout-minutes: 75
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
         api: ${{ fromJSON(inputs.android-only && inputs.android-api != 'all' && format('[{0}]', inputs.android-api) || '[24,29,33,35,36]') }}
+        profile: ${{ fromJSON(inputs.android-only && inputs.android-profile != 'all' && format('["{0}"]', inputs.android-profile) || '["small","phone","large-text","landscape","tablet"]') }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -121,11 +127,11 @@ jobs:
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect
-          script: dotnet run --project software/chamelab/ChameLab.Tools -c Release -- android-ui ui-apk/ChameLab-ui-tests.apk "${{ runner.temp }}/android-ui"
+          script: dotnet run --project software/chamelab/ChameLab.Tools -c Release -- android-ui ui-apk/ChameLab-ui-tests.apk "${{ runner.temp }}/android-ui" "${{ matrix.profile }}"
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: android-ui-api-${{ matrix.api }}
+          name: android-ui-api-${{ matrix.api }}-${{ matrix.profile }}
           path: ${{ runner.temp }}/android-ui/
           retention-days: 14
 

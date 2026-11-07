@@ -106,7 +106,7 @@
               </StackPanel>
             </Button>
 
-            <Button Classes="accent" Height="56" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+            <Button Classes="accent" MinHeight="56" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                     Command="{Binding ConnectCommand}">
               <StackPanel Orientation="Horizontal" Spacing="10">
                 <PathIcon Data="{StaticResource Icon.link}" Width="24" Height="24" />
@@ -127,10 +127,10 @@
       <!-- Manual TCP endpoint, tucked away as an advanced option. -->
       <Expander HorizontalAlignment="Stretch" CornerRadius="14">
         <Expander.Header>
-          <StackPanel Orientation="Horizontal" Spacing="10">
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
             <PathIcon Data="{StaticResource Icon.tcp}" Width="16" Height="16" />
-            <TextBlock Text="{x:Static loc:Strings.Connect_NetworkBridgeTCP}" FontWeight="SemiBold" VerticalAlignment="Center" />
-          </StackPanel>
+            <TextBlock Grid.Column="1" Text="{x:Static loc:Strings.Connect_NetworkBridgeTCP}" TextWrapping="Wrap" FontWeight="SemiBold" VerticalAlignment="Center" />
+          </Grid>
         </Expander.Header>
         <StackPanel Spacing="10">
           <TextBlock Classes="caption"

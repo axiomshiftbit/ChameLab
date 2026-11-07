@@ -348,7 +348,7 @@
               </Border>
               <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
                 <TextBlock Text="{x:Static loc:Strings.Chameleon_FirmwareUpdateHeader}" Classes="overline" />
-                <TextBlock Text="{Binding Firmware.CurrentVersion, StringFormat={x:Static loc:Strings.Chameleon_FirmwareInstalled}}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding Firmware.CurrentVersion, StringFormat={x:Static loc:Strings.Chameleon_FirmwareInstalled}}" FontWeight="SemiBold" TextWrapping="Wrap" />
                 <TextBlock Text="{Binding Firmware.CheckMessage}" Classes="caption" TextWrapping="Wrap" />
               </StackPanel>
               <Button Grid.Column="2" Classes="icon" VerticalAlignment="Center"
@@ -580,10 +580,10 @@
               <TextBlock Text="{x:Static loc:Strings.Chameleon_FactoryReset}" FontWeight="SemiBold" />
               <TextBlock Classes="caption" Text="{x:Static loc:Strings.Chameleon_WipesALLDataEverySlotNickname}" />
               <Button x:Name="WipeButton" Classes="danger">
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                  <PathIcon Data="{StaticResource Icon.delete}" />
-                  <TextBlock Text="{x:Static loc:Strings.Chameleon_FactoryReset2}" VerticalAlignment="Center" />
-                </StackPanel>
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                  <PathIcon Data="{StaticResource Icon.delete}" Width="16" Height="16" />
+                  <TextBlock Grid.Column="1" Text="{x:Static loc:Strings.Chameleon_FactoryReset2}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                </Grid>
                 <Button.Flyout>
                   <Flyout Placement="TopEdgeAlignedRight">
                     <StackPanel Spacing="12" MaxWidth="280">
