@@ -3924,4 +3924,25 @@
   <data name="Capabilities_UlcKeySearch" xml:space="preserve">
     <value>Ultralight C key search</value>
   </data>
+  <data name="Cards_ReadData" xml:space="preserve">
+    <value>카드 데이터 읽기</value>
+  </data>
+  <data name="Cards_ReadDataHint" xml:space="preserve">
+    <value>선택한 사전 없이 찾거나 저장한 키로 읽지 못한 블록을 읽습니다. 이미 읽은 데이터는 유지됩니다.</value>
+  </data>
+  <data name="Cards_ExportFoundKeys" xml:space="preserve">
+    <value>찾은 키 내보내기</value>
+  </data>
+  <data name="Cards_KeysToFile" xml:space="preserve">
+    <value>.dic 파일로 저장</value>
+  </data>
+  <data name="Cards_KeysToNewDictionary" xml:space="preserve">
+    <value>사전 만들기</value>
+  </data>
+  <data name="Cards_KeysToExistingDictionary" xml:space="preserve">
+    <value>사전에 추가</value>
+  </data>
+  <data name="Cards_KeysSaved" xml:space="preserve">
+    <value>저장한 키: {0} → {1}.</value>
+  </data>
 </root>

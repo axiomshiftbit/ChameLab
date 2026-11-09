@@ -3924,4 +3924,25 @@ Octets identiques : {1} ; différents : {2} ; inconnus : {3}.</value>
   <data name="Capabilities_UlcKeySearch" xml:space="preserve">
     <value>Ultralight C key search</value>
   </data>
+  <data name="Cards_ReadData" xml:space="preserve">
+    <value>Lire les données de la carte</value>
+  </data>
+  <data name="Cards_ReadDataHint" xml:space="preserve">
+    <value>Lire les blocs manquants avec les clés trouvées et enregistrées, sans les dictionnaires sélectionnés. Les données déjà lues sont conservées.</value>
+  </data>
+  <data name="Cards_ExportFoundKeys" xml:space="preserve">
+    <value>Exporter les clés trouvées</value>
+  </data>
+  <data name="Cards_KeysToFile" xml:space="preserve">
+    <value>Enregistrer dans un fichier .dic</value>
+  </data>
+  <data name="Cards_KeysToNewDictionary" xml:space="preserve">
+    <value>Créer un dictionnaire</value>
+  </data>
+  <data name="Cards_KeysToExistingDictionary" xml:space="preserve">
+    <value>Ajouter à un dictionnaire</value>
+  </data>
+  <data name="Cards_KeysSaved" xml:space="preserve">
+    <value>Clés enregistrées : {0} → {1}.</value>
+  </data>
 </root>

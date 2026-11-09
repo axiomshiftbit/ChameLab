@@ -3924,4 +3924,25 @@
   <data name="Capabilities_UlcKeySearch" xml:space="preserve">
     <value>Поиск ключей Ultralight C</value>
   </data>
+  <data name="Cards_ReadData" xml:space="preserve">
+    <value>Считать данные с карты</value>
+  </data>
+  <data name="Cards_ReadDataHint" xml:space="preserve">
+    <value>Дочитать недостающие блоки найденными и сохранёнными ключами без выбранных словарей. Считанные данные сохраняются.</value>
+  </data>
+  <data name="Cards_ExportFoundKeys" xml:space="preserve">
+    <value>Экспорт найденных ключей</value>
+  </data>
+  <data name="Cards_KeysToFile" xml:space="preserve">
+    <value>Сохранить в файл .dic</value>
+  </data>
+  <data name="Cards_KeysToNewDictionary" xml:space="preserve">
+    <value>Создать словарь</value>
+  </data>
+  <data name="Cards_KeysToExistingDictionary" xml:space="preserve">
+    <value>Добавить в словарь</value>
+  </data>
+  <data name="Cards_KeysSaved" xml:space="preserve">
+    <value>Сохранено ключей: {0} → {1}.</value>
+  </data>
 </root>

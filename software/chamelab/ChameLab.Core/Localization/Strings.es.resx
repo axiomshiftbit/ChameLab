@@ -3924,4 +3924,25 @@ Bytes iguales: {1}; distintos: {2}; desconocidos: {3}.</value>
   <data name="Capabilities_UlcKeySearch" xml:space="preserve">
     <value>Ultralight C key search</value>
   </data>
+  <data name="Cards_ReadData" xml:space="preserve">
+    <value>Leer datos de la tarjeta</value>
+  </data>
+  <data name="Cards_ReadDataHint" xml:space="preserve">
+    <value>Leer los bloques pendientes con las claves encontradas y guardadas, sin los diccionarios seleccionados. Se conservan los datos leídos.</value>
+  </data>
+  <data name="Cards_ExportFoundKeys" xml:space="preserve">
+    <value>Exportar claves encontradas</value>
+  </data>
+  <data name="Cards_KeysToFile" xml:space="preserve">
+    <value>Guardar en un archivo .dic</value>
+  </data>
+  <data name="Cards_KeysToNewDictionary" xml:space="preserve">
+    <value>Crear un diccionario</value>
+  </data>
+  <data name="Cards_KeysToExistingDictionary" xml:space="preserve">
+    <value>Añadir a un diccionario</value>
+  </data>
+  <data name="Cards_KeysSaved" xml:space="preserve">
+    <value>Claves guardadas: {0} → {1}.</value>
+  </data>
 </root>

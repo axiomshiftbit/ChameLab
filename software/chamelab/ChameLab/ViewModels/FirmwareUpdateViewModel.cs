@@ -50,7 +50,8 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
         _service = service;
         _backupService = backupService;
         CheckCommand = ReactiveCommand.CreateFromTask(() => CheckAsync(force: true));
-        InstallLatestCommand = ReactiveCommand.Create(ShowInstallLatest);
+        InstallLatestCommand = ReactiveCommand.Create(ShowInstallLatest,
+            this.WhenAnyValue(x => x.CanInstallLatest));
         InstallFromFileCommand = ReactiveCommand.CreateFromTask(InstallFromFileAsync);
         ConfirmCommand = ReactiveCommand.CreateFromTask(InstallAsync);
         RetryCommand = ReactiveCommand.CreateFromTask(InstallAsync);
@@ -94,7 +95,7 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
 
     public bool IsChecking => _checkState == FirmwareCheckState.Checking;
     public bool IsUpdateAvailable => _checkState == FirmwareCheckState.Available;
-    public bool CanInstallLatest => !IsChecking && CanInstall && _latest?.PackageUrl is not null;
+    public bool CanInstallLatest => IsUpdateAvailable && CanInstall && _latest?.PackageUrl is not null;
 
     public string CheckMessage
     {
@@ -233,7 +234,7 @@ public sealed class FirmwareUpdateViewModel : ViewModelBase
 
     private void ShowInstallLatest()
     {
-        if (_latest is null) return;
+        if (!CanInstallLatest || _latest is null) return;
         _pendingRelease = _latest;
         _pendingFile = null;
         _package = null;

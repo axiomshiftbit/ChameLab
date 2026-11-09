@@ -3924,4 +3924,25 @@
   <data name="Capabilities_UlcKeySearch" xml:space="preserve">
     <value>Ultralight C key search</value>
   </data>
+  <data name="Cards_ReadData" xml:space="preserve">
+    <value>カードデータを読み取る</value>
+  </data>
+  <data name="Cards_ReadDataHint" xml:space="preserve">
+    <value>選択した辞書を使わず、検出・保存済みの鍵で未読ブロックを読み取ります。読み取り済みのデータは保持されます。</value>
+  </data>
+  <data name="Cards_ExportFoundKeys" xml:space="preserve">
+    <value>検出した鍵をエクスポート</value>
+  </data>
+  <data name="Cards_KeysToFile" xml:space="preserve">
+    <value>.dic ファイルに保存</value>
+  </data>
+  <data name="Cards_KeysToNewDictionary" xml:space="preserve">
+    <value>辞書を作成</value>
+  </data>
+  <data name="Cards_KeysToExistingDictionary" xml:space="preserve">
+    <value>辞書に追加</value>
+  </data>
+  <data name="Cards_KeysSaved" xml:space="preserve">
+    <value>保存した鍵: {0} → {1}。</value>
+  </data>
 </root>

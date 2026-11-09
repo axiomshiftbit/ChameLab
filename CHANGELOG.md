@@ -9,6 +9,9 @@ Each release (v1.4.35 on) opens with `### Summary`, up to three of its most impo
 
 ## [unreleased][unreleased]
 
+- The firmware update action is unavailable when the installed version is current or newer, including after reconnecting from an update.
+- Cards: read missing MIFARE Classic blocks with found or saved keys without another dictionary pass; export unique known keys to a `.dic` file or a new/existing dictionary.
+
 ## [v1.5.2][2026-11-07] · firmware v2.3.18-cl
 ### Summary
  - Android: smoother page navigation, BLE recovery after returning to the app, and an unclipped startup logo.

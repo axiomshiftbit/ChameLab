@@ -3924,4 +3924,25 @@
   <data name="Capabilities_UlcKeySearch" xml:space="preserve">
     <value>Ultralight C key search</value>
   </data>
+  <data name="Cards_ReadData" xml:space="preserve">
+    <value>读取卡片数据</value>
+  </data>
+  <data name="Cards_ReadDataHint" xml:space="preserve">
+    <value>使用已找到和保存的密钥读取缺失的块，不使用所选字典。保留已读取的数据。</value>
+  </data>
+  <data name="Cards_ExportFoundKeys" xml:space="preserve">
+    <value>导出已找到的密钥</value>
+  </data>
+  <data name="Cards_KeysToFile" xml:space="preserve">
+    <value>保存为 .dic 文件</value>
+  </data>
+  <data name="Cards_KeysToNewDictionary" xml:space="preserve">
+    <value>创建字典</value>
+  </data>
+  <data name="Cards_KeysToExistingDictionary" xml:space="preserve">
+    <value>添加到字典</value>
+  </data>
+  <data name="Cards_KeysSaved" xml:space="preserve">
+    <value>已保存的密钥：{0} → {1}。</value>
+  </data>
 </root>

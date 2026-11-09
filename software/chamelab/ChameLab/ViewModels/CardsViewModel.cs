@@ -91,6 +91,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
 
     private void UpdateRecoveryMethods()
     {
+        RaiseReadDataActions();
         this.RaisePropertyChanged(nameof(ShowCheckRecovery));
         this.RaisePropertyChanged(nameof(ShowMfkey32));
         this.RaisePropertyChanged(nameof(ShowDarkside));
@@ -186,6 +187,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         Mfkey32Command = ReactiveCommand.CreateFromTask(() => _mfkey32Task = RunMfkey32Async(),
             this.WhenAnyValue(x => x.CanRunMfkey32));
         CancelDumpCommand = ReactiveCommand.Create(CancelDump);
+        InitializeReadDataActions();
         ImportCommand = ReactiveCommand.CreateFromTask(ImportAsync);
         ManualCommand = ReactiveCommand.Create(BeginManual);
         CancelAddCommand = ReactiveCommand.Create(CancelAdd);
@@ -2049,6 +2051,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
     /// <summary>Rebuilds the source list from the dictionary library, keeping earlier unchecks.</summary>
     private void RebuildKeySources()
     {
+        this.RaisePropertyChanged(nameof(KeyExportDictionaries));
         DumpKeySources.Clear();
         DumpKeySources.Add(NewKeySource(KnownCardKeys.Id, KnownCardKeys.Name,
             _classicDump is { } dump ? _dictionaries.KnownKeys.ForUid(dump.Uid) : Array.Empty<byte[]>()));

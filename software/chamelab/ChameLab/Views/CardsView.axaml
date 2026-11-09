@@ -3,6 +3,7 @@
  xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
              xmlns:loc="using:ChameLab.Localization"
              xmlns:vm="using:ChameLab.ViewModels"
+             xmlns:m="using:ChameLab.Models"
              xmlns:views="using:ChameLab.Views"
              xmlns:conv="using:ChameLab.Converters"
              xmlns:b="using:ChameLab.Behaviors"
@@ -917,6 +918,50 @@
                               ToolTip.Tip="{x:Static loc:Strings.Cards_PWD4BytesForNTAGUltralight}" />
                   </c:KeyRecoveryPanel.ToolbarContent>
                 </c:KeyRecoveryPanel>
+
+                <StackPanel Spacing="6" IsVisible="{Binding ShowReadDataActions}">
+                  <WrapPanel ItemSpacing="8" LineSpacing="8">
+                    <Button Command="{Binding ReadCardDataCommand}"
+                            ToolTip.Tip="{x:Static loc:Strings.Cards_ReadDataHint}">
+                      <TextBlock Text="{x:Static loc:Strings.Cards_ReadData}" TextWrapping="Wrap" />
+                    </Button>
+                    <Button IsEnabled="{Binding CanExportFoundKeys}" ToolTip.Tip="{Binding FoundKeyCountText}">
+                      <TextBlock Text="{x:Static loc:Strings.Cards_ExportFoundKeys}" TextWrapping="Wrap" />
+                      <Button.Flyout>
+                        <Flyout Placement="BottomEdgeAlignedLeft">
+                          <StackPanel Width="260" Spacing="8">
+                            <TextBlock Text="{Binding FoundKeyCountText}" Classes="caption" />
+                            <Button Command="{Binding ExportFoundKeysCommand}" IsEnabled="{Binding CanUseFiles}"
+                                    Tapped="OnFlyoutPickTapped" HorizontalAlignment="Stretch">
+                              <TextBlock Text="{x:Static loc:Strings.Cards_KeysToFile}" TextWrapping="Wrap" />
+                            </Button>
+                            <Button Command="{Binding SaveFoundKeysCommand}" Tapped="OnFlyoutPickTapped"
+                                    HorizontalAlignment="Stretch">
+                              <TextBlock Text="{x:Static loc:Strings.Cards_KeysToNewDictionary}" TextWrapping="Wrap" />
+                            </Button>
+                            <TextBlock Text="{x:Static loc:Strings.Cards_KeysToExistingDictionary}"
+                                       Classes="caption" TextWrapping="Wrap" />
+                            <ScrollViewer MaxHeight="240" HorizontalScrollBarVisibility="Disabled">
+                              <ItemsControl ItemsSource="{Binding KeyExportDictionaries}">
+                                <ItemsControl.ItemTemplate>
+                                  <DataTemplate x:DataType="m:KeyDictionary">
+                                    <Button Command="{Binding $parent[ItemsControl].((vm:CardsViewModel)DataContext).AddFoundKeysCommand}"
+                                            CommandParameter="{Binding}" Tapped="OnFlyoutPickTapped"
+                                            HorizontalAlignment="Stretch" Margin="0,2">
+                                      <TextBlock Text="{Binding Name}" TextWrapping="Wrap" MaxLines="2"
+                                                 TextTrimming="CharacterEllipsis" />
+                                    </Button>
+                                  </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                              </ItemsControl>
+                            </ScrollViewer>
+                          </StackPanel>
+                        </Flyout>
+                      </Button.Flyout>
+                    </Button>
+                  </WrapPanel>
+                  <TextBlock Text="{x:Static loc:Strings.Cards_ReadDataHint}" Classes="caption" TextWrapping="Wrap" />
+                </StackPanel>
 
                 <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding DumpPasswordError}"
                            Foreground="{actipro:ThemeResource ControlForegroundBrushOutlineDanger}">
