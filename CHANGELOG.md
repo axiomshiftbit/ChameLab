@@ -9,6 +9,13 @@ Each release (v1.4.35 on) opens with `### Summary`, up to three of its most impo
 
 ## [unreleased][unreleased]
 
+## [v1.5.3][2026-11-10] · firmware v2.3.19-cl
+### Summary
+ - Linux: the desktop app and the command line client find a connected Chameleon and its DFU bootloader again.
+ - Windows: a firmware update finds the bootloader again, fixing the timeout seen in 1.5.1 and 1.5.2.
+ - Cards: read missing MIFARE Classic blocks with found or saved keys, and export known keys to a dictionary.
+
+### Details
 - The firmware update action is unavailable when the installed version is current or newer, including after reconnecting from an update.
 - Cards: read missing MIFARE Classic blocks with found or saved keys without another dictionary pass; export unique known keys to a `.dic` file or a new/existing dictionary.
 - Linux: the desktop app and the CLI find a connected Chameleon and its DFU bootloader again. The USB ids were read through a wrongly resolved sysfs link, so no device was listed and a firmware update could not find the bootloader. Checked on a Chameleon Ultra: detection and a complete update over USB.

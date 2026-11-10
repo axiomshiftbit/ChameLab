@@ -17,12 +17,13 @@ command-line client.
 [Development builds](https://github.com/axiomshiftbit/ChameLab/actions/workflows/ui-quality.yml) ·
 [Changelog](CHANGELOG.md) · [Authors and licenses](AUTHORS.md)
 
-## Version 1.5.2
+## Version 1.5.3
 
-App **1.5.2** ships with firmware **2.3.18-cl**. This release fixes the Android splash,
-BLE recovery and card details layout, and restores Gen explanations. Firmware improves
-handling of memory allocation failures, slot metadata, LF samples and sleep cancellation
-on connection. See the [changelog](CHANGELOG.md) for details.
+App **1.5.3** ships with firmware **2.3.19-cl**. This release restores firmware updates:
+on Linux the app and the CLI find a connected Chameleon and its DFU bootloader again, and
+on Windows an update finds the bootloader of the composite USB device, fixing the timeout
+seen in 1.5.1 and 1.5.2. Firmware guards the software timer pool against exhaustion. See
+the [changelog](CHANGELOG.md) for details.
 
 ## Choose a download
 
