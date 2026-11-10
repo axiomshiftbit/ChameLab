@@ -12,6 +12,7 @@ Each release (v1.4.35 on) opens with `### Summary`, up to three of its most impo
 - The firmware update action is unavailable when the installed version is current or newer, including after reconnecting from an update.
 - Cards: read missing MIFARE Classic blocks with found or saved keys without another dictionary pass; export unique known keys to a `.dic` file or a new/existing dictionary.
 - Linux: the desktop app and the CLI find a connected Chameleon and its DFU bootloader again. The USB ids were read through a wrongly resolved sysfs link, so no device was listed and a firmware update could not find the bootloader. Checked on a Chameleon Ultra: detection and a complete update over USB.
+- Windows: a firmware update finds the bootloader again. Its serial port belongs to an interface of a composite USB device, while the port was looked up on the device node named after the serial number, so the update stopped with "The device did not show up in its bootloader" (1.5.1 and 1.5.2). Checked on a Chameleon Ultra with a complete update over USB.
 - Firmware: an exhausted software timer pool reports a timeout instead of handing out memory past the end of the pool.
 
 ## [v1.5.2][2026-11-07] · firmware v2.3.18-cl

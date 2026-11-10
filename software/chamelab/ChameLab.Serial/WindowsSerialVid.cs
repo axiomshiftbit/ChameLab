@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Microsoft.Win32;
@@ -28,7 +29,23 @@ internal static class WindowsSerialVid
             @"SYSTEM\CurrentControlSet\Enum\USB");
         if (usb is null) return false;
 
-        foreach (var deviceKeyName in usb.GetSubKeyNames())
+        var deviceKeyNames = usb.GetSubKeyNames();
+        // Only the device node is named after the serial number. The Chameleon and its bootloader
+        // are composite devices, so the port belongs to an interface node instead:
+        // USB\VID_x&PID_y&MI_00\<the device's ParentIdPrefix>&0000.
+        var interfacePrefixes = new List<string>();
+        if (serial is not null)
+        {
+            foreach (var deviceKeyName in deviceKeyNames)
+            {
+                if (!deviceKeyName.Contains(usbId, StringComparison.OrdinalIgnoreCase)) continue;
+                using var device = usb.OpenSubKey($@"{deviceKeyName}\{serial}");
+                if (device?.GetValue("ParentIdPrefix") is string prefix && prefix.Length > 0)
+                    interfacePrefixes.Add(prefix + "&");
+            }
+        }
+
+        foreach (var deviceKeyName in deviceKeyNames)
         {
             if (!deviceKeyName.Contains(usbId, StringComparison.OrdinalIgnoreCase))
                 continue;
@@ -38,7 +55,7 @@ internal static class WindowsSerialVid
 
             foreach (var instanceName in deviceKey.GetSubKeyNames())
             {
-                if (serial is not null && !string.Equals(instanceName, serial, StringComparison.OrdinalIgnoreCase)) continue;
+                if (serial is not null && !InstanceOfSerial(instanceName, serial, interfacePrefixes)) continue;
                 using var paramsKey = deviceKey.OpenSubKey(
                     $@"{instanceName}\Device Parameters");
                 if (paramsKey?.GetValue("PortName") is string pn &&
@@ -47,6 +64,15 @@ internal static class WindowsSerialVid
                     return true;
             }
         }
+        return false;
+    }
+
+    /// <summary>The device node itself, or an interface node of the composite device with that serial number.</summary>
+    internal static bool InstanceOfSerial(string instanceName, string serial, IReadOnlyList<string> interfacePrefixes)
+    {
+        if (string.Equals(instanceName, serial, StringComparison.OrdinalIgnoreCase)) return true;
+        foreach (var prefix in interfacePrefixes)
+            if (instanceName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return true;
         return false;
     }
 
