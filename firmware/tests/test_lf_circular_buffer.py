@@ -14,15 +14,17 @@ extern pthread_mutex_t irq_mutex;
 #define CRITICAL_REGION_EXIT() pthread_mutex_unlock(&irq_mutex); }
 ''')
     (temp / "test.c").write_text(r'''
+#define _POSIX_C_SOURCE 200809L
 #include <assert.h>
 #include <pthread.h>
+#include <sched.h>
 #include <stdint.h>
 #include <stdio.h>
 #include "circular_buffer.h"
 pthread_mutex_t irq_mutex = PTHREAD_MUTEX_INITIALIZER;
 static circular_buffer cb;
 static void *producer(void *unused) {
-    for(uint32_t i=0;i<1000000;i++) while(!cb_push_back(&cb,&i)) {}
+    for(uint32_t i=0;i<1000000;i++) while(!cb_push_back(&cb,&i)) sched_yield();
     return NULL;
 }
 int main(void) {
@@ -34,7 +36,7 @@ int main(void) {
     for(uint32_t i=0;i<7;i++) { assert(cb_pop_front(&cb,&out));assert(out==i); }
     pthread_t thread;assert(pthread_create(&thread,NULL,producer,NULL)==0);
     for(uint32_t i=0;i<1000000;i++) {
-        while(!cb_pop_front(&cb,&out)) {}
+        while(!cb_pop_front(&cb,&out)) sched_yield();
         assert(out==i);
     }
     assert(pthread_join(thread,NULL)==0);
