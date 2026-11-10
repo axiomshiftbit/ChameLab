@@ -152,10 +152,15 @@ public sealed class SerialScanner : ITransportScanner, IManualSerialScanner
     /// Reads a USB id (idVendor / idProduct) for a tty from sysfs: /sys/class/tty/ttyACM0/device
     /// is the USB interface, whose parent directory is the USB device holding the ids.
     /// </summary>
-    internal static string? LinuxUsbId(string portName, string file)
+    internal static string? LinuxUsbId(string portName, string file, string sysfs = "/sys")
     {
-        var tty = Path.GetFileName(portName);
-        var iface = new DirectoryInfo($"/sys/class/tty/{tty}/device");
+        // .NET resolves a relative link against the path as written, not as the kernel does.
+        // /sys/class/tty/ttyACM0 is itself a link into /sys/devices, so resolve it first:
+        // "device" (../../../3-2:1.0) is relative to that real directory.
+        var tty = new DirectoryInfo(Path.Combine(sysfs, "class", "tty", Path.GetFileName(portName)));
+        if (!tty.Exists) return null;
+        tty = tty.ResolveLinkTarget(returnFinalTarget: true) as DirectoryInfo ?? tty;
+        var iface = new DirectoryInfo(Path.Combine(tty.FullName, "device"));
         if (!iface.Exists) return null;
         var target = iface.ResolveLinkTarget(returnFinalTarget: true) as DirectoryInfo ?? iface;
         var idFile = Path.Combine(target.Parent?.FullName ?? "", file);

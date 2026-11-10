@@ -6,5 +6,6 @@
   <ItemGroup>
     <ProjectReference Include="../ChameLab.Core/ChameLab.Core.csproj" />
     <PackageReference Include="System.IO.Ports" />
+    <InternalsVisibleTo Include="ChameLab.Cli.Tests" />
   </ItemGroup>
 </Project>
