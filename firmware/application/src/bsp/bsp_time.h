@@ -20,7 +20,8 @@ typedef struct {
 
 
 // Realize a grand definition of judgment timeout
-#define NO_TIMEOUT_1MS(timer, count)    ((((autotimer*)timer)->time <= (count))?  1: 0)
+// A NULL timer (pool exhausted) counts as timed out
+#define NO_TIMEOUT_1MS(timer, count)    (((timer) != NULL && ((autotimer*)(timer))->time <= (count))?  1: 0)
 
 void bsp_timer_init(void);
 void bsp_timer_uninit(void);

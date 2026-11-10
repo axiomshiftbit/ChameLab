@@ -76,6 +76,7 @@ jobs:
           python3 firmware/tests/test_slot_save_retry.py
           python3 firmware/tests/test_lf_allocations.py
           python3 firmware/tests/test_lf_circular_buffer.py
+          python3 firmware/tests/test_bsp_timer_pool.py
           python3 firmware/tests/test_sleep_cancellation.py
           python3 firmware/tests/test_hf_selection.py
       - name: Work out the firmware version

@@ -26,22 +26,23 @@ static volatile enum {
 * 2. It's free
 */
 autotimer *bsp_obtain_timer(uint32_t start_value) {
-    uint8_t i;
-    for (i = 0; i < TIMER_BSP_COUNT; i++) {
+    for (uint8_t i = 0; i < TIMER_BSP_COUNT; i++) {
         if (bsptimers[i].busy == 0) {
             bsptimers[i].time = start_value;
             bsptimers[i].busy = 1;
-            break;
+            return &bsptimers[i];
         }
     }
-    return &bsptimers[i];
+    // Pool exhausted. Never hand out the element past the end of the pool:
+    // NO_TIMEOUT_1MS(NULL, ...) reports an immediate timeout instead.
+    return NULL;
 }
 
 /*
 * Set the timer, the operation will operate the target timer and modify the current value
 */
 inline uint8_t bsp_set_timer(autotimer *timer, uint32_t start_value) {
-    if (timer->busy == 0) return 0;
+    if (timer == NULL || timer->busy == 0) return 0;
     timer->time = start_value;
     return 1;
 }
@@ -51,6 +52,7 @@ inline uint8_t bsp_set_timer(autotimer *timer, uint32_t start_value) {
 * And zero to the timer
 */
 inline void bsp_return_timer(autotimer *timer) {
+    if (timer == NULL) return;
     timer->busy = 0;
     timer->time = 0;
 }
