@@ -7,6 +7,7 @@ using Xunit;
 
 namespace ChameLab.Tests.Crypto;
 
+[Collection(nameof(RecoveryOptimizationCollection))]
 public class HardnestedOptimizationTests
 {
     [Fact]

@@ -8,6 +8,11 @@ using Xunit;
 
 namespace ChameLab.Tests.Crypto;
 
+[CollectionDefinition(nameof(RecoveryOptimizationCollection), DisableParallelization = true)]
+public sealed class RecoveryOptimizationCollection { }
+
+// These exhaustive CPU/memory checks must not starve the simulated transport's reply loop.
+[Collection(nameof(RecoveryOptimizationCollection))]
 public class RecoveryOptimizationTests
 {
     [Fact]
