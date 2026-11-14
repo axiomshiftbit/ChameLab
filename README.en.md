@@ -65,6 +65,9 @@ Actions artifact archive first.
 2. **Cards → Add card.** First test HF/LF card detection. If nothing is found, move the
    card closer, turn it over and scan again. Read a supported card or import a saved file,
    then save it to the library.
+   “Auto” selects an applicable MIFARE Classic recovery method and reuses found keys across
+   the remaining sectors. Search settings control batch checks, the starting sector and order.
+   “Stop” preserves results for continuation.
    MIFARE Classic key recovery reads accessible blocks automatically. “Read card data” fills
    missing blocks with found and saved keys without the selected dictionaries, keeping existing
    data. “Export found keys” saves unique keys to `.dic`, a new dictionary or an existing one;

@@ -39,8 +39,67 @@
           SizeChanged="OnMemoryToolbarSizeChanged">
       <!-- The host's extra controls (the Ultralight password) take the room right of the buttons. -->
       <DockPanel IsVisible="{Binding ShowDumpActions}" VerticalAlignment="Center">
-        <c:ActionRow DockPanel.Dock="Left" Classes="attackactions" Spacing="6"
+        <c:ActionRow DockPanel.Dock="Left" Classes="attackactions" Spacing="6" Wrap="True"
                     VerticalAlignment="Center" IsEnabled="{Binding !IsBusy}">
+          <Button c:ActionRow.Priority="5" IsVisible="{Binding !IsUltralightDump}" Padding="0" Width="40"
+                  ToolTip.Tip="{x:Static loc:Strings.KeySearch_Options}"
+                  AutomationProperties.Name="{x:Static loc:Strings.KeySearch_Options}">
+            <PathIcon Data="{StaticResource Icon.settings}" Width="16" Height="16" />
+            <Button.Flyout>
+              <Flyout Placement="BottomEdgeAlignedLeft" OverlayDismissEventPassThrough="True">
+                <ScrollViewer MaxHeight="520" HorizontalScrollBarVisibility="Disabled">
+                  <StackPanel Spacing="10" Margin="12" IsEnabled="{Binding !IsBusy}">
+                    <TextBlock Text="{Binding KeySearchSettings.Title}" Classes="overline" />
+                    <TextBlock Text="{x:Static loc:Strings.KeySearch_Method}" Classes="caption" />
+                    <Border Classes="segmented compact">
+                      <StackPanel>
+                        <RadioButton Classes="segment" IsChecked="{Binding KeySearchSettings.SingleKey}">
+                          <TextBlock Text="{x:Static loc:Strings.KeySearch_SingleKey}" TextWrapping="Wrap" />
+                        </RadioButton>
+                        <RadioButton Classes="segment" IsChecked="{Binding KeySearchSettings.AllSectors}">
+                          <TextBlock Text="{x:Static loc:Strings.KeySearch_AllSectors}" TextWrapping="Wrap" />
+                        </RadioButton>
+                        <RadioButton Classes="segment" IsChecked="{Binding KeySearchSettings.OneSector}">
+                          <TextBlock Text="{x:Static loc:Strings.KeySearch_OneSector}" TextWrapping="Wrap" />
+                        </RadioButton>
+                      </StackPanel>
+                    </Border>
+                    <TextBlock Text="{x:Static loc:Strings.KeySearch_Start}" Classes="caption" />
+                    <Border Classes="segmented compact">
+                      <StackPanel>
+                        <RadioButton Classes="segment" IsChecked="{Binding KeySearchSettings.FromBeginning}">
+                          <TextBlock Text="{x:Static loc:Strings.KeySearch_Beginning}" TextWrapping="Wrap" />
+                        </RadioButton>
+                        <RadioButton Classes="segment" IsChecked="{Binding KeySearchSettings.FromSelected}">
+                          <TextBlock Text="{x:Static loc:Strings.KeySearch_Selected}" TextWrapping="Wrap" />
+                        </RadioButton>
+                      </StackPanel>
+                    </Border>
+                    <TextBlock Text="{x:Static loc:Strings.KeySearch_Order}" Classes="caption" />
+                    <Border Classes="segmented compact">
+                      <StackPanel>
+                        <RadioButton Classes="segment" IsChecked="{Binding KeySearchSettings.Sequential}">
+                          <TextBlock Text="{x:Static loc:Strings.KeySearch_Sequential}" TextWrapping="Wrap" />
+                        </RadioButton>
+                        <RadioButton Classes="segment" IsChecked="{Binding KeySearchSettings.Random}">
+                          <TextBlock Text="{x:Static loc:Strings.KeySearch_Random}" TextWrapping="Wrap" />
+                        </RadioButton>
+                      </StackPanel>
+                    </Border>
+                  </StackPanel>
+                </ScrollViewer>
+              </Flyout>
+            </Button.Flyout>
+          </Button>
+          <Button Classes="responsive accent theme-soft" c:ActionRow.Priority="4"
+                  Command="{Binding AutoRecoveryCommand}" IsVisible="{Binding ShowAutoRecovery}"
+                  ToolTip.Tip="{x:Static loc:Strings.AutoRecovery_Tip}"
+                  AutomationProperties.Name="{x:Static loc:Strings.AutoRecovery_Label}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <c:AttackIcon Label="A" />
+              <TextBlock Classes="action-label" Text="{x:Static loc:Strings.AutoRecovery_Label}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
           <Grid MinHeight="40" c:ActionRow.Priority="3">
             <Grid.Styles>
               <Style Selector="Button.dump-main">

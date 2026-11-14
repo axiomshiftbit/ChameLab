@@ -3945,4 +3945,80 @@ Gleiche Bytes: {1}; unterschiedlich: {2}; unbekannt: {3}.</value>
   <data name="Cards_KeysSaved" xml:space="preserve">
     <value>Gespeicherte Schlüssel: {0} → {1}.</value>
   </data>
+  <data name="Common_All" xml:space="preserve">
+    <value>Alle</value>
+  </data>
+  <data name="Common_None" xml:space="preserve">
+    <value>Keine</value>
+  </data>
+  <data name="Common_Start" xml:space="preserve">
+    <value>Starten</value>
+  </data>
+  <data name="KeySearch_Options" xml:space="preserve">
+    <value>Schlüsselsuche</value>
+  </data>
+  <data name="KeySearch_Method" xml:space="preserve">
+    <value>Suchmethode</value>
+  </data>
+  <data name="KeySearch_SingleKey" xml:space="preserve">
+    <value>Ein Schlüssel nach dem anderen</value>
+  </data>
+  <data name="KeySearch_AllSectors" xml:space="preserve">
+    <value>Stapel über alle Sektoren</value>
+  </data>
+  <data name="KeySearch_OneSector" xml:space="preserve">
+    <value>Stapel in einem Sektor</value>
+  </data>
+  <data name="KeySearch_Start" xml:space="preserve">
+    <value>Startsektor</value>
+  </data>
+  <data name="KeySearch_Beginning" xml:space="preserve">
+    <value>Erster Sektor</value>
+  </data>
+  <data name="KeySearch_Selected" xml:space="preserve">
+    <value>Ausgewählter Sektor</value>
+  </data>
+  <data name="KeySearch_Order" xml:space="preserve">
+    <value>Sektorreihenfolge</value>
+  </data>
+  <data name="KeySearch_Sequential" xml:space="preserve">
+    <value>Nacheinander</value>
+  </data>
+  <data name="KeySearch_Random" xml:space="preserve">
+    <value>Zufällig</value>
+  </data>
+  <data name="Recovery_StaticEncNotStatic" xml:space="preserve">
+    <value>Die verschlüsselten Nonces der Karte ändern sich zwischen den Erfassungen. Static encrypted nested kann diese Schlüssel nicht wiederherstellen. Verwenden Sie Nested oder Hardnested.</value>
+  </data>
+  <data name="Common_SizeKilobytes" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Common_SizeMegabytes" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+  <data name="AutoRecovery_Label" xml:space="preserve"><value>Auto</value></data>
+  <data name="AutoRecovery_Tip" xml:space="preserve"><value>Jeden gefundenen Schlüssel an den übrigen Sektoren prüfen und dann automatisch eine Methode für unbekannte Schlüssel wählen. Verwendet die ausgewählten Schlüsselwörterbücher.</value></data>
+  <data name="AutoRecovery_Choosing" xml:space="preserve"><value>Auto: Nächsten Schritt auswählen…</value></data>
+  <data name="AutoRecovery_Reusing" xml:space="preserve"><value>Auto: Gefundene Schlüssel an den übrigen Sektoren prüfen…</value></data>
+  <data name="AutoRecovery_NextMethod" xml:space="preserve"><value>Als Nächstes: {0}</value></data>
+  <data name="AutoRecovery_Incomplete" xml:space="preserve"><value>Automatische Wiederherstellung beendet. Noch unbekannte Schlüssel: {0}. Gefundene Schlüssel wurden gespeichert.</value></data>
+  <data name="AutoRecovery_TryReader" xml:space="preserve"><value>Weitere Wörterbücher oder mfkey32 mit dem ursprünglichen Lesegerät versuchen, dann Auto erneut starten.</value></data>
+  <data name="Device_NoBatchKeyCheck" xml:space="preserve">
+    <value>Diese Firmware unterstützt keine Stapelprüfung von Schlüsseln.</value>
+  </data>
+  <data name="Dictionaries_AllCardTypes" xml:space="preserve">
+    <value>Alle Typen</value>
+  </data>
+  <data name="Dictionaries_CardTypeUnknown" xml:space="preserve">
+    <value>Unbekannt</value>
+  </data>
+  <data name="Dictionaries_FilterByCardType" xml:space="preserve">
+    <value>Nach Kartentyp filtern</value>
+  </data>
+  <data name="Dictionaries_CardType" xml:space="preserve">
+    <value>Typ</value>
+  </data>
+  <data name="Dictionaries_KnownPassword" xml:space="preserve">
+    <value>Passwort</value>
+  </data>
 </root>

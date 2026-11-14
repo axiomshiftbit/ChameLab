@@ -20,7 +20,7 @@ sealed class Program
         AppServices.Register([], store: new MemoryKeyValueStore());
 #else
         AppServices.Register(new ITransportScanner[] { new SerialScanner() }, dfu: new IDfuLocator[] { new SerialDfuLocator() },
-            hardnested: new ManagedHardnestedEngine());
+            hardnested: new ManagedHardnestedEngine(), wakeLock: new WakeLockService(DesktopWakeLock.AcquireAsync));
 #endif
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }

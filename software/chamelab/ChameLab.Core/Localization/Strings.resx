@@ -3948,4 +3948,94 @@ Equal bytes: {1}; different: {2}; unknown: {3}.</value>
   <data name="Cards_KeysSaved" xml:space="preserve">
     <value>Keys saved: {0} → {1}.</value>
   </data>
+  <data name="Common_All" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="Common_None" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="Common_Start" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="KeySearch_Options" xml:space="preserve">
+    <value>Key search options</value>
+  </data>
+  <data name="KeySearch_Method" xml:space="preserve">
+    <value>Search method</value>
+  </data>
+  <data name="KeySearch_SingleKey" xml:space="preserve">
+    <value>One key at a time</value>
+  </data>
+  <data name="KeySearch_AllSectors" xml:space="preserve">
+    <value>Batches across all sectors</value>
+  </data>
+  <data name="KeySearch_OneSector" xml:space="preserve">
+    <value>Batches in one sector</value>
+  </data>
+  <data name="KeySearch_Start" xml:space="preserve">
+    <value>Start sector</value>
+  </data>
+  <data name="KeySearch_Beginning" xml:space="preserve">
+    <value>First sector</value>
+  </data>
+  <data name="KeySearch_Selected" xml:space="preserve">
+    <value>Selected sector</value>
+  </data>
+  <data name="KeySearch_Order" xml:space="preserve">
+    <value>Sector order</value>
+  </data>
+  <data name="KeySearch_Sequential" xml:space="preserve">
+    <value>Sequential</value>
+  </data>
+  <data name="KeySearch_Random" xml:space="preserve">
+    <value>Random</value>
+  </data>
+  <data name="Recovery_StaticEncNotStatic" xml:space="preserve">
+    <value>The card's encrypted nonces change between captures. Static encrypted nested cannot recover these keys. Try Nested or Hardnested instead.</value>
+  </data>
+  <data name="Common_SizeKilobytes" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Common_SizeMegabytes" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+  <data name="AutoRecovery_Label" xml:space="preserve">
+    <value>Auto</value>
+  </data>
+  <data name="AutoRecovery_Tip" xml:space="preserve">
+    <value>Check each recovered key across remaining sectors, then automatically choose a recovery method for unknown keys. Uses the selected key dictionaries.</value>
+  </data>
+  <data name="AutoRecovery_Choosing" xml:space="preserve">
+    <value>Auto: choosing the next step…</value>
+  </data>
+  <data name="AutoRecovery_Reusing" xml:space="preserve">
+    <value>Auto: checking recovered keys across remaining sectors…</value>
+  </data>
+  <data name="AutoRecovery_NextMethod" xml:space="preserve">
+    <value>Next: {0}</value>
+  </data>
+  <data name="AutoRecovery_Incomplete" xml:space="preserve">
+    <value>Auto recovery stopped with {0} keys still unknown. Recovered keys have been kept.</value>
+  </data>
+  <data name="AutoRecovery_TryReader" xml:space="preserve">
+    <value>Try additional dictionaries or use mfkey32 with the original reader, then run Auto again.</value>
+  </data>
+  <data name="Device_NoBatchKeyCheck" xml:space="preserve">
+    <value>This firmware does not support checking keys in batches.</value>
+  </data>
+  <data name="Dictionaries_AllCardTypes" xml:space="preserve">
+    <value>All types</value>
+  </data>
+  <data name="Dictionaries_CardTypeUnknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="Dictionaries_FilterByCardType" xml:space="preserve">
+    <value>Filter by card type</value>
+  </data>
+  <data name="Dictionaries_CardType" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Dictionaries_KnownPassword" xml:space="preserve">
+    <value>Password</value>
+  </data>
 </root>

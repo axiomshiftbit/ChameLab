@@ -3945,4 +3945,80 @@ Octets identiques : {1} ; différents : {2} ; inconnus : {3}.</value>
   <data name="Cards_KeysSaved" xml:space="preserve">
     <value>Clés enregistrées : {0} → {1}.</value>
   </data>
+  <data name="Common_All" xml:space="preserve">
+    <value>Tous</value>
+  </data>
+  <data name="Common_None" xml:space="preserve">
+    <value>Aucun</value>
+  </data>
+  <data name="Common_Start" xml:space="preserve">
+    <value>Démarrer</value>
+  </data>
+  <data name="KeySearch_Options" xml:space="preserve">
+    <value>Options de recherche de clés</value>
+  </data>
+  <data name="KeySearch_Method" xml:space="preserve">
+    <value>Méthode de recherche</value>
+  </data>
+  <data name="KeySearch_SingleKey" xml:space="preserve">
+    <value>Une clé à la fois</value>
+  </data>
+  <data name="KeySearch_AllSectors" xml:space="preserve">
+    <value>Lots sur tous les secteurs</value>
+  </data>
+  <data name="KeySearch_OneSector" xml:space="preserve">
+    <value>Lots dans un secteur</value>
+  </data>
+  <data name="KeySearch_Start" xml:space="preserve">
+    <value>Secteur de départ</value>
+  </data>
+  <data name="KeySearch_Beginning" xml:space="preserve">
+    <value>Premier secteur</value>
+  </data>
+  <data name="KeySearch_Selected" xml:space="preserve">
+    <value>Secteur sélectionné</value>
+  </data>
+  <data name="KeySearch_Order" xml:space="preserve">
+    <value>Ordre des secteurs</value>
+  </data>
+  <data name="KeySearch_Sequential" xml:space="preserve">
+    <value>Séquentiel</value>
+  </data>
+  <data name="KeySearch_Random" xml:space="preserve">
+    <value>Aléatoire</value>
+  </data>
+  <data name="Recovery_StaticEncNotStatic" xml:space="preserve">
+    <value>Les nonces chiffrés de la carte changent entre les captures. Static encrypted nested ne peut pas récupérer ces clés. Essayez Nested ou Hardnested.</value>
+  </data>
+  <data name="Common_SizeKilobytes" xml:space="preserve">
+    <value>{0} Ko</value>
+  </data>
+  <data name="Common_SizeMegabytes" xml:space="preserve">
+    <value>{0} Mo</value>
+  </data>
+  <data name="AutoRecovery_Label" xml:space="preserve"><value>Auto</value></data>
+  <data name="AutoRecovery_Tip" xml:space="preserve"><value>Tester chaque clé récupérée sur les secteurs restants, puis choisir automatiquement une méthode pour les clés inconnues. Utilise les dictionnaires sélectionnés.</value></data>
+  <data name="AutoRecovery_Choosing" xml:space="preserve"><value>Auto : choix de la prochaine étape…</value></data>
+  <data name="AutoRecovery_Reusing" xml:space="preserve"><value>Auto : vérification des clés récupérées sur les secteurs restants…</value></data>
+  <data name="AutoRecovery_NextMethod" xml:space="preserve"><value>Ensuite : {0}</value></data>
+  <data name="AutoRecovery_Incomplete" xml:space="preserve"><value>La récupération automatique est terminée. Clés encore inconnues : {0}. Les clés récupérées ont été conservées.</value></data>
+  <data name="AutoRecovery_TryReader" xml:space="preserve"><value>Essayez d'autres dictionnaires ou mfkey32 avec le lecteur d'origine, puis relancez Auto.</value></data>
+  <data name="Device_NoBatchKeyCheck" xml:space="preserve">
+    <value>Ce micrologiciel ne prend pas en charge la vérification des clés par lots.</value>
+  </data>
+  <data name="Dictionaries_AllCardTypes" xml:space="preserve">
+    <value>Tous les types</value>
+  </data>
+  <data name="Dictionaries_CardTypeUnknown" xml:space="preserve">
+    <value>Inconnu</value>
+  </data>
+  <data name="Dictionaries_FilterByCardType" xml:space="preserve">
+    <value>Filtrer par type de carte</value>
+  </data>
+  <data name="Dictionaries_CardType" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Dictionaries_KnownPassword" xml:space="preserve">
+    <value>Mot de passe</value>
+  </data>
 </root>

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -22,7 +23,7 @@ public class ToolsNavigationTests
     [InlineData(360, true)]
     [InlineData(1000, false)]
     [InlineData(1000, true)]
-    public void EveryToolOpensAndReturnsWithTheCorrectHint(int width, bool dark)
+    public async Task EveryToolOpensAndReturnsWithTheCorrectHint(int width, bool dark)
     {
         Application.Current!.RequestedThemeVariant = dark ? ThemeVariant.Dark : ThemeVariant.Light;
         var scene = LayoutScenarios.Create("tools", "ru");
@@ -30,12 +31,20 @@ public class ToolsNavigationTests
         var window = new Window { Width = width, Height = 850, Content = scene };
         window.Show();
         void Settle() { Dispatcher.UIThread.RunJobs(); window.UpdateLayout(); }
-        void Click(Button button)
+        async Task Click(Button button)
         {
             button.BringIntoView(); Settle();
+            // Reactive command availability can arrive after the layout pass.
+            for (var i = 0; i < 200 && !button.IsEffectivelyEnabled; i++)
+            { await Task.Delay(10); Settle(); }
+            Assert.True(button.IsEffectivelyEnabled);
+            // Pointer hit testing uses the rendered scene, which can lag behind layout.
+            using (window.CaptureRenderedFrame()) { }
             var point = button.TranslatePoint(new Point(button.Bounds.Width / 2, button.Bounds.Height / 2), window)!.Value;
             window.MouseMove(point); Settle();
             window.MouseDown(point, MouseButton.Left); window.MouseUp(point, MouseButton.Left); Settle();
+            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+            Settle();
         }
         try
         {
@@ -45,7 +54,7 @@ public class ToolsNavigationTests
             Assert.Equal(ids.Order(), buttons.Select(b => (string)b.CommandParameter!).Order());
             foreach (var id in ids)
             {
-                Click(buttons.Single(b => (string)b.CommandParameter! == id));
+                await Click(buttons.Single(b => (string)b.CommandParameter! == id));
                 Assert.False(model.IsHome);
                 Assert.False(string.IsNullOrWhiteSpace(model.CurrentToolTitle));
                 var texts = scene.GetVisualDescendants().OfType<TextBlock>().Where(t => t.IsEffectivelyVisible).Select(t => t.Text).ToArray();
@@ -57,8 +66,8 @@ public class ToolsNavigationTests
                     Assert.Equal(Strings.Tool_unsupported_firmware, model.HfUnsupportedHint);
                 }
                 if (id == "hf") Assert.Contains(Strings.Tools_TheChameleonAnswersAReaderAs, texts);
-                Click(scene.GetVisualDescendants().OfType<Button>().Single(b => b.Command == model.BackCommand));
-                Assert.True(model.IsHome);
+                await Click(scene.GetVisualDescendants().OfType<Button>().Single(b => b.Command == model.BackCommand));
+                Assert.True(model.IsHome, $"Back did not return from {id}");
             }
         }
         finally { window.Close(); }

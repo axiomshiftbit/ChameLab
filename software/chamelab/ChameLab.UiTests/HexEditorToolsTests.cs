@@ -176,6 +176,8 @@ public class HexEditorToolsTests
             Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
             var editor = view.GetVisualDescendants().OfType<HexEditor>().Single(c => c.Name == "MemoryEditor");
             var toolbar = view.GetVisualDescendants().OfType<HexEditorToolbar>().Single();
+            // This case checks layout; animated focus is covered by the deferred-transition test.
+            toolbar.FindControl<Expander>("Navigation")!.ContentTransition = null;
             editor.Focus();
             editor.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.F, KeyModifiers = KeyModifiers.Control });
             Dispatcher.UIThread.RunJobs();

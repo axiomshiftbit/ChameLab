@@ -65,7 +65,7 @@ public sealed partial class CardsViewModel
     {
         if (!CanReadCardData) return Task.CompletedTask;
         var keys = CardKeys();
-        return RunAsync(async () =>
+        return RunAwakeAsync(async () =>
         {
             if (_device.Client is not { } client || _classicDump is null) return;
             using var cts = new CancellationTokenSource();

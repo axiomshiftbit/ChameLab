@@ -19,7 +19,7 @@ internal sealed partial class Program
         var scanners = new List<ITransportScanner> { new WebSerialScanner() };
         if (bluetooth) scanners.Add(new WebBluetoothScanner());
         AppServices.Register(scanners, new LocalStorageStore(), feedback: new WebFeedbackPlayer(),
-            hardnested: new WebHardnestedEngine(), keyRecovery: new WebKeyRecoveryEngine());
+            hardnested: new WebHardnestedEngine(), keyRecovery: new WebKeyRecoveryEngine(), wakeLock: new WakeLockService(WebWakeLock.AcquireAsync));
 
         return BuildAvaloniaApp()
             .WithInterFont()

@@ -7,6 +7,9 @@ namespace ChameLab.ViewModels;
 /// Reading and writing supply independent card state and operations to the same panel.</summary>
 public interface IKeyRecoveryContext
 {
+    MifareKeySearchSettingsViewModel KeySearchSettings { get; }
+    ICommand AutoRecoveryCommand { get; }
+    bool ShowAutoRecovery { get; }
     bool CanDump { get; }
     bool ShowRecoveryTools { get; }
     bool ShowWriteProgress { get; }

@@ -217,6 +217,88 @@ public class CardReadDataTests
         finally { window.Close(); }
     }
 
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AutoReusesKnownKeysReadsTheCardAndKeepsResultsOnStop(bool stop)
+    {
+        var transport = new CardTransport { AllSectors = true };
+        var device = new DeviceService([new Scanner(transport)]);
+        await device.ConnectAsync(new(TransportKind.Ble, "synthetic", "Synthetic Chameleon"));
+        try
+        {
+            var (model, dictionaries) = Open(device, PartialCard());
+            dictionaries.Add(new KeyDictionary { Name = "Unused candidates", Keys = [Convert.FromHexString("B1B2B3B4B5B6")] });
+            Assert.True(model.ShowAutoRecovery);
+            Assert.True(model.AutoRecoveryCommand.CanExecute(null));
+            if (stop) transport.AfterAuth = () => model.CancelDumpCommand.Execute(null);
+            await ((ReactiveCommand<RxVoid, RxVoid>)model.AutoRecoveryCommand).Execute();
+            Dispatcher.UIThread.RunJobs();
+            Assert.Null(model.Error);
+            Assert.False(model.IsDumpRunning);
+            var result = model.Form!.Build().ToMifareDump()!;
+            // Reopening a saved dump deliberately clears authentication state.
+            // Verify the persisted trailer and unknown flags, not the live-session key arrays.
+            Assert.Equal(CardTransport.KnownKey, result.GetBlock(3)![..6]);
+            Assert.False(result.KeyAUnknown[0]);
+            if (!stop)
+            {
+                Assert.Equal(CardTransport.KnownKey, result.GetBlock(3)![10..]);
+                Assert.False(result.KeyBUnknown[0]);
+            }
+            Assert.DoesNotContain(transport.Requests, r => r.Command is Command.Mf1WriteOneBlock
+                or Command.Mf1DarksideAcquire or Command.Mf1NestedAcquire or Command.Mf1StaticNestedAcquire);
+            Assert.All(transport.Requests.Where(r => r.Command == Command.Mf1AuthOneKeyBlock),
+                r => Assert.Equal(CardTransport.KnownKey, r.Data[2..8]));
+            Assert.Contains(dictionaries.KnownKeys.PositionsForUid(result.Uid), k => k.Sector == 0 && k.KeyType == MfKeyType.A);
+            if (stop)
+            {
+                Assert.True(model.ShowAutoRecovery);
+                Assert.True(result.RecoveredBlocks < result.BlockCount);
+                transport.AfterAuth = null;
+                await ((ReactiveCommand<RxVoid, RxVoid>)model.AutoRecoveryCommand).Execute();
+                Dispatcher.UIThread.RunJobs();
+            }
+            Assert.Null(model.Error);
+            Assert.False(model.ShowAutoRecovery);
+            Assert.All(model.Form.Build().Data, block => Assert.Equal(16, block.Length));
+        }
+        finally { await device.DisconnectAsync(); }
+    }
+
+    [AvaloniaTheory]
+    [InlineData("ru", 320, 1.5)]
+    [InlineData("en", 360, 1.0)]
+    [InlineData("de", 320, 1.5)]
+    public void AutoAndSearchSettingsFitThePhone(string language, int width, double scale)
+    {
+        LocalizationService.Apply(language); LocalizationService.UseOnThisThread();
+        var (model, _) = Open(new DeviceService([]), PartialCard());
+        var view = new CardsView { DataContext = model };
+        var window = new Window { Width = width, Height = 640, Content = view };
+        window.Show();
+        try
+        {
+            Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
+            LayoutScenarios.ScaleText(view, scale); window.UpdateLayout();
+            var automatic = Assert.Single(view.GetVisualDescendants().OfType<Button>(), b => b.Command == model.AutoRecoveryCommand);
+            Assert.True(automatic.IsVisible);
+            Assert.False(automatic.IsEffectivelyEnabled);
+            Assert.Empty(LayoutScenarios.FindOverflow(view));
+            var settings = Assert.Single(view.GetVisualDescendants().OfType<Button>(),
+                b => ToolTip.GetTip(b) as string == Strings.KeySearch_Options);
+            var flyout = Assert.IsType<Flyout>(settings.Flyout);
+            flyout.ShowAt(settings);
+            Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
+            var content = Assert.IsAssignableFrom<Control>(flyout.Content);
+            LayoutScenarios.ScaleText(content, scale); content.UpdateLayout();
+            Assert.Equal(7, content.GetVisualDescendants().OfType<RadioButton>().Count());
+            Assert.Empty(LayoutScenarios.FindOverflow(content));
+            flyout.Hide();
+        }
+        finally { window.Close(); }
+    }
+
     private sealed class Scanner(CardTransport transport) : ITransportScanner
     {
         public TransportKind Kind => TransportKind.Ble;
@@ -232,6 +314,8 @@ public class CardReadDataTests
         private readonly FrameParser _parser = new();
         private readonly Channel<byte[]> _replies = Channel.CreateUnbounded<byte[]>();
         public bool ChangedCard { get; init; }
+        public bool AllSectors { get; init; }
+        public Action? AfterAuth { get; set; }
         public Action? AfterRead { get; set; }
         public List<ChameleonFrame> Requests { get; } = new();
         public TransportKind Kind => TransportKind.Ble;
@@ -254,13 +338,14 @@ public class CardReadDataTests
                 if (request.Command == Command.Hf14aScan) status = Status.HfTagOk;
                 if (request.Command is Command.Mf1AuthOneKeyBlock or Command.Mf1ReadOneBlock)
                 {
-                    var match = request.Data[1] < 4 && request.Data[0] == 0x60 && request.Data[2..8].SequenceEqual(KnownKey);
+                    var match = (AllSectors || request.Data[1] < 4 && request.Data[0] == 0x60) && request.Data[2..8].SequenceEqual(KnownKey);
                     status = match ? Status.HfTagOk : Status.MfErrAuth;
                     if (match && request.Command == Command.Mf1ReadOneBlock)
                         payload = Enumerable.Repeat(request.Data[1], 16).ToArray();
                 }
                 _replies.Writer.TryWrite(FrameCodec.Encode(request.Command, payload, (ushort)status));
                 if (request.Command == Command.Mf1ReadOneBlock) AfterRead?.Invoke();
+                if (request.Command == Command.Mf1AuthOneKeyBlock) AfterAuth?.Invoke();
             }
             return Task.CompletedTask;
         }

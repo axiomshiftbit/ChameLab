@@ -3945,4 +3945,80 @@
   <data name="Cards_KeysSaved" xml:space="preserve">
     <value>保存した鍵: {0} → {1}。</value>
   </data>
+  <data name="Common_All" xml:space="preserve">
+    <value>すべて</value>
+  </data>
+  <data name="Common_None" xml:space="preserve">
+    <value>なし</value>
+  </data>
+  <data name="Common_Start" xml:space="preserve">
+    <value>開始</value>
+  </data>
+  <data name="KeySearch_Options" xml:space="preserve">
+    <value>鍵検索の設定</value>
+  </data>
+  <data name="KeySearch_Method" xml:space="preserve">
+    <value>検索方法</value>
+  </data>
+  <data name="KeySearch_SingleKey" xml:space="preserve">
+    <value>鍵を1つずつ確認</value>
+  </data>
+  <data name="KeySearch_AllSectors" xml:space="preserve">
+    <value>全セクターで一括確認</value>
+  </data>
+  <data name="KeySearch_OneSector" xml:space="preserve">
+    <value>1セクターで一括確認</value>
+  </data>
+  <data name="KeySearch_Start" xml:space="preserve">
+    <value>開始セクター</value>
+  </data>
+  <data name="KeySearch_Beginning" xml:space="preserve">
+    <value>最初のセクター</value>
+  </data>
+  <data name="KeySearch_Selected" xml:space="preserve">
+    <value>選択したセクター</value>
+  </data>
+  <data name="KeySearch_Order" xml:space="preserve">
+    <value>セクターの順序</value>
+  </data>
+  <data name="KeySearch_Sequential" xml:space="preserve">
+    <value>順番に確認</value>
+  </data>
+  <data name="KeySearch_Random" xml:space="preserve">
+    <value>ランダム</value>
+  </data>
+  <data name="Recovery_StaticEncNotStatic" xml:space="preserve">
+    <value>カードの暗号化nonceが取得ごとに変化します。Static encrypted nestedではこれらの鍵を復元できません。NestedまたはHardnestedを使用してください。</value>
+  </data>
+  <data name="Common_SizeKilobytes" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Common_SizeMegabytes" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+  <data name="AutoRecovery_Label" xml:space="preserve"><value>自動</value></data>
+  <data name="AutoRecovery_Tip" xml:space="preserve"><value>復元した各キーを残りのセクターで確認してから、不明なキーの復元方法を自動で選択します。選択したキー辞書を使用します。</value></data>
+  <data name="AutoRecovery_Choosing" xml:space="preserve"><value>自動：次の手順を選択中…</value></data>
+  <data name="AutoRecovery_Reusing" xml:space="preserve"><value>自動：復元したキーを残りのセクターで確認中…</value></data>
+  <data name="AutoRecovery_NextMethod" xml:space="preserve"><value>次の方法：{0}</value></data>
+  <data name="AutoRecovery_Incomplete" xml:space="preserve"><value>自動復元を終了しました。不明なキーは残り {0} 個です。復元したキーは保存されています。</value></data>
+  <data name="AutoRecovery_TryReader" xml:space="preserve"><value>別の辞書、または元のリーダーで mfkey32 を試してから、自動復元を再実行してください。</value></data>
+  <data name="Device_NoBatchKeyCheck" xml:space="preserve">
+    <value>このファームウェアはキーの一括チェックに対応していません。</value>
+  </data>
+  <data name="Dictionaries_AllCardTypes" xml:space="preserve">
+    <value>すべての種類</value>
+  </data>
+  <data name="Dictionaries_CardTypeUnknown" xml:space="preserve">
+    <value>不明</value>
+  </data>
+  <data name="Dictionaries_FilterByCardType" xml:space="preserve">
+    <value>カードの種類で絞り込み</value>
+  </data>
+  <data name="Dictionaries_CardType" xml:space="preserve">
+    <value>種類</value>
+  </data>
+  <data name="Dictionaries_KnownPassword" xml:space="preserve">
+    <value>パスワード</value>
+  </data>
 </root>

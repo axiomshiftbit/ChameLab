@@ -269,9 +269,6 @@ public sealed class DictionariesViewModel : PageViewModelBase, IReorderableList
     public string KnownKeysCountText => string.Format(Strings.Dictionaries_KnownKeysCount, Loc.Plural(Strings.Plural_UidsKeys, _library.KnownKeys.CardCount),
             Loc.Plural(Strings.Plural_Keys, _library.KnownKeys.KeyCount))
         + (_library.KnownKeys.PasswordCount > 0 ? Loc.Plural(Strings.Plural_NtagPasswords, _library.KnownKeys.PasswordCount) : "");
-    public string KnownKeysText => _library.KnownKeys.KeyCount == 0
-        ? Strings.Dictionaries_KnownKeysEmpty
-        : _library.KnownKeys.DisplayText;
     public bool IsKnownKeys => _pane == DictionariesPane.KnownKeys;
     public bool IsEditorPane => HasPane && !IsKnownKeys;
 
@@ -341,7 +338,6 @@ public sealed class DictionariesViewModel : PageViewModelBase, IReorderableList
     private void Rebuild()
     {
         this.RaisePropertyChanged(nameof(KnownKeysCountText));
-        this.RaisePropertyChanged(nameof(KnownKeysText));
         var selectedId = _selected?.Dictionary.Id;
         _rebuilding = true;
         try

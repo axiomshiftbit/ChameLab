@@ -25,7 +25,7 @@
 
         <!-- Brand mark: the ChameLab logo. -->
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-          <Path Data="{StaticResource Logo.chamelab}" Fill="#BBA678" Stretch="Uniform" Height="32"
+          <Image Source="/Assets/chameleon.png" Stretch="Uniform" Width="32" Height="32"
                 VerticalAlignment="Center" Classes="header-logo" />
           <Button Classes="brand" VerticalAlignment="Center"
                   Command="{Binding AppUpdate.OpenDownloadCommand}"

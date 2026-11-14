@@ -103,7 +103,7 @@ public sealed partial class CliSession
         if (kind == MifareClassicPrngType.Static)
         {
             var capture = await Client.GetStaticNestedNoncesAsync(block, KeyType(a), key, target, KeyType(a, "t"), ct);
-            keys = await Task.Run(() => StaticNestedRecovery.Recover(capture.Uid, KeyType(a), capture.Nonces[0].Nt, capture.Nonces[0].NtEnc, capture.Nonces[1].Nt, capture.Nonces[1].NtEnc, ct), ct);
+            keys = await Task.Run(() => StaticNestedRecovery.Recover(capture.Uid, KeyType(a, "t"), capture.Nonces[0].Nt, capture.Nonces[0].NtEnc, capture.Nonces[1].Nt, capture.Nonces[1].NtEnc, ct), ct);
         }
         else
         {

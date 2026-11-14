@@ -9,8 +9,8 @@ namespace ChameLab.Tests;
 
 public class StaticNestedRecoveryTests
 {
-    // Physical captures entered through a known A key, targeting either A or B.
-    // Passing the target B type instead of the known A type produced 128k wrong keys.
+    // Regression captures using 160/320 timing for either target key type.
+    // The alternate Gen2 timing must remain supported without a single-sample candidate union.
     [Theory]
     [InlineData(MfKeyType.A, 0x2B7C6E42u, 0x1DE65248u, 0x112233445566UL)]
     [InlineData(MfKeyType.B, 0x2B7C6E42u, 0x1DE65248u, 0x112233445566UL)]
@@ -20,7 +20,7 @@ public class StaticNestedRecoveryTests
         MfKeyType targetType, uint enc0, uint enc1, ulong expected)
     {
         Assert.True(targetType is MfKeyType.A or MfKeyType.B);
-        var keys = StaticNestedRecovery.Recover(0x4D4F4E53, MfKeyType.A,
+        var keys = StaticNestedRecovery.Recover(0x4D4F4E53, targetType,
             0x009080A2, enc0, 0x009080A2, enc1);
 
         Assert.Equal(expected, Assert.Single(keys));
@@ -28,8 +28,12 @@ public class StaticNestedRecoveryTests
 
     [Theory]
     [InlineData(0x01200145u, MfKeyType.A, 160)]
+    [InlineData(0x01200145u, MfKeyType.A, 161)]
     [InlineData(0x01200145u, MfKeyType.B, 160)]
+    [InlineData(0x01200145u, MfKeyType.B, 161)]
     [InlineData(0x009080A2u, MfKeyType.A, 160)]
+    [InlineData(0x009080A2u, MfKeyType.A, 161)]
+    [InlineData(0x009080A2u, MfKeyType.B, 160)]
     [InlineData(0x009080A2u, MfKeyType.B, 161)]
     public void SupportedNonceOffsets_RecoversKnownKey(uint nonce, MfKeyType type, int distance)
     {

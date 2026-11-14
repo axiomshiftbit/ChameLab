@@ -178,7 +178,7 @@ public static class LayoutScenarios
         if (page == "dictionary-known")
         {
             vm.OpenKnownKeysCommand.Execute(null);
-            vm.KnownEditor.Selected = vm.KnownEditor.Uids.Single();
+            vm.KnownEditor.Selected = vm.KnownEditor.Cards.Single();
         }
         var view = new DictionariesView { DataContext = vm };
         view.Loaded += (_, _) =>

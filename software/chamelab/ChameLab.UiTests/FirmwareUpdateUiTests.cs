@@ -86,6 +86,9 @@ public class FirmwareUpdateUiTests
             Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
             Assert.Equal(1, handler.Requests);
             Assert.True(button.IsVisible);
+            // A cached recheck completes synchronously, before ReactiveCommand's UI notification.
+            for (var i = 0; i < 200 && !button.IsEffectivelyEnabled; i++)
+            { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); window.UpdateLayout(); }
             Assert.True(button.IsEffectivelyEnabled);
         }
         finally { window.Close(); }

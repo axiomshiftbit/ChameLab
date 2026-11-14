@@ -3945,4 +3945,80 @@
   <data name="Cards_KeysSaved" xml:space="preserve">
     <value>已保存的密钥：{0} → {1}。</value>
   </data>
+  <data name="Common_All" xml:space="preserve">
+    <value>全部</value>
+  </data>
+  <data name="Common_None" xml:space="preserve">
+    <value>无</value>
+  </data>
+  <data name="Common_Start" xml:space="preserve">
+    <value>开始</value>
+  </data>
+  <data name="KeySearch_Options" xml:space="preserve">
+    <value>密钥搜索设置</value>
+  </data>
+  <data name="KeySearch_Method" xml:space="preserve">
+    <value>搜索方式</value>
+  </data>
+  <data name="KeySearch_SingleKey" xml:space="preserve">
+    <value>逐个密钥检查</value>
+  </data>
+  <data name="KeySearch_AllSectors" xml:space="preserve">
+    <value>在所有扇区批量检查</value>
+  </data>
+  <data name="KeySearch_OneSector" xml:space="preserve">
+    <value>在单个扇区批量检查</value>
+  </data>
+  <data name="KeySearch_Start" xml:space="preserve">
+    <value>起始扇区</value>
+  </data>
+  <data name="KeySearch_Beginning" xml:space="preserve">
+    <value>第一个扇区</value>
+  </data>
+  <data name="KeySearch_Selected" xml:space="preserve">
+    <value>所选扇区</value>
+  </data>
+  <data name="KeySearch_Order" xml:space="preserve">
+    <value>扇区顺序</value>
+  </data>
+  <data name="KeySearch_Sequential" xml:space="preserve">
+    <value>按顺序</value>
+  </data>
+  <data name="KeySearch_Random" xml:space="preserve">
+    <value>随机</value>
+  </data>
+  <data name="Recovery_StaticEncNotStatic" xml:space="preserve">
+    <value>卡片的加密 nonce 在每次采集时都会变化。Static encrypted nested 无法恢复这些密钥。请尝试 Nested 或 Hardnested。</value>
+  </data>
+  <data name="Common_SizeKilobytes" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Common_SizeMegabytes" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+  <data name="AutoRecovery_Label" xml:space="preserve"><value>自动</value></data>
+  <data name="AutoRecovery_Tip" xml:space="preserve"><value>先在其余扇区检查每个已恢复的密钥，再自动选择未知密钥的恢复方法。使用选定的密钥字典。</value></data>
+  <data name="AutoRecovery_Choosing" xml:space="preserve"><value>自动：正在选择下一步…</value></data>
+  <data name="AutoRecovery_Reusing" xml:space="preserve"><value>自动：正在其余扇区检查已恢复的密钥…</value></data>
+  <data name="AutoRecovery_NextMethod" xml:space="preserve"><value>下一种方法：{0}</value></data>
+  <data name="AutoRecovery_Incomplete" xml:space="preserve"><value>自动恢复已结束，仍有 {0} 个未知密钥。已恢复的密钥已保存。</value></data>
+  <data name="AutoRecovery_TryReader" xml:space="preserve"><value>请尝试其他字典，或使用原始读卡器运行 mfkey32，然后再次运行自动恢复。</value></data>
+  <data name="Device_NoBatchKeyCheck" xml:space="preserve">
+    <value>此固件不支持批量校验密钥。</value>
+  </data>
+  <data name="Dictionaries_AllCardTypes" xml:space="preserve">
+    <value>所有类型</value>
+  </data>
+  <data name="Dictionaries_CardTypeUnknown" xml:space="preserve">
+    <value>未知</value>
+  </data>
+  <data name="Dictionaries_FilterByCardType" xml:space="preserve">
+    <value>按卡片类型筛选</value>
+  </data>
+  <data name="Dictionaries_CardType" xml:space="preserve">
+    <value>类型</value>
+  </data>
+  <data name="Dictionaries_KnownPassword" xml:space="preserve">
+    <value>密码</value>
+  </data>
 </root>

@@ -13,6 +13,8 @@ internal static class Program
         {
             switch (args)
             {
+                case ["generate-hardnested-partial-sums"]: HardnestedTools.GeneratePartialSums(Root()); break;
+                case ["generate-hardnested-partial-sums", "--check"]: HardnestedTools.GeneratePartialSums(Root(), true); break;
                 case ["generate-hardnested"]: HardnestedTools.Generate(Root(), false); break;
                 case ["generate-hardnested", "--check"]: HardnestedTools.Generate(Root(), true); break;
                 case ["import-hardnested-tables", var upstream]: HardnestedTools.ImportTables(Root(), upstream); break;
@@ -33,7 +35,7 @@ internal static class Program
                 case ["zip", var source, var destination]: Archive(source, destination); break;
                 case ["name-release-files", var folder, var appVersion, var firmwareVersion]: NameReleaseFiles(folder, appVersion, firmwareVersion); break;
                 case ["--help"] or []:
-                    Console.WriteLine("ChameLab development tools\n  generate-hardnested [--check]\n  import-hardnested-tables PROXMARK3_CHECKOUT\n  prepare-hardnested-reference DISPOSABLE_PROXMARK3_CHECKOUT\n  compare-hardnested MANAGED NATIVE OUTPUT [REPETITIONS] [--cases FILE] [--only CASE...]\n  reference-vectors --generator EXE --nested EXE --staticnested EXE --mfkey32v2 EXE [--output JSON]\n  benchmark nested|static-encrypted [ITERATIONS WARMUPS]\n  read-mfc4k --help\n  pr-review MODE\n  zip SOURCE_DIRECTORY OUTPUT.zip\n  verify-firmware FILE.zip ultra|lite\n  mac-bundle PUBLISH_DIRECTORY VERSION\n  name-release-files DIRECTORY APP_VERSION FIRMWARE_VERSION");
+                    Console.WriteLine("ChameLab development tools\n  generate-hardnested [--check]\n  generate-hardnested-partial-sums [--check]\n  import-hardnested-tables PROXMARK3_CHECKOUT\n  prepare-hardnested-reference DISPOSABLE_PROXMARK3_CHECKOUT\n  compare-hardnested MANAGED NATIVE OUTPUT [REPETITIONS] [--cases FILE] [--only CASE...]\n  reference-vectors --generator EXE --nested EXE --staticnested EXE --mfkey32v2 EXE [--output JSON]\n  benchmark nested|static-encrypted [ITERATIONS WARMUPS]\n  read-mfc4k --help\n  pr-review MODE\n  zip SOURCE_DIRECTORY OUTPUT.zip\n  verify-firmware FILE.zip ultra|lite\n  mac-bundle PUBLISH_DIRECTORY VERSION\n  name-release-files DIRECTORY APP_VERSION FIRMWARE_VERSION");
                     break;
                 default: throw new ArgumentException("Unknown command. Run with --help.");
             }
@@ -56,12 +58,14 @@ internal static class Program
         var otherLanguages = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         { ".py", ".c", ".h", ".cpp", ".hpp", ".cc", ".cxx", ".go", ".rs", ".js", ".cjs", ".mjs", ".ts", ".tsx", ".jsx", ".sh", ".ps1", ".bat", ".cmd", ".java", ".kt", ".kts", ".rb", ".swift", ".m", ".mm", ".asm", ".s", ".lua", ".dart", ".fs", ".vb" };
         var invalid = files.Where(f => File.Exists(System.IO.Path.Combine(root, f)) && otherLanguages.Contains(System.IO.Path.GetExtension(f))
+            // Independent reference-vector generator; not application/runtime code.
+            && f != "software/chamelab/ChameLab.Tests/Reference/generate_sen_vectors.py"
             && !f.StartsWith("firmware/", StringComparison.Ordinal) && !f.StartsWith("website/", StringComparison.Ordinal)
             && !f.StartsWith("software/chamelab/ChameLab.Browser/wwwroot/", StringComparison.Ordinal)
             && !f.StartsWith("software/chamelab/ChameLab.Browser/tests/", StringComparison.Ordinal)
             && !f.StartsWith("software/chamelab/ChameLab.Browser/tools/", StringComparison.Ordinal)).ToArray();
         if (invalid.Length > 0) throw new InvalidDataException("Non-C# source outside firmware/web: " + string.Join(", ", invalid));
-        Console.WriteLine("Source language audit passed: client/tools are C#; firmware and web are exempt.");
+        Console.WriteLine("Source language audit passed: client/tools are C#; firmware, web and the reference-vector generator are exempt.");
     }
 
     internal static async Task<string> Run(string executable, IEnumerable<string> args, string? directory = null)

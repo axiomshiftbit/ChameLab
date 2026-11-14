@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
+    <AvaloniaResource Include="..\ChameLab.Android\Icon.png" Link="Assets\chameleon.png" />
   </ItemGroup>
 
   <ItemGroup>

@@ -9,6 +9,24 @@ Each release (v1.4.35 on) opens with `### Summary`, up to three of its most impo
 
 ## [unreleased][unreleased]
 
+## [v1.5.4][2026-11-14] · firmware v2.3.20-cl
+### Summary
+- MIFARE Classic: automatic recovery, batched dictionary checks and retention of recovered keys when stopped.
+- StaticNested timing variants fixed and verified on a physical Chameleon; SEN, Nested, Darkside and Hardnested improvements.
+- Custom in-app icon and automatic sleep inhibition during long card operations.
+
+### Details
+
+- The in-app header now uses the custom app icon shared with the launcher.
+- MIFARE Classic: Auto chooses a recovery method from card evidence, reuses confirmed keys and remembers their sector and A/B position. Stopping preserves partial results, and reading does not repeat an exhausted dictionary pass.
+- MIFARE Classic dictionaries are checked in firmware batches, with individual-check fallback on older devices. Search method, starting sector and sector order are configurable; progress distinguishes a batch from one sector.
+- Static Nested checks both supported timing variants for either nonce pattern against two nonces, prioritizing the target key type. The app and CLI share the fix and authenticate candidates on the card.
+- Static Encrypted Nested imports the Proxmark3 candidate pipeline, stable-capture confirmation, offline dictionary filtering and FM11RF08S hidden-sector handling. Command support and firmware version are checked together to account for diverging fork and upstream versions.
+- Long card operations inhibit automatic host sleep until completion or cancellation cleanup.
+- Imported Nested, Darkside and Hardnested optimizations; Hardnested stops collecting constant nonces that cannot solve the attack, and card inspection no longer starts a lengthy Darkside probe.
+- Known card keys retain MIFARE Classic sector positions and card types, and allow editing NTAG/T55xx passwords. Existing data is imported automatically; the new backup format is not intended for older app versions.
+- Firmware 2.3.20-cl fixes SEN sector-range replies, first-block hidden-sector collection, zero key B handling and RF errors; adds normal-key SEN collection; bounds Darkside duration and corrects partial-response status.
+
 ## [v1.5.3][2026-11-10] · firmware v2.3.19-cl
 ### Summary
  - Linux: the desktop app and the command line client find a connected Chameleon and its DFU bootloader again.
