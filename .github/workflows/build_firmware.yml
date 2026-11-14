@@ -52,6 +52,7 @@ jobs:
         run: |
           python3 firmware/tests/test_mifare_access.py
           python3 firmware/tests/test_mifare_transfer.py
+          python3 firmware/tests/test_mifare_recovery.py --check-range-regression --sanitize
       - name: Test USB and Bluetooth ownership
         run: |
           cc -std=c99 -Wall -Wextra -Werror \

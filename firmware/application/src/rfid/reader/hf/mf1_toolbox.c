@@ -13,6 +13,7 @@
 #include "hw_connect.h"
 #include "nrf_gpio.h"
 #include "rgb_marquee.h"
+#include "app_timer.h"
 
 // The default delay of the antenna reset
 static uint32_t g_ant_reset_delay = 100;
@@ -259,7 +260,14 @@ int authex(struct Crypto1State *pcs, uint32_t uid, uint8_t blockNo, uint8_t keyT
 * As a result, the CPU cannot complete the replay attack within the same time.
 * There is basically no solution in this situation. It is recommended to close the non -critical interruption and task scheduling outside this code
 */
-static uint8_t darkside_select_nonces(picc_14a_tag_t *tag, uint8_t block, uint8_t keytype, uint32_t *nt, mf1_darkside_status_t *darkside_status) {
+static bool darkside_expired(uint32_t started) {
+    // A complete parity sweep can take longer than the host's former 60s limit.
+    // Bound resynchronization retries as well, and return before its 120s deadline.
+    return app_timer_cnt_diff_compute(app_timer_cnt_get(), started) >= APP_TIMER_TICKS(90000);
+}
+
+static uint8_t darkside_select_nonces(picc_14a_tag_t *tag, uint8_t block, uint8_t keytype, uint32_t *nt,
+    mf1_darkside_status_t *darkside_status, uint32_t started) {
 #define NT_COUNT 15
     uint8_t tag_auth[4]         = { keytype, block, 0x00, 0x00 };
     uint8_t tag_resp[4]         = { 0x00 };
@@ -272,6 +280,10 @@ static uint8_t darkside_select_nonces(picc_14a_tag_t *tag, uint8_t block, uint8_
 
     //Random number collection
     for (i = 0; i < NT_COUNT; i++) {
+        if (darkside_expired(started)) {
+            *darkside_status = DARKSIDE_CANT_FIX_NT;
+            return STATUS_HF_TAG_OK;
+        }
         bsp_wdt_feed();
         while (NRF_LOG_PROCESS());
         //When the antenna is reset, we must make sure
@@ -341,6 +353,7 @@ static uint8_t darkside_select_nonces(picc_14a_tag_t *tag, uint8_t block, uint8_
 uint8_t darkside_recover_key(uint8_t targetBlk, uint8_t targetTyp,
                              uint8_t firstRecover, uint8_t ntSyncMax, DarksideCore_t *dc,
                              mf1_darkside_status_t *darkside_status) {
+    uint32_t started = app_timer_cnt_get();
 
     // Card information for fixed use
     static uint32_t uid_ori                 = 0;
@@ -370,7 +383,7 @@ uint8_t darkside_recover_key(uint8_t targetBlk, uint8_t targetTyp,
     uint8_t par                             = 0x00;  // This variable is responsible for increasing the puppet school inspection, and the reply of the collision card
     uint8_t status                          = 0x00;  // This variable is responsible for saving card communication status
     uint16_t len                            = 0x00;  // This variable is responsible for saving the data of the card in the communication process to respond to the length of the card
-    uint8_t nt_diff                         = 0x00;  // This variable is critical, don't initialize it, because the following is used directly
+    uint8_t nt_diff                         = 0x00;  // Start every collection at the first of eight NACKs.
     bool led_toggle                         = false;
 
     // We need to confirm the use of a certain card first
@@ -400,7 +413,7 @@ uint8_t darkside_recover_key(uint8_t targetBlk, uint8_t targetTyp,
         uid_ori = get_u32_tag_uid(p_tag_info);
 
         // Then you need to fix a random number that may appear
-        status = darkside_select_nonces(p_tag_info, targetBlk, targetTyp, &nt_ori, darkside_status);
+        status = darkside_select_nonces(p_tag_info, targetBlk, targetTyp, &nt_ori, darkside_status, started);
         if ((status != STATUS_HF_TAG_OK) || (*darkside_status != DARKSIDE_OK)) {
             //The fixed random number failed, and the next step cannot be performed
             return status;
@@ -419,6 +432,10 @@ uint8_t darkside_recover_key(uint8_t targetBlk, uint8_t targetTyp,
     }
     // Always collect different NACK under a large cycle
     do {
+        if (darkside_expired(started)) {
+            *darkside_status = DARKSIDE_CANT_FIX_NT;
+            return STATUS_HF_TAG_OK;
+        }
         bsp_wdt_feed();
         while (NRF_LOG_PROCESS());
         // update LEDs
@@ -535,7 +552,8 @@ uint8_t darkside_recover_key(uint8_t targetBlk, uint8_t targetTyp,
                 par = ((par + 1) & 0x1F) | par_low;
                 if (par == par_low) {    // tried all 32 possible parities without success. Got some NACK but not all 8...
                     NRF_LOG_INFO("Card sent only %i/8 NACK.", nt_diff);
-                    return DARKSIDE_NO_NAK_SENT;
+                    *darkside_status = DARKSIDE_NO_NAK_SENT;
+                    return STATUS_HF_TAG_OK;
                 }
             }
         }
@@ -1059,7 +1077,7 @@ uint16_t mf1_toolbox_check_keys_of_sectors(
 
                 status = auth_key_use_522_hw(trailerNo, PICC_AUTHENT1A, in->keys[j].key);
                 if (status != STATUS_HF_TAG_OK) { // auth failed
-                    if (status == STATUS_HF_TAG_NO) return STATUS_HF_TAG_NO;
+                    if (status != STATUS_MF_ERR_AUTH) return status;
                     continue;
                 }
                 // key A found
@@ -1067,8 +1085,15 @@ uint16_t mf1_toolbox_check_keys_of_sectors(
                 out->keys[i][0] = in->keys[j];
                 // try to read keyB from trailer of sector
                 status = pcd_14a_reader_mf1_read(trailerNo, trailer);
-                // key B not in trailer
-                if (status != STATUS_HF_TAG_OK || 0 == *(uint64_t *) &trailer[10]) break;
+                // A readable B is data, including an all-zero key. Validate the
+                // redundant access bits before interpreting the six bytes.
+                if (status != STATUS_HF_TAG_OK) break;
+                bool valid_access = (trailer[7] >> 4) == ((~trailer[6]) & 15) &&
+                    (trailer[8] & 15) == (((~trailer[6]) >> 4) & 15) &&
+                    (trailer[8] >> 4) == ((~trailer[7]) & 15);
+                bool readable_b = !(trailer[7] & 0x80) &&
+                    (!(trailer[8] & 0x08) || !(trailer[8] & 0x80));
+                if (!valid_access || !readable_b) break;
                 // key B found
                 skipKeyB = true;
                 out->found.b[i / 4] |= 0b1 << maskShift;
@@ -1084,7 +1109,7 @@ uint16_t mf1_toolbox_check_keys_of_sectors(
 
             status = auth_key_use_522_hw(trailerNo, PICC_AUTHENT1B, in->keys[j].key);
             if (status != STATUS_HF_TAG_OK) { // auth failed
-                if (status == STATUS_HF_TAG_NO) return STATUS_HF_TAG_NO;
+                if (status != STATUS_MF_ERR_AUTH) return status;
                 continue;
             }
             // key B found
@@ -1207,7 +1232,9 @@ uint8_t mf1_static_encrypted_nonces_acquire(uint64_t keyKnown, uint8_t sector_co
 
     for (uint16_t sec = starting_sector; sec < sector_count && sec < 40; sec++) {
         mf1_toolbox_report_healthy();
-        uint16_t blockNo = (sec < 32) ? sec * 4 + 3 : 128 + (sec - 32) * 16 + 15;
+        // Match Proxmark3 SEN: authenticate the first block. FM11RF08S's hidden
+        // sector 32 starts at 128 and does not expose the 4K trailer at 143.
+        uint16_t blockNo = (sec < 32) ? sec * 4 : 128 + (sec - 32) * 16;
 
         mf1_static_nonce_sector_t sector_nonces = {0};
 
@@ -1284,6 +1311,64 @@ uint8_t mf1_static_encrypted_nonces_acquire(uint64_t keyKnown, uint8_t sector_co
     return STATUS_HF_TAG_OK;
 }
 
+/* FM11RF08S normal-key fallback. Calibrate the distance from a decrypted nested
+ * nonce to the following first-auth nonce, then rewind each following nonce.
+ * The host confirms a second capture before accepting this timing-sensitive evidence.
+ * Based on Proxmark3's MifareAcquireStaticEncryptedNonces (GPLv3). */
+uint8_t mf1_static_encrypted_nonces_with_key(uint64_t key, uint8_t known_block, uint8_t known_type,
+    uint8_t sector_count, uint8_t starting_sector, uint8_t sector_data[40][sizeof(mf1_static_nonce_sector_t)],
+    uint8_t *sectors_acquired, uint32_t *card_uid) {
+    struct Crypto1State state = {0, 0};
+    uint8_t answer[16] = {0}, parity[4] = {0}, status;
+    uint32_t first_nt = 0;
+    *sectors_acquired = 0;
+    if (pcd_14a_reader_scan_auto(p_tag_info) != STATUS_HF_TAG_OK) return STATUS_HF_TAG_NO;
+    uint32_t cuid = get_u32_tag_uid(p_tag_info);
+    *card_uid = cuid;
+    status = authex(&state, cuid, known_block, known_type, key, AUTH_FIRST, &first_nt);
+    if (status != STATUS_HF_TAG_OK) return status;
+    if (send_cmd(&state, AUTH_NESTED, known_type, known_block, &status, answer, parity, sizeof(answer) * 8) != 32)
+        return STATUS_HF_ERR_STAT;
+    uint32_t encrypted_nt = bytes_to_num(answer, 4);
+    crypto1_init(&state, key);
+    uint32_t nested_nt = crypto1_word(&state, encrypted_nt ^ cuid, 1) ^ encrypted_nt;
+    if (pcd_14a_reader_fast_select(p_tag_info) != STATUS_HF_TAG_OK) return STATUS_HF_TAG_NO;
+    status = authex(&state, cuid, known_block, known_type, key, AUTH_FIRST, &first_nt);
+    if (status != STATUS_HF_TAG_OK) return status;
+    if (!check_lfsr_prng(nested_nt) || !check_lfsr_prng(first_nt)) return STATUS_HF_ERR_STAT;
+    uint32_t from = nested_nt >> 16, to = first_nt >> 16;
+    nonce_distance(&from, &to);
+    uint32_t distance = (65535 - from + to) % 65535;
+    for (uint16_t sec = starting_sector; sec < sector_count; sec++) {
+        mf1_toolbox_report_healthy();
+        mf1_static_nonce_sector_t captured = {0};
+        uint8_t block = sec < 32 ? sec * 4 : 128 + (sec - 32) * 16;
+        for (uint8_t type = 0; type < 2; type++) {
+            memset(parity, 0, sizeof(parity));
+            if (send_cmd(&state, AUTH_NESTED, 0x60 + type, block, &status, answer, parity, sizeof(answer) * 8) != 32)
+                return STATUS_HF_ERR_STAT;
+            uint32_t enc = bytes_to_num(answer, 4);
+            uint8_t error = ((parity[0] ^ oddparity8(enc >> 24)) << 3) |
+                ((parity[1] ^ oddparity8(enc >> 16)) << 2) |
+                ((parity[2] ^ oddparity8(enc >> 8)) << 1) | (parity[3] ^ oddparity8(enc));
+            if (pcd_14a_reader_fast_select(p_tag_info) != STATUS_HF_TAG_OK) return STATUS_HF_TAG_NO;
+            status = authex(&state, cuid, known_block, known_type, key, AUTH_FIRST, &first_nt);
+            if (status != STATUS_HF_TAG_OK) return status;
+            if (!check_lfsr_prng(first_nt)) return STATUS_HF_ERR_STAT;
+            uint32_t nt = prng_successor(first_nt, (65535 - distance) % 65535);
+            /* Both records use the existing 7-byte wire format. */
+            uint8_t *record = type == 0 ? (uint8_t *)&captured.key_a : (uint8_t *)&captured.key_b;
+            num_to_bytes(nt >> 16, 2, record);
+            record[2] = error;
+            num_to_bytes(enc, 4, record + 3);
+        }
+        memcpy(sector_data[sec], &captured, sizeof(captured));
+        (*sectors_acquired)++;
+    }
+    crypto1_deinit(&state);
+    return STATUS_HF_TAG_OK;
+}
+
 uint16_t mf1_toolbox_check_keys_on_block(
     mf1_toolbox_check_keys_on_block_in_t *in,
     mf1_toolbox_check_keys_on_block_out_t *out
@@ -1317,7 +1402,7 @@ uint16_t mf1_toolbox_check_keys_on_block(
         uint64_t key_u64 = bytes_to_num(in->keys[i].key, 6);
         status = authex(pcs, cuid, in->block, in->key_type, key_u64, AUTH_FIRST, &nt1);
         if (status != STATUS_HF_TAG_OK) {
-            if (status == STATUS_HF_TAG_NO) return STATUS_HF_TAG_NO;
+            if (status != STATUS_MF_ERR_AUTH) return status;
             continue;
         }
         out->found = 1;
