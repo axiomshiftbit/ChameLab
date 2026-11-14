@@ -101,22 +101,9 @@ jobs:
         run: |
           git tag -f dev
           git push origin refs/tags/dev --force
-  deploy_site:
-    name: Deploy the website
-    # After the dev release, whose web app the site serves; the site's own changes go out even
-    # when the dev release failed
-    if: always() && github.ref == 'refs/heads/main' && needs.gui_pipeline.result == 'success'
-    needs: [gui_pipeline, create_dev_release]
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    uses: ./.github/workflows/deploy_site.yml
   create_release:
     permissions:
       contents: write
-      # Starts the website deployment with this release's web app
-      actions: write
     name: Create tagged release with artifacts
     runs-on: ubuntu-latest
     if: always() && startsWith(github.ref, 'refs/tags/v') && needs.firmware_pipeline.result == 'success' && needs.gui_pipeline.result == 'success'
@@ -163,7 +150,7 @@ jobs:
             - `chamelab-<version>-<os>.zip`: ChameLab for desktop
             - `chamelab-<version>-android-arm64.apk`: ChameLab for Android (most phones); `-android-arm.apk` for 32-bit Android
             - `client-<version>-<os>.zip`: command line client
-            - `chamelab-<version>-web.zip`: the web app, as the website serves it
+            - `chamelab-<version>-web.zip`: the web app
             Built from commit ${{ github.sha }}
 
             SHA-256:
@@ -178,12 +165,6 @@ jobs:
           generate_release_notes: true
           append_body: true
           files: release-artifacts/*
-      - name: Deploy the website with this web app
-        # From main: the github-pages environment takes deployments from main only
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run deploy_site.yml --repo "$GITHUB_REPOSITORY" --ref main
-
   announce_release:
     name: Announce the release
     # Telegram (and MAX) in Russian from CHANGELOG.ru.md, Discord in English from CHANGELOG.md;
