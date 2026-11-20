@@ -48,6 +48,7 @@ jobs:
         run: |
           python3 firmware/tests/test_hf_raw.py
           python3 firmware/tests/test_em4x05_password.py
+          python3 firmware/tests/test_lf_command_compat.py
       - name: Test MIFARE Classic access conditions for every block
         run: |
           python3 firmware/tests/test_mifare_access.py

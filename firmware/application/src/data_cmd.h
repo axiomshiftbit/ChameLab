@@ -207,6 +207,9 @@
 #define DATA_CMD_LF_SET_CYCLE                   (5907)
 #define DATA_CMD_LF_GET_CYCLE                   (5908)
 #define DATA_CMD_LF_GET_ALL_CYCLES              (5909)
+#define DATA_CMD_LF_SET_CYCLE_MODE              (5910)
+#define DATA_CMD_LF_GET_CYCLE_MODE              (5911)
+#define DATA_CMD_LF_GET_ALL_CYCLE_MODES         (5912)
 #define DATA_CMD_HIDPROX_SET_EMU_ID             (5002)
 #define DATA_CMD_HIDPROX_GET_EMU_ID             (5003)
 #define DATA_CMD_VIKING_SET_EMU_ID              (5004)
@@ -231,6 +234,7 @@
 #define DATA_CMD_EM410X_WRITE_TO_EM4X05         (3034)
 #define DATA_CMD_EM4X05_WRITE_WORD              (3035)
 #define DATA_CMD_EM4X05_READ_WORD               (3036)
-#define DATA_CMD_EM4X05_CHECK_PASSWORD          (3037)
+#define DATA_CMD_LF_AUTO_SCAN                   (3037) /* empty: scan; 4 bytes: legacy fork EM4x05 check */
+#define DATA_CMD_EM4X05_CHECK_PASSWORD          (3038)
 
 #endif

@@ -1096,6 +1096,19 @@ static data_frame_tx_t *cmd_processor_pyramid_scan(uint16_t cmd, uint16_t status
     return data_frame_make(cmd, STATUS_LF_TAG_OK, sizeof(card_data), card_data);
 }
 
+static data_frame_tx_t *cmd_processor_lf_auto_scan(uint16_t cmd, uint16_t status, uint16_t length, uint8_t *data) {
+    if (length != 0) {
+        return data_frame_make(cmd, STATUS_PAR_ERR, 0, NULL);
+    }
+    uint8_t result[2 + 16] = {0};  // tag type, then the protocol's scan data
+    uint16_t result_len = 0;
+    status = scan_lf_auto(result, &result_len);
+    if (status != STATUS_LF_TAG_OK) {
+        return data_frame_make(cmd, status, 0, NULL);
+    }
+    return data_frame_make(cmd, STATUS_LF_TAG_OK, result_len, result);
+}
+
 static data_frame_tx_t *cmd_processor_jablotron_write_to_t55xx(uint16_t cmd, uint16_t status, uint16_t length, uint8_t *data) {
     typedef struct {
         uint8_t id[5];
@@ -1338,8 +1351,8 @@ static data_frame_tx_t *cmd_processor_em410x_set_emu_id(uint16_t cmd, uint16_t s
 }
 
 // Wire payload: extra count (0..7), then per extra card its tag type (u16, big-endian) and 16
-// data bytes (its emulator data, zero-padded). The firmware emulates the next card of the list
-// on each field appearance, so there is no per-card timing.
+// data bytes (its emulator data, zero-padded). How the cards are sent (next card per field
+// appearance, or in turn while the field is present) is set separately (5910) and kept here.
 #define LF_CYCLE_PAYLOAD_MAX (1 + (LF_CYCLE_MAX - 1) * LF_CYCLE_ENTRY_SIZE)
 static data_frame_tx_t *cmd_processor_lf_set_cycle(uint16_t cmd, uint16_t status, uint16_t length, uint8_t *data) {
     tag_specific_type_t type;
@@ -1356,12 +1369,15 @@ static data_frame_tx_t *cmd_processor_lf_set_cycle(uint16_t cmd, uint16_t status
     tag_data_buffer_t *buffer = get_buffer_by_tag_type(type);
     bool sensing = get_device_mode() != DEVICE_MODE_READER;
     if (sensing) tag_emulation_sense_end();
+    // Changing the cards keeps the mode, so clients that only know the list don't reset it.
+    lf_cycle_settings_t settings = lf_cycle_settings(buffer->buffer, buffer->length);
     memset(buffer->buffer + size, 0, buffer->length - size);
     // Only a real cycle (two cards or more) gets a record; a single card is just its own card.
     if (data[0]) {
         buffer->buffer[LF_CYCLE_MARKER] = 0xC7;
         buffer->buffer[LF_CYCLE_VERSION] = 5;
         buffer->buffer[LF_CYCLE_COUNT] = data[0] + 1;
+        lf_cycle_store_settings(buffer->buffer, settings);
         memcpy(buffer->buffer + LF_CYCLE_EXTRAS, data + 1, length - 1);
     }
     tag_emulation_load_by_buffer(type, false);
@@ -1424,6 +1440,73 @@ static data_frame_tx_t *cmd_processor_lf_get_all_cycles(uint16_t cmd, uint16_t s
         entry[1] = tag_types.tag_lf;
         if (record_length >= id_size) memcpy(entry + 2, record, id_size);
         lf_cycle_payload(record, record_length, entry + 2 + LF_MAX_TAG_ID_SIZE);
+    }
+    return data_frame_make(cmd, STATUS_SUCCESS, sizeof(response), response);
+}
+
+// Cycle mode payload: mode (0 = next card on each field appearance, 1 = cards in turn while the
+// field is present), bursts per card (1..10, while present), silence between cards in 100 ms
+// steps (0..30, while present). Only a slot with a card list (5907) has a mode.
+static data_frame_tx_t *cmd_processor_lf_set_cycle_mode(uint16_t cmd, uint16_t status, uint16_t length, uint8_t *data) {
+    tag_specific_type_t type;
+    uint16_t size;
+    if (!get_active_lf_type(&type, &size) || length != 3) return data_frame_make(cmd, STATUS_PAR_ERR, 0, NULL);
+    lf_cycle_settings_t settings = {data[0], data[1], data[2]};
+    tag_data_buffer_t *buffer = get_buffer_by_tag_type(type);
+    if (!lf_cycle_settings_valid(settings) || !lf_cycle_valid(buffer->buffer, buffer->length))
+        return data_frame_make(cmd, STATUS_PAR_ERR, 0, NULL);
+    bool sensing = get_device_mode() != DEVICE_MODE_READER;
+    if (sensing) tag_emulation_sense_end();
+    // Normalize an unsaved v4 record first, so its settings bytes are in the v5 layout.
+    lf_cycle_prepare_save(buffer->buffer, buffer->length);
+    lf_cycle_store_settings(buffer->buffer, settings);
+    tag_emulation_load_by_buffer(type, false);
+    if (sensing) tag_emulation_sense_run();
+    return data_frame_make(cmd, STATUS_SUCCESS, 0, NULL);
+}
+
+static void lf_cycle_mode_payload(const uint8_t *record, uint16_t record_length, uint8_t *out) {
+    lf_cycle_settings_t settings = lf_cycle_settings(record, record_length);
+    out[0] = settings.mode;
+    out[1] = settings.bursts;
+    out[2] = settings.silence;
+}
+
+static data_frame_tx_t *cmd_processor_lf_get_cycle_mode(uint16_t cmd, uint16_t status, uint16_t length, uint8_t *data) {
+    tag_specific_type_t type;
+    uint16_t size;
+    if (length || !get_active_lf_type(&type, &size)) return data_frame_make(cmd, STATUS_PAR_ERR, 0, NULL);
+    tag_data_buffer_t *buffer = get_buffer_by_tag_type(type);
+    uint8_t response[3];
+    lf_cycle_mode_payload(buffer->buffer, buffer->length, response);
+    return data_frame_make(cmd, STATUS_SUCCESS, sizeof(response), response);
+}
+
+// The cycle mode of every slot, 3 bytes each as in 5911 (the defaults where a slot has no LF
+// card list), read like 5909: the active slot from RAM, the others from flash.
+static data_frame_tx_t *cmd_processor_lf_get_all_cycle_modes(uint16_t cmd, uint16_t status, uint16_t length, uint8_t *data) {
+    if (length) return data_frame_make(cmd, STATUS_PAR_ERR, 0, NULL);
+    uint8_t response[TAG_MAX_SLOT_NUM * 3];
+    uint8_t active = tag_emulation_get_slot();
+    for (uint8_t slot = 0; slot < TAG_MAX_SLOT_NUM; slot++) {
+        tag_slot_specific_type_t tag_types;
+        tag_emulation_get_specific_types_by_slot(slot, &tag_types);
+        uint32_t record_words[(LF_CYCLE_SIZE + 3) / 4] = {0};
+        const uint8_t *record = (const uint8_t *)record_words;
+        uint16_t record_length = 0;
+        if (lf_tag_id_size(tag_types.tag_lf) == 0) {
+            // No emulated LF card: defaults.
+        } else if (slot == active) {
+            tag_data_buffer_t *buffer = get_buffer_by_tag_type(tag_types.tag_lf);
+            record = buffer->buffer;
+            record_length = buffer->length;
+        } else {
+            fds_slot_record_map_t map_info;
+            get_fds_map_by_slot_sense_type_for_dump(slot, TAG_SENSE_LF, &map_info);
+            record_length = sizeof(record_words);
+            if (!fds_read_sync(map_info.id, map_info.key, &record_length, (uint8_t *)record_words)) record_length = 0;
+        }
+        lf_cycle_mode_payload(record, record_length, response + slot * 3);
     }
     return data_frame_make(cmd, STATUS_SUCCESS, sizeof(response), response);
 }
@@ -2430,6 +2513,14 @@ static data_frame_tx_t *cmd_processor_em4x05_check_password(uint16_t cmd, uint16
     uint32_t be = U32HTONL(uid);
     return data_frame_make(cmd, status, status == STATUS_LF_TAG_OK ? sizeof(be) : 0,
                            status == STATUS_LF_TAG_OK ? (uint8_t *)&be : NULL);
+}
+
+/* 3037 predates upstream LF auto scan in this fork. Preserve old clients without
+ * interpreting their four-byte password as a scan. New clients use 3038 for EM. */
+static data_frame_tx_t *cmd_processor_lf_3037(uint16_t cmd, uint16_t status, uint16_t length, uint8_t *data) {
+    if (length == 0) return cmd_processor_lf_auto_scan(cmd, status, length, data);
+    if (length == 4) return cmd_processor_em4x05_check_password(cmd, status, length, data);
+    return data_frame_make(cmd, STATUS_PAR_ERR, 0, NULL);
 }
 
 static data_frame_tx_t *cmd_processor_em4x05_scan(uint16_t cmd, uint16_t status, uint16_t length, uint8_t *data) {
@@ -3450,6 +3541,7 @@ static cmd_data_map_t m_data_cmd_map[] = {
     {    DATA_CMD_JABLOTRON_SCAN,               before_reader_run,           cmd_processor_jablotron_scan,                NULL                   },
     {    DATA_CMD_JABLOTRON_WRITE_TO_T55XX,     before_reader_run,           cmd_processor_jablotron_write_to_t55xx,      NULL                   },
     {    DATA_CMD_PYRAMID_SCAN,                 before_reader_run,           cmd_processor_pyramid_scan,                  NULL                   },
+    {    DATA_CMD_LF_AUTO_SCAN,                 before_reader_run,           cmd_processor_lf_3037,                       NULL                   },
     {    DATA_CMD_IDTECK_WRITE_TO_T55XX,        before_reader_run,           cmd_processor_idteck_write_to_t55xx,         NULL                   },
     {    DATA_CMD_LF_T55XX_WRITE,               before_reader_run,           cmd_processor_lf_t55xx_write,                NULL                   },
     {    DATA_CMD_ADC_GENERIC_READ,             before_reader_run,           cmd_processor_generic_read,                  NULL                   },
@@ -3521,6 +3613,9 @@ static cmd_data_map_t m_data_cmd_map[] = {
     {    DATA_CMD_LF_SET_CYCLE,                   NULL,                      cmd_processor_lf_set_cycle,                  NULL                   },
     {    DATA_CMD_LF_GET_CYCLE,                   NULL,                      cmd_processor_lf_get_cycle,                  NULL                   },
     {    DATA_CMD_LF_GET_ALL_CYCLES,              NULL,                      cmd_processor_lf_get_all_cycles,             NULL                   },
+    {    DATA_CMD_LF_SET_CYCLE_MODE,              NULL,                      cmd_processor_lf_set_cycle_mode,             NULL                   },
+    {    DATA_CMD_LF_GET_CYCLE_MODE,              NULL,                      cmd_processor_lf_get_cycle_mode,             NULL                   },
+    {    DATA_CMD_LF_GET_ALL_CYCLE_MODES,         NULL,                      cmd_processor_lf_get_all_cycle_modes,        NULL                   },
     {    DATA_CMD_HIDPROX_SET_EMU_ID,             NULL,                      cmd_processor_hidprox_set_emu_id,            NULL                   },
     {    DATA_CMD_HIDPROX_GET_EMU_ID,             NULL,                      cmd_processor_hidprox_get_emu_id,            NULL                   },
     {    DATA_CMD_IOPROX_SET_EMU_ID,              NULL,                      cmd_processor_ioprox_set_emu_id,             NULL                   },
