@@ -11,6 +11,7 @@ let statusLine = null;
 let stream = null;
 let detector = null;
 let closed = false;
+let generation = 0;
 let canvas = null;
 let gray = null;
 let waiter = null;
@@ -26,13 +27,17 @@ function cleanup() {
 export async function open(status, cancelLabel) {
     close();
     closed = false;
+    const session = generation;
     if (!navigator.mediaDevices?.getUserMedia) return "nocamera";
     try {
-        stream = await navigator.mediaDevices.getUserMedia({
+        const acquired = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
             audio: false,
         });
+        if (session !== generation) { acquired.getTracks().forEach(t => t.stop()); return "closed"; }
+        stream = acquired;
     } catch (e) {
+        if (session !== generation) return "closed";
         stream = null;
         if (e?.name === "NotAllowedError" || e?.name === "SecurityError") return "denied";
         if (e?.name === "NotFoundError" || e?.name === "OverconstrainedError") return "nocamera";
@@ -47,6 +52,7 @@ export async function open(status, cancelLabel) {
         }
     } catch { detector = null; }
 
+    if (session !== generation) return "closed";
     overlay = document.createElement("div");
     overlay.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:#000;display:flex;" +
         "flex-direction:column;align-items:center;justify-content:center;font-family:system-ui,sans-serif";
@@ -81,6 +87,7 @@ export function setStatus(text) {
 }
 
 export function close() {
+    generation++;
     closed = true;
     cleanup();
     if (waiter) { const w = waiter; waiter = null; w(); }

@@ -29,20 +29,21 @@ internal sealed partial class WebQrCamera : IQrCamera
         var baseUri = JSHost.GlobalThis.GetPropertyAsJSObject("document")!.GetPropertyAsString("baseURI")!;
         await (_import ??= JSHost.ImportAsync("qr-scan", new Uri(new Uri(baseUri), "qr-scan.js").AbsoluteUri));
 
-        var opened = await OpenAsync(status, Strings.Common_Cancel);
-        switch (opened)
-        {
-            case "ok": break;
-            case "denied": throw new QrCameraUnavailableException(Strings.Qr_CameraDenied);
-            case "nocamera": throw new QrCameraUnavailableException(Strings.Qr_NoCamera);
-            default: throw new QrCameraUnavailableException(opened.StartsWith("error:", StringComparison.Ordinal) ? opened[6..] : opened);
-        }
-
+        ct.ThrowIfCancellationRequested();
         using var registration = ct.Register(Close);
-        string? last = null;
-        byte[] buffer = Array.Empty<byte>();
         try
         {
+            var opened = await OpenAsync(status, Strings.Common_Cancel).WaitAsync(ct);
+            switch (opened)
+            {
+                case "ok": break;
+                case "closed": return false;
+                case "denied": throw new QrCameraUnavailableException(Strings.Qr_CameraDenied);
+                case "nocamera": throw new QrCameraUnavailableException(Strings.Qr_NoCamera);
+                default: throw new QrCameraUnavailableException(opened.StartsWith("error:", StringComparison.Ordinal) ? opened[6..] : opened);
+            }
+            string? last = null;
+            byte[] buffer = Array.Empty<byte>();
             while (true)
             {
                 var frame = await NextFrameAsync();

@@ -26,12 +26,13 @@ internal sealed class IosQrCamera : IQrCamera
             AVAuthorizationStatus.NotDetermined => await AVCaptureDevice.RequestAccessForMediaTypeAsync(AVAuthorizationMediaType.Video),
             _ => false,
         };
+        ct.ThrowIfCancellationRequested();
         if (!granted) throw new QrCameraUnavailableException(Strings.Qr_CameraDenied);
         var device = AVCaptureDevice.GetDefaultDevice(AVMediaTypes.Video)
             ?? throw new QrCameraUnavailableException(Strings.Qr_NoCamera);
 
         var done = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var scanner = new ScannerViewController(device, status, onCode, done);
+        using var scanner = new ScannerViewController(device, status, onCode, done);
         var presenter = TopViewController() ?? throw new QrCameraUnavailableException(Strings.Qr_NoCamera);
         presenter.PresentViewController(scanner, true, null);
         using var registration = ct.Register(() => scanner.BeginInvokeOnMainThread(() => scanner.Finish(false)));
@@ -56,6 +57,7 @@ internal sealed class IosQrCamera : IQrCamera
         private readonly Func<string, QrScanStep> _onCode;
         private readonly TaskCompletionSource<bool> _done;
         private readonly AVCaptureSession _session = new();
+        private readonly DispatchQueue _cameraQueue = new("ChameLab.QrCamera");
         private AVCaptureVideoPreviewLayer? _preview;
         private UILabel? _label;
         private MetadataDelegate? _delegate;
@@ -134,7 +136,7 @@ internal sealed class IosQrCamera : IQrCamera
             });
 
             // StartRunning blocks until the camera is up: off the main thread.
-            DispatchQueue.GetGlobalQueue(DispatchQueuePriority.Default).DispatchAsync(_session.StartRunning);
+            _cameraQueue.DispatchAsync(() => { if (!_finished) _session.StartRunning(); });
         }
 
         public override void ViewDidLayoutSubviews()
@@ -156,12 +158,22 @@ internal sealed class IosQrCamera : IQrCamera
         {
             if (_finished) return;
             _finished = true;
-            DispatchQueue.GetGlobalQueue(DispatchQueuePriority.Default).DispatchAsync(() =>
+            _cameraQueue.DispatchAsync(() =>
             {
                 if (_session.Running) _session.StopRunning();
+                BeginInvokeOnMainThread(() =>
+                {
+                    if (PresentingViewController is not null)
+                        DismissViewController(true, () => _done.TrySetResult(scanned));
+                    else _done.TrySetResult(scanned);
+                });
             });
-            if (PresentingViewController is not null) DismissViewController(true, null);
-            _done.TrySetResult(scanned);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) { _preview?.Dispose(); _session.Dispose(); _cameraQueue.Dispose(); }
+            base.Dispose(disposing);
         }
 
         private sealed class MetadataDelegate(ScannerViewController owner) : AVCaptureMetadataOutputObjectsDelegate

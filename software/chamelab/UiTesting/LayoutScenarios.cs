@@ -24,7 +24,7 @@ namespace ChameLab.UiTesting;
 // Compiled only into UI test projects/builds. All libraries are synthetic and in memory.
 public static class LayoutScenarios
 {
-    public static readonly string[] Pages = ["connect", "connect-found", "notice", "error", "settings", "device", "slots", "cards", "cards-library", "card-classic", "card-access", "card-compare", "card-hex", "card-ultralight", "card-lf", "dictionaries", "dictionary-download", "dictionary-editor", "dictionary-known", "tools", "hf", "lf", "auth", "ValueBlocks", "T55Password", "T55Block", "Gen4", "RawHf", "RawDevice", "console", "plugins", "key-search", "writer", "writer-classic", "writer-ultralight", "writer-lf", "cards-add", "cards-uid-only", "journal"];
+    public static readonly string[] Pages = ["connect", "connect-found", "notice", "error", "settings", "device", "slots", "cards", "cards-library", "card-classic", "card-qr", "slot-capture", "card-access", "card-compare", "card-hex", "card-ultralight", "card-lf", "dictionaries", "dictionary-download", "dictionary-editor", "dictionary-known", "tools", "hf", "lf", "auth", "ValueBlocks", "T55Password", "T55Block", "Gen4", "RawHf", "RawDevice", "console", "plugins", "key-search", "writer", "writer-classic", "writer-ultralight", "writer-lf", "cards-add", "cards-uid-only", "journal"];
 
     public static Border Create(string page, string language)
     {
@@ -45,12 +45,13 @@ public static class LayoutScenarios
             "notice" or "error" => MessageScenario(page),
             "settings" => new SettingsView { DataContext = new SettingsViewModel(cards, dictionaries, new AppUpdateViewModel()) },
             "device" => new ChameleonView { DataContext = new ChameleonViewModel(device, cards, firmware) },
+            "slot-capture" => CaptureScenario(dictionaries),
             "slots" => new SlotsView { DataContext = new SlotsViewModel(device, cards) },
             "journal" => new JournalView { DataContext = new JournalViewModel(device.Journal) },
             "writer" or "writer-classic" or "writer-ultralight" or "writer-lf" => WriterScenario(page, device, cards, dictionaries),
             "cards-add" or "cards-uid-only" => AddScenario(page, device, cards, dictionaries),
             "cards" => new CardsView { DataContext = new CardsViewModel(device, cards, dictionaries) },
-            "cards-library" or "card-classic" or "card-access" or "card-compare" or "card-hex" or "card-ultralight" or "card-lf" => SavedCardScenario(page, device, cards, dictionaries),
+            "cards-library" or "card-classic" or "card-qr" or "card-access" or "card-compare" or "card-hex" or "card-ultralight" or "card-lf" => SavedCardScenario(page, device, cards, dictionaries),
             "dictionaries" => new DictionariesView { DataContext = new DictionariesViewModel(dictionaries, cards) },
             "tools" => new ToolsView { DataContext = new ToolsViewModel(device, dictionaries, cards) },
             "dictionary-download" or "dictionary-editor" or "dictionary-known" => DictionaryScenario(page, dictionaries, cards),
@@ -152,11 +153,22 @@ public static class LayoutScenarios
             reference.Data[1][0] = 1;
             reference.Data[2] = [];
             reference.Extra.UnknownKeyA.Add(0);
-            model.CompareWithCard(reference);
+            reference.Name = "Synthetic comparison";
+            cards.Add(reference);
+            model.CompareCommand.Execute(null);
+            model.CompareTarget = model.CompareTargets.Single();
         }
+        if (page == "card-qr") model.ShareQrCommand.Execute(null);
         if (page == "card-hex") model.Form!.ShowAllMemory = true;
         return view;
     }
+    private static Control CaptureScenario(DictionaryLibrary dictionaries)
+    {
+        var vm = new EmulatorCaptureViewModel(() => null, 1, true, dictionaries);
+        vm.Clear();
+        return new ScrollViewer { Content = new EmulatorCapturePanel { DataContext = vm, Margin = new Thickness(16) } };
+    }
+
     private static Control WriterScenario(string page, DeviceService device, CardLibrary cards, DictionaryLibrary dictionaries)
     {
         var vm = new WriterViewModel(device, cards, dictionaries);
