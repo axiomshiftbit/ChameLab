@@ -724,7 +724,7 @@
     <value>Enregistrer une copie de cette carte</value>
   </data>
   <data name="Cards_SaveAsJSONCompatibleWithThe" xml:space="preserve">
-    <value>Enregistrer en JSON (compatible avec l'application Flutter)</value>
+    <value>Enregistrer en JSON (compatible avec ChameleonUltraGUI)</value>
   </data>
   <data name="Cards_SaveNewBeforeLeaving" xml:space="preserve">
     <value>Enregistrer la nouvelle carte avant de quitter ?</value>
@@ -2023,7 +2023,7 @@
     <value>APPAREIL CONNECTÉ</value>
   </data>
   <data name="Main_DeviceSummary" xml:space="preserve">
-    <value>{0} · fw {1}</value>
+    <value>{0} {1}</value>
   </data>
   <data name="Main_Disconnect" xml:space="preserve">
     <value>Déconnecter</value>
@@ -2059,7 +2059,7 @@
     <value>Non connecté</value>
   </data>
   <data name="Main_Offline" xml:space="preserve">
-    <value>Hors ligne</value>
+    <value>Aucun appareil</value>
   </data>
   <data name="Main_Online" xml:space="preserve">
     <value>En ligne</value>
@@ -2254,7 +2254,7 @@
     <value>{0} carte|{0} cartes</value>
   </data>
   <data name="Plural_DeletedFolderCards" xml:space="preserve">
-    <value>Dossier {1} supprimé ; sa carte est toujours dans Cartes.|Dossier {1} supprimé ; ses {0} cartes sont toujours dans Cartes.</value>
+    <value>Dossier {1} supprimé ; sa carte est maintenant dans {2}.|Dossier {1} supprimé ; ses {0} cartes sont maintenant dans {2}.</value>
   </data>
   <data name="Plural_Dictionaries" xml:space="preserve">
     <value>{0} dictionnaire|{0} dictionnaires</value>
@@ -2530,7 +2530,7 @@
     <value>Scannez la carte cible avant de lancer mfkey32.</value>
   </data>
   <data name="Recovery_SectorKeyDetail" xml:space="preserve">
-    <value>Secteur {0} · clé {1} · {2}</value>
+    <value>Secteur {0}{1} · {2}</value>
   </data>
   <data name="Recovery_SectorKeyProgress" xml:space="preserve">
     <value>Secteur {0} · clé {1} · {2}/{3}</value>
@@ -2665,7 +2665,7 @@
     <value>Par défaut</value>
   </data>
   <data name="Slots_DragCardsToChangeTheOrder" xml:space="preserve">
-    <value>Faites glisser les cartes pour changer l'ordre. À chaque apparition du champ du lecteur, l'appareil envoie la carte suivante à tour de rôle.</value>
+    <value>Faites glisser les cartes pour changer l'ordre.</value>
   </data>
   <data name="Slots_EmptySlot" xml:space="preserve">
     <value>Emplacement vide</value>
@@ -4020,5 +4020,545 @@ Octets identiques : {1} ; différents : {2} ; inconnus : {3}.</value>
   </data>
   <data name="Dictionaries_KnownPassword" xml:space="preserve">
     <value>Mot de passe</value>
+  </data>
+  <data name="Cards_GenerateRandomUid" xml:space="preserve">
+    <value>Générer un UID aléatoire</value>
+  </data>
+  <data name="Cards_CardFileCompatibleWithChameleonUltraGui" xml:space="preserve">
+    <value>Fichier de carte, compatible avec ChameleonUltraGUI</value>
+  </data>
+  <data name="Device_NoLfTag" xml:space="preserve">
+    <value>Aucun tag LF : {0}</value>
+  </data>
+  <data name="Main_SupportUs" xml:space="preserve">
+    <value>Soutenez-nous sur {0}</value>
+  </data>
+  <data name="Slots_SwitchCards" xml:space="preserve">
+    <value>Changer de carte</value>
+  </data>
+  <data name="Slots_CyclePerField" xml:space="preserve">
+    <value>À chaque passage</value>
+  </data>
+  <data name="Slots_CycleWhilePresent" xml:space="preserve">
+    <value>Dans le champ</value>
+  </data>
+  <data name="Slots_CyclePerFieldHint" xml:space="preserve">
+    <value>Chaque fois que le champ du lecteur apparaît, l'appareil envoie la carte suivante à tour de rôle. Pour changer, éloignez l'appareil du lecteur puis rapprochez-le.</value>
+  </data>
+  <data name="Slots_CycleWhilePresentHint" xml:space="preserve">
+    <value>Tant que le champ du lecteur est présent, l'appareil envoie les cartes à tour de rôle. Il retient la dernière carte envoyée et repart d'elle la fois suivante.</value>
+  </data>
+  <data name="Slots_TimePerCardBursts" xml:space="preserve">
+    <value>Temps par carte, salves</value>
+  </data>
+  <data name="Slots_TimePerCardTip" xml:space="preserve">
+    <value>1–10 salves par carte ; une salve correspond à dix trames de la carte : environ 0,33 s pour EM410x, de 0,16 (Viking, IDTECK) à 0,66 (Electra, Jablotron) pour les autres types</value>
+  </data>
+  <data name="Slots_OneBurstByCardType" xml:space="preserve">
+    <value>Une salve ≈ 0,16–0,66 s selon le type.</value>
+  </data>
+  <data name="Slots_SilenceBetweenCardsS" xml:space="preserve">
+    <value>Silence entre les cartes, s</value>
+  </data>
+  <data name="Slots_CollectNonces" xml:space="preserve">
+    <value>Collecter les nonces</value>
+  </data>
+  <data name="Dictionaries_Type" xml:space="preserve">
+    <value>Type de dictionnaire</value>
+  </data>
+  <data name="Tools_T55xxPassword" xml:space="preserve">
+    <value>Changer le mot de passe T55XX</value>
+  </data>
+  <data name="Tools_T55xxDictionaryHint" xml:space="preserve">
+    <value>Essayer les mots de passe des dictionnaires</value>
+  </data>
+  <data name="Tools_Console" xml:space="preserve">
+    <value>Console</value>
+  </data>
+  <data name="Tools_ConsoleHint" xml:space="preserve">
+    <value>Commandes du client en ligne de commande</value>
+  </data>
+  <data name="Tools_ConsoleIntro" xml:space="preserve">
+    <value>Exécute les commandes du client en ligne de commande sur le Chameleon connecté. Tapez help pour la liste, ou une commande suivie de --help pour ses options.</value>
+  </data>
+  <data name="Tools_ConsoleFolder" xml:space="preserve">
+    <value>Les fichiers sans chemin complet vont dans {0}</value>
+  </data>
+  <data name="Tools_ConsolePlaceholder" xml:space="preserve">
+    <value>Tapez une commande ; Tab la complète</value>
+  </data>
+  <data name="Tools_ConsolePlaceholderTouch" xml:space="preserve">
+    <value>Saisissez une commande ; touchez une suggestion pour l’ajouter</value>
+  </data>
+  <data name="Tools_ConsoleFilesInApp" xml:space="preserve">
+    <value>Les fichiers enregistrés par les commandes restent dans ChameLab sur cet appareil.</value>
+  </data>
+  <data name="Tools_ConsoleFilesBrowser" xml:space="preserve">
+    <value>Les fichiers enregistrés par les commandes restent dans cette page et disparaissent quand elle est rechargée.</value>
+  </data>
+  <data name="Tools_ConsoleRun" xml:space="preserve">
+    <value>Exécuter</value>
+  </data>
+  <data name="Tools_ConsoleWrap" xml:space="preserve">
+    <value>Retour</value>
+  </data>
+  <data name="Tools_ConsoleAutoscroll" xml:space="preserve">
+    <value>Défiler</value>
+  </data>
+  <data name="Tools_ConsoleChooseFolder" xml:space="preserve">
+    <value>Choisir le dossier des fichiers des commandes</value>
+  </data>
+  <data name="Tools_ConsoleDefaultFolder" xml:space="preserve">
+    <value>Utiliser le dossier par défaut</value>
+  </data>
+  <data name="Tools_FromTheConsole" xml:space="preserve">
+    <value>Depuis la console</value>
+  </data>
+  <data name="Tools_T55xxDescription" xml:space="preserve">
+    <value>Placez un badge T55XX sur le lecteur. Les clés sont vérifiées en écrivant puis en lisant un autre ID. Si une clé fonctionne, l’ID d’origine est restauré et le nouveau mot de passe est défini.</value>
+  </data>
+  <data name="Tools_T55xxNewKey" xml:space="preserve">
+    <value>Nouvelle clé (4 octets, hex)</value>
+  </data>
+  <data name="Tools_T55xxDefaultKeyHint" xml:space="preserve">
+    <value>Laissez vide pour utiliser 20206666.</value>
+  </data>
+  <data name="Tools_T55xxUnsupported" xml:space="preserve">
+    <value>Ce micrologiciel ne permet pas de modifier les mots de passe T55XX. Mettez-le à jour ; un Chameleon Ultra est nécessaire.</value>
+  </data>
+  <data name="Tools_T55xxProgress" xml:space="preserve">
+    <value>Clés vérifiées : {0} / {1}</value>
+  </data>
+  <data name="Tools_T55xxComplete" xml:space="preserve">
+    <value>ID d’origine restauré et vérifié.</value>
+  </data>
+  <data name="Tools_T55xxCancelled" xml:space="preserve">
+    <value>Annulé.</value>
+  </data>
+  <data name="Tools_T55xxFoundKey" xml:space="preserve">
+    <value>Clé correspondante : {0}</value>
+  </data>
+  <data name="Tools_T55xxUnprotected" xml:space="preserve">
+    <value>Le badge n’est pas protégé par mot de passe.</value>
+  </data>
+  <data name="Tools_T55xxNotFound" xml:space="preserve">
+    <value>Introuvable</value>
+  </data>
+  <data name="Tools_T55xxNotSet" xml:space="preserve">
+    <value>Non définie</value>
+  </data>
+  <data name="Tools_T55xxNoMatch" xml:space="preserve">
+    <value>Aucune clé correspondante dans les dictionnaires sélectionnés.</value>
+  </data>
+  <data name="Tools_T55xxReadOriginalFailed" xml:space="preserve">
+    <value>Impossible de lire un ID LF pris en charge. Gardez le badge sur le lecteur.</value>
+  </data>
+  <data name="Tools_T55xxProbeFailed" xml:space="preserve">
+    <value>Impossible de vérifier l’ID de test. La recherche a été arrêtée et la restauration de l’ID d’origine a été tentée.</value>
+  </data>
+  <data name="Tools_T55xxRestoreFailed" xml:space="preserve">
+    <value>Impossible de restaurer l’ID {0} : {1}. Clé candidate : {2} ; nouvelle clé : {3}. Conservez cet ID et les deux clés pour la restauration. {4}</value>
+  </data>
+  <data name="Tools_T55xxOriginalId" xml:space="preserve">
+    <value>ID {0} d’origine : {1}</value>
+  </data>
+  <data name="Dictionaries_KeyLength" xml:space="preserve">
+    <value>Longueur de clé (octets)</value>
+  </data>
+  <data name="Dictionaries_AllKeyLengths" xml:space="preserve">
+    <value>Toutes les longueurs</value>
+  </data>
+  <data name="Dictionaries_InvalidKeyLength" xml:space="preserve">
+    <value>La longueur de clé doit être comprise entre 4 et 16 octets.</value>
+  </data>
+  <data name="Dictionaries_BadKeyLine" xml:space="preserve">
+    <value>Ligne {0} : une clé hexadécimale de {1} octets est attendue.</value>
+  </data>
+  <data name="Plural_Bytes" xml:space="preserve">
+    <value>{0} octet|{0} octets</value>
+  </data>
+  <data name="Hex_InsertByte" xml:space="preserve">
+    <value>Insérer un octet</value>
+  </data>
+  <data name="Hex_DeleteBytes" xml:space="preserve">
+    <value>Supprimer les octets</value>
+  </data>
+  <data name="Hex_TypeToAddByte" xml:space="preserve">
+    <value>tapez pour ajouter un octet</value>
+  </data>
+  <data name="Dictionaries_KeyTooShort" xml:space="preserve">
+    <value>La clé {0} fait moins de {1} octets</value>
+  </data>
+  <data name="Tools_T55xxKeepKey" xml:space="preserve">
+    <value>Conserver</value>
+  </data>
+  <data name="Tools_T55xxKeepKeyHint" xml:space="preserve">
+    <value>Le mot de passe actuel et le mode de protection seront conservés.</value>
+  </data>
+  <data name="Tools_T55xxSetNewKey" xml:space="preserve">
+    <value>Définir</value>
+  </data>
+  <data name="Tools_T55xxCurrentKey" xml:space="preserve">
+    <value>Clé actuelle</value>
+  </data>
+  <data name="Tools_T55xxKnowKey" xml:space="preserve">
+    <value>Je la connais</value>
+  </data>
+  <data name="Tools_T55xxDictionaryAttack" xml:space="preserve">
+    <value>Attaque par dictionnaire</value>
+  </data>
+  <data name="Tools_T55xxKnownKey" xml:space="preserve">
+    <value>Mot de passe connu</value>
+  </data>
+  <data name="Tools_T55xxNewKeyTitle" xml:space="preserve">
+    <value>Nouvelle clé</value>
+  </data>
+  <data name="Tools_T55xxDefaultKeyWillBeSet" xml:space="preserve">
+    <value>La clé par défaut {0} sera définie.</value>
+  </data>
+  <data name="Tools_T55xxUid" xml:space="preserve">
+    <value>UID</value>
+  </data>
+  <data name="Tools_T55xxFound" xml:space="preserve">
+    <value>Trouvée</value>
+  </data>
+  <data name="Tools_T55xxNew" xml:space="preserve">
+    <value>Nouvelle</value>
+  </data>
+  <data name="Cards_SaveKeys" xml:space="preserve">
+    <value>Enregistrer les clés</value>
+  </data>
+  <data name="Cards_SaveTheCardsKeys" xml:space="preserve">
+    <value>Enregistrer les clés de la carte : dans le presse-papiers, un dictionnaire ou un fichier</value>
+  </data>
+  <data name="Cards_KeysToClipboard" xml:space="preserve">
+    <value>Copier dans le presse-papiers</value>
+  </data>
+  <data name="Cards_KeysToDictionary" xml:space="preserve">
+    <value>Ajouter à un dictionnaire</value>
+  </data>
+  <data name="Cards_ExportKeysTitle" xml:space="preserve">
+    <value>Enregistrer les clés (.dic)</value>
+  </data>
+  <data name="Cards_KeysCopied" xml:space="preserve">
+    <value>Copié : {0}.</value>
+  </data>
+  <data name="Cards_KeysAddedTo" xml:space="preserve">
+    <value>Ajouté à « {1} » : {0}.</value>
+  </data>
+  <data name="Cards_KeysAlreadyInDictionary" xml:space="preserve">
+    <value>« {0} » contient déjà toutes ces clés.</value>
+  </data>
+  <data name="Cards_KeysSavedToNewDictionary" xml:space="preserve">
+    <value>Dictionnaire « {1} » créé : {0}.</value>
+  </data>
+  <data name="Plural_T55xxPasswords" xml:space="preserve">
+    <value> · {0} mot de passe T55XX| · {0} mots de passe T55XX</value>
+  </data>
+  <data name="Relay_DisplayName" xml:space="preserve">
+    <value>Appareil partagé {0}</value>
+  </data>
+  <data name="Relay_Network" xml:space="preserve">
+    <value>Appareil partagé (internet)</value>
+  </data>
+  <data name="Relay_InvalidCode" xml:space="preserve">
+    <value>Aucun appareil n’est partagé avec ce code. Vérifiez le code ou demandez-en un nouveau.</value>
+  </data>
+  <data name="Relay_Busy" xml:space="preserve">
+    <value>Quelqu’un d’autre est déjà connecté à cet appareil partagé.</value>
+  </data>
+  <data name="Relay_HostLeft" xml:space="preserve">
+    <value>L’appareil partagé n’est plus disponible : le partage a été arrêté de l’autre côté.</value>
+  </data>
+  <data name="Relay_Closed" xml:space="preserve">
+    <value>La connexion au serveur relais a été perdue.</value>
+  </data>
+  <data name="Relay_Unreachable" xml:space="preserve">
+    <value>Impossible de joindre le serveur relais {0}.</value>
+  </data>
+  <data name="Relay_UnexpectedReply" xml:space="preserve">
+    <value>Le serveur relais a envoyé une réponse inattendue.</value>
+  </data>
+  <data name="Relay_InvalidCodeFormat" xml:space="preserve">
+    <value>Un code ressemble à TR1-ABCD-1234 : le serveur, puis 8 lettres et chiffres.</value>
+  </data>
+  <data name="Share_AlreadySharing" xml:space="preserve">
+    <value>Un appareil est déjà partagé.</value>
+  </data>
+  <data name="Share_NotLocal" xml:space="preserve">
+    <value>Seul un appareil connecté à cet ordinateur peut être partagé.</value>
+  </data>
+  <data name="Share_DeviceLost" xml:space="preserve">
+    <value>L’appareil partagé a été déconnecté de cet ordinateur.</value>
+  </data>
+  <data name="Connect_SharedDevice" xml:space="preserve">
+    <value>Se connecter à un appareil partagé</value>
+  </data>
+  <data name="Connect_SharedDeviceHint" xml:space="preserve">
+    <value>Saisissez le code affiché dans ChameLab chez la personne qui partage son Chameleon.</value>
+  </data>
+  <data name="Share_Title" xml:space="preserve">
+    <value>Partager cet appareil</value>
+  </data>
+  <data name="Share_Hint" xml:space="preserve">
+    <value>Permettez à quelqu’un d’utiliser le Chameleon sélectionné depuis un autre ordinateur via internet. Il se connecte avec le code affiché ici.</value>
+  </data>
+  <data name="Share_Warning" xml:space="preserve">
+    <value>Toute personne qui a le code contrôle entièrement l’appareil jusqu’à ce que vous arrêtiez le partage.</value>
+  </data>
+  <data name="Share_Start" xml:space="preserve">
+    <value>Partager</value>
+  </data>
+  <data name="Share_Stop" xml:space="preserve">
+    <value>Arrêter le partage</value>
+  </data>
+  <data name="Share_Starting" xml:space="preserve">
+    <value>Démarrage…</value>
+  </data>
+  <data name="Share_Waiting" xml:space="preserve">
+    <value>En attente d’une connexion…</value>
+  </data>
+  <data name="Share_PeerConnected" xml:space="preserve">
+    <value>Quelqu’un est connecté et utilise l’appareil.</value>
+  </data>
+  <data name="Share_CodeLabel" xml:space="preserve">
+    <value>Code à partager</value>
+  </data>
+  <data name="Relay_UnknownRegion" xml:space="preserve">
+    <value>Le code commence par {0}, mais aucun serveur relais ne porte ce nom.</value>
+  </data>
+  <data name="Relay_NoServers" xml:space="preserve">
+    <value>Aucun serveur relais n’est joignable. Vérifiez la connexion internet.</value>
+  </data>
+  <data name="Tools_FrameTime" xml:space="preserve">
+    <value>+{0:F3} ms</value>
+  </data>
+  <data name="Tools_FrameGap" xml:space="preserve">
+    <value>Δ {0:F1} µs</value>
+  </data>
+  <data name="Tools_FrameTimingHint" xml:space="preserve">
+    <value>Temps depuis le début de la capture ; Δ est la pause depuis la fin de la trame précédente.</value>
+  </data>
+  <data name="Share_TrafficToDevice" xml:space="preserve">
+    <value>Envoyé à l’appareil</value>
+  </data>
+  <data name="Share_TrafficFromDevice" xml:space="preserve">
+    <value>Reçu de l’appareil</value>
+  </data>
+  <data name="Share_PeerConnectedName" xml:space="preserve">
+    <value>{0} est connecté et utilise l’appareil.</value>
+  </data>
+  <data name="Main_SelectBootloader" xml:space="preserve">
+    <value>Choisir le bootloader</value>
+  </data>
+  <data name="Firmware_PickBootloaderUsb" xml:space="preserve">
+    <value>En attente du bootloader… La première fois, le navigateur a besoin de votre autorisation : cliquez sur Choisir le bootloader et sélectionnez le port DFU du Chameleon dans la liste.</value>
+  </data>
+  <data name="Firmware_PickBootloaderBle" xml:space="preserve">
+    <value>En attente du bootloader… La première fois, le navigateur a besoin de votre autorisation : cliquez sur Choisir le bootloader et sélectionnez l'appareil CU-… (CL-… pour un Lite) dans la liste.</value>
+  </data>
+  <data name="Firmware_BootloaderNotPicked" xml:space="preserve">
+    <value>Le bootloader n'a pas été choisi à temps. Si les LED 4 et 5 clignotent, l'appareil attend dans son bootloader : cliquez sur Réessayer et sélectionnez-le.</value>
+  </data>
+  <data name="Recovery_SkipSector" xml:space="preserve">
+    <value>Ignorer le secteur</value>
+  </data>
+  <data name="Recovery_SkipSectorTip" xml:space="preserve">
+    <value>Ignorer le secteur {0} et passer au suivant. Les clés trouvées sont conservées.</value>
+  </data>
+  <data name="Recovery_KeyProgress" xml:space="preserve">
+    <value>clé {0} sur {1}</value>
+  </data>
+  <data name="Qr_Damaged" xml:space="preserve">
+    <value>Les QR codes ne forment pas une carte. Scannez-les à nouveau.</value>
+  </data>
+  <data name="Qr_PartOf" xml:space="preserve">
+    <value>Code {0} sur {1}</value>
+  </data>
+  <data name="Qr_Pause" xml:space="preserve">
+    <value>Pause</value>
+  </data>
+  <data name="Qr_Play" xml:space="preserve">
+    <value>Lecture</value>
+  </data>
+  <data name="Qr_Previous" xml:space="preserve">
+    <value>Code précédent</value>
+  </data>
+  <data name="Qr_Next" xml:space="preserve">
+    <value>Code suivant</value>
+  </data>
+  <data name="Qr_SingleHint" xml:space="preserve">
+    <value>Le QR contient les données de la carte et les clés enregistrées. Partagez-le uniquement avec une personne de confiance. Dans ChameLab : Ajouter une carte → Code QR.</value>
+  </data>
+  <data name="Qr_SeriesHint" xml:space="preserve">
+    <value>Cette carte utilise plusieurs codes. Scannez toutes les parties dans ChameLab. Les données et les clés enregistrées ne sont pas chiffrées.</value>
+  </data>
+  <data name="Qr_PointAtCode" xml:space="preserve">
+    <value>Pointez l'appareil photo vers un QR code de carte ChameLab</value>
+  </data>
+  <data name="Qr_OpenImageTitle" xml:space="preserve">
+    <value>Ouvrir une image de QR code</value>
+  </data>
+  <data name="Qr_NoCodeInImage" xml:space="preserve">
+    <value>Aucun QR code trouvé dans {0}.</value>
+  </data>
+  <data name="Qr_NotACardCode" xml:space="preserve">
+    <value>Ce QR code n'est pas une carte ChameLab.</value>
+  </data>
+  <data name="Qr_FromQrCode" xml:space="preserve">
+    <value>Depuis un QR code</value>
+  </data>
+  <data name="Qr_CardReceived" xml:space="preserve">
+    <value>Carte reçue</value>
+  </data>
+  <data name="Qr_PartsRead" xml:space="preserve">
+    <value>{0} codes lus sur {1}. Manquants : {2}.</value>
+  </data>
+  <data name="Qr_Share" xml:space="preserve">
+    <value>QR code</value>
+  </data>
+  <data name="Qr_ShareTip" xml:space="preserve">
+    <value>Afficher la carte en QR code à scanner avec un autre téléphone ou ordinateur</value>
+  </data>
+  <data name="Qr_ShareHeader" xml:space="preserve">
+    <value>PARTAGER EN QR CODE</value>
+  </data>
+  <data name="Qr_ScanTile" xml:space="preserve">
+    <value>QR code</value>
+  </data>
+  <data name="Qr_ScanCamera" xml:space="preserve">
+    <value>Appareil photo</value>
+  </data>
+  <data name="Qr_ScanImage" xml:space="preserve">
+    <value>Depuis une image</value>
+  </data>
+  <data name="Qr_ScanTip" xml:space="preserve">
+    <value>Ajouter une carte partagée depuis ChameLab en QR code</value>
+  </data>
+  <data name="Qr_ScanImageTip" xml:space="preserve">
+    <value>Lire le QR code depuis une capture d'écran ou une photo</value>
+  </data>
+  <data name="Qr_CameraDenied" xml:space="preserve">
+    <value>L'accès à l'appareil photo est refusé. Autorisez-le dans les réglages du système, ou ouvrez une capture d'écran ou une photo du code.</value>
+  </data>
+  <data name="Qr_NoCamera" xml:space="preserve">
+    <value>Aucun appareil photo disponible. Ouvrez plutôt une capture d'écran ou une photo du code.</value>
+  </data>
+  <data name="Qr_ScannerUnavailable" xml:space="preserve">
+    <value>Le lecteur de QR codes n'est pas disponible sur cet appareil (il nécessite les services Google Play). Ouvrez plutôt une capture d'écran ou une photo du code.</value>
+  </data>
+  <data name="Compare_Button" xml:space="preserve">
+    <value>Comparer</value>
+  </data>
+  <data name="Compare_Tip" xml:space="preserve">
+    <value>Comparer la mémoire de cette carte avec une autre carte enregistrée ou un fichier de dump</value>
+  </data>
+  <data name="Compare_Header" xml:space="preserve">
+    <value>COMPARER LES DUMPS</value>
+  </data>
+  <data name="Compare_Hint" xml:space="preserve">
+    <value>Choisissez une carte enregistrée ou ouvrez un fichier de dump. Les octets différents sont surlignés ; les modifications de cette carte apparaissent aussitôt.</value>
+  </data>
+  <data name="Compare_PickCard" xml:space="preserve">
+    <value>Carte enregistrée à comparer</value>
+  </data>
+  <data name="Compare_OpenFile" xml:space="preserve">
+    <value>Fichier</value>
+  </data>
+  <data name="Compare_OpenFileTip" xml:space="preserve">
+    <value>Comparer avec un fichier de dump : JSON, Flipper .nfc, MCT, .bin, .eml et les autres formats d'import</value>
+  </data>
+  <data name="Compare_OpenFileTitle" xml:space="preserve">
+    <value>Ouvrir un dump à comparer</value>
+  </data>
+  <data name="Compare_NoCards" xml:space="preserve">
+    <value>Aucune autre carte enregistrée n'a ce type de mémoire. Ouvrez plutôt un fichier de dump.</value>
+  </data>
+  <data name="Compare_Identical" xml:space="preserve">
+    <value>Les cartes sont identiques.</value>
+  </data>
+  <data name="Compare_BlocksDiffer" xml:space="preserve">
+    <value>Blocs différents : {0} sur {1} ; octets : {2}</value>
+  </data>
+  <data name="Compare_PagesDiffer" xml:space="preserve">
+    <value>Pages différentes : {0} sur {1} ; octets : {2}</value>
+  </data>
+  <data name="Compare_OnlyDifferences" xml:space="preserve">
+    <value>Différences uniquement</value>
+  </data>
+  <data name="Compare_NotRead" xml:space="preserve">
+    <value>non lu</value>
+  </data>
+  <data name="Compare_FileHasNoMatch" xml:space="preserve">
+    <value>{0} ne contient aucune carte avec ce type de mémoire.</value>
+  </data>
+  <data name="Common_BackTo" xml:space="preserve">
+    <value>Retour à {0}</value>
+  </data>
+  <data name="Common_Move" xml:space="preserve">
+    <value>Déplacer</value>
+  </data>
+  <data name="Common_MoveFolder" xml:space="preserve">
+    <value>Déplacer ce dossier dans un autre</value>
+  </data>
+  <data name="Common_MovedFolder" xml:space="preserve">
+    <value>Dossier {0} déplacé dans {1}.</value>
+  </data>
+  <data name="Common_NewFolderInside" xml:space="preserve">
+    <value>Nouveau dossier à l'intérieur</value>
+  </data>
+  <data name="Common_ShowOrHideFoldersInside" xml:space="preserve">
+    <value>Afficher ou masquer les dossiers qu'il contient</value>
+  </data>
+  <data name="Common_FolderContentsMoveUp" xml:space="preserve">
+    <value>Son contenu remonte d'un niveau</value>
+  </data>
+  <data name="Common_FolderContentsMoveTo" xml:space="preserve">
+    <value>Rien de son contenu n'est supprimé : tout va dans {0}.</value>
+  </data>
+  <data name="Plural_DeletedFolderDictionaries" xml:space="preserve">
+    <value>Dossier {1} supprimé ; son dictionnaire est maintenant dans {2}.|Dossier {1} supprimé ; ses {0} dictionnaires sont maintenant dans {2}.</value>
+  </data>
+  <data name="Dictionaries_MoveThisDictionaryToAFolder" xml:space="preserve">
+    <value>Déplacer ce dictionnaire dans un dossier</value>
+  </data>
+  <data name="Dictionaries_NoDictionariesInThisFolderYet" xml:space="preserve">
+    <value>Aucun dictionnaire dans ce dossier pour l'instant. Faites-y glisser des dictionnaires dans le volet de navigation ou ajoutez-en un ici.</value>
+  </data>
+  <data name="Dictionaries_AddDictionary" xml:space="preserve">
+    <value>Ajouter un dictionnaire</value>
+  </data>
+  <data name="Dictionaries_AddADictionary" xml:space="preserve">
+    <value>Ajouter un dictionnaire</value>
+  </data>
+  <data name="Dictionaries_AddHint" xml:space="preserve">
+    <value>Importez un fichier de clés, saisissez les clés ou téléchargez un dictionnaire connu.</value>
+  </data>
+  <data name="Dictionaries_AddTip" xml:space="preserve">
+    <value>Importer, saisir ou télécharger un dictionnaire de clés</value>
+  </data>
+  <data name="Dictionaries_TypeKeysByHand" xml:space="preserve">
+    <value>Saisir les clés à la main</value>
+  </data>
+  <data name="Dictionaries_DownloadTip" xml:space="preserve">
+    <value>Télécharger un dictionnaire connu du projet Proxmark3, Flipper Zero ou Unleashed</value>
+  </data>
+  <data name="Dictionaries_DownloadTitle" xml:space="preserve">
+    <value>Télécharger un dictionnaire</value>
+  </data>
+  <data name="Dictionaries_DownloadHint" xml:space="preserve">
+    <value>Listes de clés publiées sur GitHub par les projets Proxmark3, Flipper Zero et Unleashed. Celui que vous choisissez s'ouvre pour vérification avant d'être enregistré.</value>
+  </data>
+  <data name="Dictionaries_DlFailed" xml:space="preserve">
+    <value>Impossible de télécharger {0} : {1}</value>
+  </data>
+  <data name="Slots_NonceCount" xml:space="preserve">
+    <value>Nonces collectés</value>
+  </data>
+  <data name="Device_IncompleteResponse" xml:space="preserve">
+    <value>Réponse incomplète de l’appareil contenant les données collectées.</value>
+  </data>
+  <data name="Slots_PasswordCount" xml:space="preserve">
+    <value>Mots de passe collectés</value>
   </data>
 </root>

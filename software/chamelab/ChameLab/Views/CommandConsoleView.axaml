@@ -13,17 +13,26 @@
         <Expander.Header><TextBlock Text="{x:Static loc:Strings.Console_Help}" TextWrapping="Wrap" /></Expander.Header>
         <SelectableTextBlock Text="{Binding Help}" TextWrapping="Wrap" />
       </Expander>
-      <TextBox Text="{Binding CommandText}" Classes="mono" TextWrapping="Wrap" AcceptsReturn="False" IsEnabled="{Binding !Working}" />
+      <TextBox KeyDown="OnCommandKeyDown" Text="{Binding CommandText}" Classes="mono" TextWrapping="Wrap" AcceptsReturn="False" IsEnabled="{Binding !Working}" />
+      <ItemsControl ItemsSource="{Binding Suggestions}">
+        <ItemsControl.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Classes="caption" /></DataTemplate></ItemsControl.ItemTemplate>
+      </ItemsControl>
       <WrapPanel Orientation="Horizontal">
         <Button Command="{Binding RunCommand}" Content="{x:Static loc:Strings.Console_Run}" IsEnabled="{Binding !Working}" Margin="0,0,8,8" />
-        <Button Command="{Binding StopCommand}" Content="{x:Static loc:Strings.Console_Stop}" IsEnabled="{Binding Working}" Margin="0,0,8,8" />
+        <Button Command="{Binding StopCommand}" Content="{Binding StopLabel}" IsEnabled="{Binding Working}" Margin="0,0,8,8" />
         <Button Command="{Binding ClearCommand}" Content="{x:Static loc:Strings.Console_Clear}" Margin="0,0,8,8" />
       </WrapPanel>
       <StackPanel IsVisible="{Binding WaitingForInput}" Spacing="8">
         <TextBox Text="{Binding Response}" TextWrapping="Wrap" Classes="mono" />
         <Button Command="{Binding SendInputCommand}" Content="{x:Static loc:Strings.Console_Respond}" />
       </StackPanel>
-      <ScrollViewer Height="280" HorizontalScrollBarVisibility="Auto"><SelectableTextBlock Text="{Binding Output}" Classes="mono" /></ScrollViewer>
+      <WrapPanel Orientation="Horizontal">
+        <CheckBox Content="{x:Static loc:Strings.Tools_ConsoleWrap}" IsChecked="{Binding WrapOutput}" Margin="0,0,16,0" />
+        <CheckBox Content="{x:Static loc:Strings.Tools_ConsoleAutoscroll}" IsChecked="{Binding AutoScroll}" />
+      </WrapPanel>
+      <ScrollViewer Name="OutputScroll" Height="280" HorizontalScrollBarVisibility="Auto">
+        <SelectableTextBlock Text="{Binding Output}" TextWrapping="{Binding OutputWrapping}" Classes="mono" />
+      </ScrollViewer>
       <Expander HorizontalAlignment="Stretch">
         <Expander.Header><TextBlock Text="{x:Static loc:Strings.Console_Files}" TextWrapping="Wrap" /></Expander.Header>
         <StackPanel Spacing="8" IsEnabled="{Binding !Working}">

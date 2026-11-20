@@ -119,6 +119,8 @@ public sealed class KnownCardKeys
         catch (Exception ex) { LoadError = string.Format(Strings.Library_KnownKeysLoadError, ex.Message); }
     }
 
+    internal void Accept(KnownCardKeys source) => _cards = source.Copy();
+
     public string? LoadError { get; }
     public event Action? Changed;
     public int CardCount => _cards.Count;

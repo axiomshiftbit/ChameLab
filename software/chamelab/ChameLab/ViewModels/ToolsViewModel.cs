@@ -37,6 +37,12 @@ public sealed partial class ToolsViewModel : PageViewModelBase
     private SniffTool _tool;
     private readonly Dictionary<string, PageViewModelBase> _extraTools = new();
 
+    private void OnConsoleChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(CommandConsoleViewModel.Working)) this.RaisePropertyChanged(nameof(IsConsoleRunning));
+    }
+    public bool IsConsoleRunning => Extra is CommandConsoleViewModel { Working: true };
+
     public ToolsViewModel(DeviceService device, DictionaryLibrary? dictionaries = null, CardLibrary? cards = null) : base(() => Strings.Tools_Tools, "tools")
     {
         _device = device;
@@ -128,6 +134,12 @@ public sealed partial class ToolsViewModel : PageViewModelBase
             _extraTools[tool] = extra = tool == "key-search" ? new KeySearchViewModel(_device, _dictionaries) : tool == "plugins" ? new PluginsViewModel(_device, _cards, _dictionaries) : tool == "console" ? new CommandConsoleViewModel(_device) : tool == "dictionaries"
             ? new DictionariesViewModel(_dictionaries, _cards)
             : new DeviceToolsViewModel(_device, _dictionaries, Enum.Parse<DeviceTool>(tool));
+        if (extra is CommandConsoleViewModel console)
+        {
+            console.PropertyChanged -= OnConsoleChanged;
+            console.PropertyChanged += OnConsoleChanged;
+        }
+
         Extra = extra;
         Tool = SniffTool.Extra;
     }

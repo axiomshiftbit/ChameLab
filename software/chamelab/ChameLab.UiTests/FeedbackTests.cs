@@ -196,6 +196,8 @@ public class FeedbackTests
                     Command.GetAppVersion => (Status.Success, [2, 3]),
                     Command.GetDeviceMode => (Status.Success, [_mode]),
                     Command.Hf14aScan => (Found ? Status.HfTagOk : Status.HfTagNo, Found ? [4, 1, 2, 3, 4, 4, 0, 9, 0] : []),
+                    Command.VikingScan or Command.HidProxScan or Command.JablotronScan or Command.IoProxScan
+                        or Command.PyramidScan or Command.PacScan => (Status.InvalidCmd, []),
                     Command.Em410xScan => (Found ? Status.LfTagOk : Status.LfTagNoFound, Found ? [1, 2, 3, 4, 5] : []),
                     Command.Mf1DetectSupport or Command.Hf14aRaw => (Status.HfTagOk, []),
                     Command.Mf1AuthOneKeyBlock => (Status.MfErrAuth, []),

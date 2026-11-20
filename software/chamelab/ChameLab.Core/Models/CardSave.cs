@@ -164,8 +164,7 @@ public sealed class CardSave
 
     public static string NormalizeFolder(string? folder)
     {
-        var f = folder?.Trim() ?? string.Empty;
-        return f.Length > MaxFolderLength ? f[..MaxFolderLength].TrimEnd() : f;
+        return FolderPath.Normalize(folder);
     }
 
     public static string NormalizeColor(string? color)

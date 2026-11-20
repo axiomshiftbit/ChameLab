@@ -107,7 +107,8 @@ public enum Command : ushort
     Em410xWriteToEm4x05 = 3034,
     Em4x05WriteWord = 3035,
     Em4x05ReadWord = 3036,
-    Em4x05CheckPassword = 3037,
+    LfAutoScan = 3037,
+    Em4x05CheckPassword = 3038,
 
     Mf1WriteEmuBlockData = 4000,
     Hf14aSetAntiCollData = 4001,
@@ -165,6 +166,9 @@ public enum Command : ushort
     LfSetCycle = 5907,
     LfGetCycle = 5908,
     LfGetAllCycles = 5909,
+    LfSetCycleMode = 5910,
+    LfGetCycleMode = 5911,
+    LfGetAllCycleModes = 5912,
 
     // Extended firmware operations, also available from the shared command console.
     Mf1GetDetectionEnable = 4007,

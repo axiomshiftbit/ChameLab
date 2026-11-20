@@ -8,7 +8,7 @@ internal sealed class LineEditor
     private readonly List<string> _history = [];
     public LineEditor()
     {
-        try { if (File.Exists(_historyFile)) _history.AddRange(File.ReadLines(_historyFile).TakeLast(1000)); }
+        try { if (File.Exists(_historyFile)) _history.AddRange(File.ReadLines(_historyFile).Where(CommandHistory.IsSafe).TakeLast(1000)); }
         catch (IOException) { }
         catch (UnauthorizedAccessException) { }
     }
@@ -36,7 +36,7 @@ internal sealed class LineEditor
             {
                 case ConsoleKey.Enter:
                     Console.WriteLine(); var line = text.ToString();
-                    if (line.Length > 0)
+                    if (CommandHistory.IsSafe(line))
                     {
                         _history.Add(line);
                         try { File.WriteAllLines(_historyFile, _history.TakeLast(1000)); }

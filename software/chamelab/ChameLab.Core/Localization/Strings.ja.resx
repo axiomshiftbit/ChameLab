@@ -724,7 +724,7 @@
     <value>このカードのコピーを保存</value>
   </data>
   <data name="Cards_SaveAsJSONCompatibleWithThe" xml:space="preserve">
-    <value>JSON として保存（Flutter アプリと互換）</value>
+    <value>JSON として保存（ChameleonUltraGUI と互換）</value>
   </data>
   <data name="Cards_SaveNewBeforeLeaving" xml:space="preserve">
     <value>移動する前に新しいカードを保存しますか？</value>
@@ -2023,7 +2023,7 @@
     <value>接続中のデバイス</value>
   </data>
   <data name="Main_DeviceSummary" xml:space="preserve">
-    <value>{0} · fw {1}</value>
+    <value>{0} {1}</value>
   </data>
   <data name="Main_Disconnect" xml:space="preserve">
     <value>切断</value>
@@ -2059,7 +2059,7 @@
     <value>未接続</value>
   </data>
   <data name="Main_Offline" xml:space="preserve">
-    <value>オフライン</value>
+    <value>デバイスなし</value>
   </data>
   <data name="Main_Online" xml:space="preserve">
     <value>オンライン</value>
@@ -2254,7 +2254,7 @@
     <value>{0} 枚のカード</value>
   </data>
   <data name="Plural_DeletedFolderCards" xml:space="preserve">
-    <value>フォルダー {1} を削除しました。中の {0} 枚のカードは「カード」に残っています。</value>
+    <value>フォルダー {1} を削除しました。中の {0} 枚のカードは {2} に移りました。</value>
   </data>
   <data name="Plural_Dictionaries" xml:space="preserve">
     <value>{0} 個の辞書</value>
@@ -2302,13 +2302,13 @@
     <value>。{0} 回間違えるとカードがロックされます。</value>
   </data>
   <data name="Prng_Hard" xml:space="preserve">
-    <value>Hard（予測不可能）</value>
+    <value>強い（予測不可能）</value>
   </data>
   <data name="Prng_Static" xml:space="preserve">
-    <value>Static（固定 nonce）</value>
+    <value>静的（固定 nonce）</value>
   </data>
   <data name="Prng_Weak" xml:space="preserve">
-    <value>Weak（予測可能）</value>
+    <value>弱い（予測可能）</value>
   </data>
   <data name="Protection_AnswerPACK" xml:space="preserve">
     <value>応答（PACK）</value>
@@ -2530,7 +2530,7 @@
     <value>mfkey32 を開始する前にターゲットカードをスキャンしてください。</value>
   </data>
   <data name="Recovery_SectorKeyDetail" xml:space="preserve">
-    <value>セクター {0} · キー {1} · {2}</value>
+    <value>セクター {0}{1} · {2}</value>
   </data>
   <data name="Recovery_SectorKeyProgress" xml:space="preserve">
     <value>セクター {0} · キー {1} · {2}/{3}</value>
@@ -2665,7 +2665,7 @@
     <value>既定</value>
   </data>
   <data name="Slots_DragCardsToChangeTheOrder" xml:space="preserve">
-    <value>カードをドラッグして順序を変更します。リーダーのフィールドが現れるたびに、デバイスは次のカードを順番に送信します。</value>
+    <value>カードをドラッグして順序を変更します。</value>
   </data>
   <data name="Slots_EmptySlot" xml:space="preserve">
     <value>空のスロット</value>
@@ -4020,5 +4020,545 @@
   </data>
   <data name="Dictionaries_KnownPassword" xml:space="preserve">
     <value>パスワード</value>
+  </data>
+  <data name="Cards_GenerateRandomUid" xml:space="preserve">
+    <value>ランダムな UID を生成</value>
+  </data>
+  <data name="Cards_CardFileCompatibleWithChameleonUltraGui" xml:space="preserve">
+    <value>カードファイル（ChameleonUltraGUI と互換）</value>
+  </data>
+  <data name="Device_NoLfTag" xml:space="preserve">
+    <value>LF タグがありません: {0}</value>
+  </data>
+  <data name="Main_SupportUs" xml:space="preserve">
+    <value>{0}で応援する</value>
+  </data>
+  <data name="Slots_SwitchCards" xml:space="preserve">
+    <value>カードの切り替え</value>
+  </data>
+  <data name="Slots_CyclePerField" xml:space="preserve">
+    <value>タッチごと</value>
+  </data>
+  <data name="Slots_CycleWhilePresent" xml:space="preserve">
+    <value>フィールド中</value>
+  </data>
+  <data name="Slots_CyclePerFieldHint" xml:space="preserve">
+    <value>リーダーのフィールドが現れるたびに、デバイスは次のカードを順番に送信します。切り替えるには、デバイスをリーダーから離して再びかざします。</value>
+  </data>
+  <data name="Slots_CycleWhilePresentHint" xml:space="preserve">
+    <value>リーダーのフィールドがある間、デバイスはカードを順番に送信します。最後に送信したカードを記憶し、次回はそのカードから始めます。</value>
+  </data>
+  <data name="Slots_TimePerCardBursts" xml:space="preserve">
+    <value>カードあたりの時間（バースト）</value>
+  </data>
+  <data name="Slots_TimePerCardTip" xml:space="preserve">
+    <value>カードあたり 1～10 バースト。1 バーストはカードの 10 フレーム：EM410x で約 0.33 秒、その他の種類では 0.16（Viking、IDTECK）～0.66（Electra、Jablotron）秒</value>
+  </data>
+  <data name="Slots_OneBurstByCardType" xml:space="preserve">
+    <value>1 バースト ≈ 0.16～0.66 秒（種類による）。</value>
+  </data>
+  <data name="Slots_SilenceBetweenCardsS" xml:space="preserve">
+    <value>カード間の無音、秒</value>
+  </data>
+  <data name="Slots_CollectNonces" xml:space="preserve">
+    <value>nonce を収集</value>
+  </data>
+  <data name="Dictionaries_Type" xml:space="preserve">
+    <value>辞書の種類</value>
+  </data>
+  <data name="Tools_T55xxPassword" xml:space="preserve">
+    <value>T55XX パスワード変更</value>
+  </data>
+  <data name="Tools_T55xxDictionaryHint" xml:space="preserve">
+    <value>辞書のパスワードを試す</value>
+  </data>
+  <data name="Tools_Console" xml:space="preserve">
+    <value>コンソール</value>
+  </data>
+  <data name="Tools_ConsoleHint" xml:space="preserve">
+    <value>コマンドラインクライアントのコマンド</value>
+  </data>
+  <data name="Tools_ConsoleIntro" xml:space="preserve">
+    <value>接続中の Chameleon でコマンドラインクライアントのコマンドを実行します。一覧は help、各コマンドのオプションはコマンドに --help を付けて入力します。</value>
+  </data>
+  <data name="Tools_ConsoleFolder" xml:space="preserve">
+    <value>フルパスのないファイルは {0} に保存されます</value>
+  </data>
+  <data name="Tools_ConsolePlaceholder" xml:space="preserve">
+    <value>コマンドを入力（Tab で補完）</value>
+  </data>
+  <data name="Tools_ConsolePlaceholderTouch" xml:space="preserve">
+    <value>コマンドを入力。候補をタップすると追加されます</value>
+  </data>
+  <data name="Tools_ConsoleFilesInApp" xml:space="preserve">
+    <value>コマンドが保存したファイルは、このデバイスの ChameLab 内に保存されます。</value>
+  </data>
+  <data name="Tools_ConsoleFilesBrowser" xml:space="preserve">
+    <value>コマンドが保存したファイルはこのページ内にあり、再読み込みすると消えます。</value>
+  </data>
+  <data name="Tools_ConsoleRun" xml:space="preserve">
+    <value>実行</value>
+  </data>
+  <data name="Tools_ConsoleWrap" xml:space="preserve">
+    <value>折り返し</value>
+  </data>
+  <data name="Tools_ConsoleAutoscroll" xml:space="preserve">
+    <value>スクロール</value>
+  </data>
+  <data name="Tools_ConsoleChooseFolder" xml:space="preserve">
+    <value>コマンドのファイルを保存するフォルダーを選択</value>
+  </data>
+  <data name="Tools_ConsoleDefaultFolder" xml:space="preserve">
+    <value>既定のフォルダーに戻す</value>
+  </data>
+  <data name="Tools_FromTheConsole" xml:space="preserve">
+    <value>コンソールから</value>
+  </data>
+  <data name="Tools_T55xxDescription" xml:space="preserve">
+    <value>T55XX タグをリーダーに置いてください。別の ID を書き込んで読み取り、キーを検証します。キーが有効なら元の ID を復元し、新しいパスワードを設定します。</value>
+  </data>
+  <data name="Tools_T55xxNewKey" xml:space="preserve">
+    <value>新しいキー（4 バイト、16 進数）</value>
+  </data>
+  <data name="Tools_T55xxDefaultKeyHint" xml:space="preserve">
+    <value>空欄の場合は 20206666 を使用します。</value>
+  </data>
+  <data name="Tools_T55xxUnsupported" xml:space="preserve">
+    <value>このファームウェアは T55XX パスワードの書き込みに対応していません。更新してください。Chameleon Ultra が必要です。</value>
+  </data>
+  <data name="Tools_T55xxProgress" xml:space="preserve">
+    <value>検証済みキー：{0} / {1}</value>
+  </data>
+  <data name="Tools_T55xxComplete" xml:space="preserve">
+    <value>元の ID を復元し、確認しました。</value>
+  </data>
+  <data name="Tools_T55xxCancelled" xml:space="preserve">
+    <value>キャンセルしました。</value>
+  </data>
+  <data name="Tools_T55xxFoundKey" xml:space="preserve">
+    <value>一致したキー：{0}</value>
+  </data>
+  <data name="Tools_T55xxUnprotected" xml:space="preserve">
+    <value>タグはパスワードで保護されていません。</value>
+  </data>
+  <data name="Tools_T55xxNotFound" xml:space="preserve">
+    <value>見つかりません</value>
+  </data>
+  <data name="Tools_T55xxNotSet" xml:space="preserve">
+    <value>未設定</value>
+  </data>
+  <data name="Tools_T55xxNoMatch" xml:space="preserve">
+    <value>選択した辞書に一致するキーがありません。</value>
+  </data>
+  <data name="Tools_T55xxReadOriginalFailed" xml:space="preserve">
+    <value>対応する LF ID を読み取れませんでした。タグをリーダー上に置いたままにしてください。</value>
+  </data>
+  <data name="Tools_T55xxProbeFailed" xml:space="preserve">
+    <value>テスト ID を確認できませんでした。検索を停止し、元の ID の復元を試みました。</value>
+  </data>
+  <data name="Tools_T55xxRestoreFailed" xml:space="preserve">
+    <value>{0} ID {1} を復元できませんでした。候補キー：{2}、新しいキー：{3}。復元のため、この ID と両方のキーを保存してください。{4}</value>
+  </data>
+  <data name="Tools_T55xxOriginalId" xml:space="preserve">
+    <value>元の {0} ID：{1}</value>
+  </data>
+  <data name="Dictionaries_KeyLength" xml:space="preserve">
+    <value>キーの長さ（バイト）</value>
+  </data>
+  <data name="Dictionaries_AllKeyLengths" xml:space="preserve">
+    <value>すべてのキー長</value>
+  </data>
+  <data name="Dictionaries_InvalidKeyLength" xml:space="preserve">
+    <value>キーの長さは4～16バイトである必要があります。</value>
+  </data>
+  <data name="Dictionaries_BadKeyLine" xml:space="preserve">
+    <value>{0}行目：{1}バイトの16進数キーが必要です。</value>
+  </data>
+  <data name="Plural_Bytes" xml:space="preserve">
+    <value>{0} バイト</value>
+  </data>
+  <data name="Hex_InsertByte" xml:space="preserve">
+    <value>バイトを挿入</value>
+  </data>
+  <data name="Hex_DeleteBytes" xml:space="preserve">
+    <value>バイトを削除</value>
+  </data>
+  <data name="Hex_TypeToAddByte" xml:space="preserve">
+    <value>入力してバイトを追加</value>
+  </data>
+  <data name="Dictionaries_KeyTooShort" xml:space="preserve">
+    <value>キー {0} が {1} バイト未満です</value>
+  </data>
+  <data name="Tools_T55xxKeepKey" xml:space="preserve">
+    <value>維持</value>
+  </data>
+  <data name="Tools_T55xxKeepKeyHint" xml:space="preserve">
+    <value>現在のパスワードと保護モードを維持します。</value>
+  </data>
+  <data name="Tools_T55xxSetNewKey" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="Tools_T55xxCurrentKey" xml:space="preserve">
+    <value>現在のキー</value>
+  </data>
+  <data name="Tools_T55xxKnowKey" xml:space="preserve">
+    <value>わかっている</value>
+  </data>
+  <data name="Tools_T55xxDictionaryAttack" xml:space="preserve">
+    <value>辞書攻撃</value>
+  </data>
+  <data name="Tools_T55xxKnownKey" xml:space="preserve">
+    <value>既知のパスワード</value>
+  </data>
+  <data name="Tools_T55xxNewKeyTitle" xml:space="preserve">
+    <value>新しいキー</value>
+  </data>
+  <data name="Tools_T55xxDefaultKeyWillBeSet" xml:space="preserve">
+    <value>既定のキー {0} が設定されます。</value>
+  </data>
+  <data name="Tools_T55xxUid" xml:space="preserve">
+    <value>UID</value>
+  </data>
+  <data name="Tools_T55xxFound" xml:space="preserve">
+    <value>検出</value>
+  </data>
+  <data name="Tools_T55xxNew" xml:space="preserve">
+    <value>新規</value>
+  </data>
+  <data name="Cards_SaveKeys" xml:space="preserve">
+    <value>キーを保存</value>
+  </data>
+  <data name="Cards_SaveTheCardsKeys" xml:space="preserve">
+    <value>カードのキーをクリップボード、辞書、またはファイルに保存</value>
+  </data>
+  <data name="Cards_KeysToClipboard" xml:space="preserve">
+    <value>クリップボードにコピー</value>
+  </data>
+  <data name="Cards_KeysToDictionary" xml:space="preserve">
+    <value>辞書に追加</value>
+  </data>
+  <data name="Cards_ExportKeysTitle" xml:space="preserve">
+    <value>キーを保存（.dic）</value>
+  </data>
+  <data name="Cards_KeysCopied" xml:space="preserve">
+    <value>{0}をコピーしました。</value>
+  </data>
+  <data name="Cards_KeysAddedTo" xml:space="preserve">
+    <value>「{1}」に{0}を追加しました。</value>
+  </data>
+  <data name="Cards_KeysAlreadyInDictionary" xml:space="preserve">
+    <value>「{0}」にはこれらのキーがすべて含まれています。</value>
+  </data>
+  <data name="Cards_KeysSavedToNewDictionary" xml:space="preserve">
+    <value>辞書「{1}」を作成しました（{0}）。</value>
+  </data>
+  <data name="Plural_T55xxPasswords" xml:space="preserve">
+    <value> · {0} 個の T55XX パスワード</value>
+  </data>
+  <data name="Relay_DisplayName" xml:space="preserve">
+    <value>共有デバイス {0}</value>
+  </data>
+  <data name="Relay_Network" xml:space="preserve">
+    <value>共有デバイス（インターネット）</value>
+  </data>
+  <data name="Relay_InvalidCode" xml:space="preserve">
+    <value>このコードで共有されているデバイスはありません。コードを確認するか、新しいコードを依頼してください。</value>
+  </data>
+  <data name="Relay_Busy" xml:space="preserve">
+    <value>この共有デバイスには既に別のユーザーが接続しています。</value>
+  </data>
+  <data name="Relay_HostLeft" xml:space="preserve">
+    <value>共有デバイスが利用できなくなりました。相手側で共有が停止されました。</value>
+  </data>
+  <data name="Relay_Closed" xml:space="preserve">
+    <value>リレーサーバーとの接続が切れました。</value>
+  </data>
+  <data name="Relay_Unreachable" xml:space="preserve">
+    <value>リレーサーバー {0} に接続できません。</value>
+  </data>
+  <data name="Relay_UnexpectedReply" xml:space="preserve">
+    <value>リレーサーバーから予期しない応答がありました。</value>
+  </data>
+  <data name="Relay_InvalidCodeFormat" xml:space="preserve">
+    <value>コードは TR1-ABCD-1234 の形式です（サーバー名と 8 文字の英数字）。</value>
+  </data>
+  <data name="Share_AlreadySharing" xml:space="preserve">
+    <value>既にデバイスを共有しています。</value>
+  </data>
+  <data name="Share_NotLocal" xml:space="preserve">
+    <value>共有できるのはこのコンピューターに接続されたデバイスだけです。</value>
+  </data>
+  <data name="Share_DeviceLost" xml:space="preserve">
+    <value>共有中のデバイスがこのコンピューターから切断されました。</value>
+  </data>
+  <data name="Connect_SharedDevice" xml:space="preserve">
+    <value>共有デバイスに接続</value>
+  </data>
+  <data name="Connect_SharedDeviceHint" xml:space="preserve">
+    <value>Chameleon を共有している人の ChameLab に表示されているコードを入力してください。</value>
+  </data>
+  <data name="Share_Title" xml:space="preserve">
+    <value>このデバイスを共有</value>
+  </data>
+  <data name="Share_Hint" xml:space="preserve">
+    <value>選択した Chameleon を、別のコンピューターからインターネット経由で使えるようにします。相手はここに表示されるコードで接続します。</value>
+  </data>
+  <data name="Share_Warning" xml:space="preserve">
+    <value>コードを知っている人は、共有を停止するまでデバイスを完全に操作できます。</value>
+  </data>
+  <data name="Share_Start" xml:space="preserve">
+    <value>共有</value>
+  </data>
+  <data name="Share_Stop" xml:space="preserve">
+    <value>共有を停止</value>
+  </data>
+  <data name="Share_Starting" xml:space="preserve">
+    <value>開始しています…</value>
+  </data>
+  <data name="Share_Waiting" xml:space="preserve">
+    <value>接続を待っています…</value>
+  </data>
+  <data name="Share_PeerConnected" xml:space="preserve">
+    <value>接続中のユーザーがデバイスを使用しています。</value>
+  </data>
+  <data name="Share_CodeLabel" xml:space="preserve">
+    <value>共有コード</value>
+  </data>
+  <data name="Relay_UnknownRegion" xml:space="preserve">
+    <value>コードは {0} で始まっていますが、その名前のリレーサーバーはありません。</value>
+  </data>
+  <data name="Relay_NoServers" xml:space="preserve">
+    <value>どのリレーサーバーにも接続できません。インターネット接続を確認してください。</value>
+  </data>
+  <data name="Tools_FrameTime" xml:space="preserve">
+    <value>+{0:F3} ms</value>
+  </data>
+  <data name="Tools_FrameGap" xml:space="preserve">
+    <value>Δ {0:F1} µs</value>
+  </data>
+  <data name="Tools_FrameTimingHint" xml:space="preserve">
+    <value>キャプチャ開始からの時間。Δ は前のフレーム終了後の待ち時間です。</value>
+  </data>
+  <data name="Share_TrafficToDevice" xml:space="preserve">
+    <value>デバイスへ送信</value>
+  </data>
+  <data name="Share_TrafficFromDevice" xml:space="preserve">
+    <value>デバイスから受信</value>
+  </data>
+  <data name="Share_PeerConnectedName" xml:space="preserve">
+    <value>{0} が接続してデバイスを使用しています。</value>
+  </data>
+  <data name="Main_SelectBootloader" xml:space="preserve">
+    <value>ブートローダーを選択</value>
+  </data>
+  <data name="Firmware_PickBootloaderUsb" xml:space="preserve">
+    <value>ブートローダーを待っています… 初回はブラウザーに許可が必要です。「ブートローダーを選択」をクリックし、一覧から Chameleon の DFU ポートを選んでください。</value>
+  </data>
+  <data name="Firmware_PickBootloaderBle" xml:space="preserve">
+    <value>ブートローダーを待っています… 初回はブラウザーに許可が必要です。「ブートローダーを選択」をクリックし、一覧から CU-…(Lite の場合は CL-…)という名前のデバイスを選んでください。</value>
+  </data>
+  <data name="Firmware_BootloaderNotPicked" xml:space="preserve">
+    <value>時間内にブートローダーが選択されませんでした。LED 4 と 5 が点滅している場合、デバイスはブートローダーで待機しています。「再試行」をクリックして選択してください。</value>
+  </data>
+  <data name="Recovery_SkipSector" xml:space="preserve">
+    <value>セクターをスキップ</value>
+  </data>
+  <data name="Recovery_SkipSectorTip" xml:space="preserve">
+    <value>セクター {0} をスキップして次に進みます。見つかったキーは保持されます。</value>
+  </data>
+  <data name="Recovery_KeyProgress" xml:space="preserve">
+    <value>キー {0}/{1}</value>
+  </data>
+  <data name="Qr_Damaged" xml:space="preserve">
+    <value>QR コードからカードを復元できません。もう一度スキャンしてください。</value>
+  </data>
+  <data name="Qr_PartOf" xml:space="preserve">
+    <value>コード {0} / {1}</value>
+  </data>
+  <data name="Qr_Pause" xml:space="preserve">
+    <value>一時停止</value>
+  </data>
+  <data name="Qr_Play" xml:space="preserve">
+    <value>再生</value>
+  </data>
+  <data name="Qr_Previous" xml:space="preserve">
+    <value>前のコード</value>
+  </data>
+  <data name="Qr_Next" xml:space="preserve">
+    <value>次のコード</value>
+  </data>
+  <data name="Qr_SingleHint" xml:space="preserve">
+    <value>QRコードにはカードのデータと保存済みの鍵が含まれます。信頼できる相手にのみ共有してください。ChameLabの「カードを追加 → QRコード」で読み取ります。</value>
+  </data>
+  <data name="Qr_SeriesHint" xml:space="preserve">
+    <value>このカードは複数のコードに分かれています。ChameLabですべて読み取ってください。カードデータと保存済みの鍵は暗号化されていません。</value>
+  </data>
+  <data name="Qr_PointAtCode" xml:space="preserve">
+    <value>ChameLab のカード QR コードにカメラを向けてください</value>
+  </data>
+  <data name="Qr_OpenImageTitle" xml:space="preserve">
+    <value>QR コードの画像を開く</value>
+  </data>
+  <data name="Qr_NoCodeInImage" xml:space="preserve">
+    <value>{0} に QR コードが見つかりません。</value>
+  </data>
+  <data name="Qr_NotACardCode" xml:space="preserve">
+    <value>この QR コードは ChameLab のカードではありません。</value>
+  </data>
+  <data name="Qr_FromQrCode" xml:space="preserve">
+    <value>QR コードから</value>
+  </data>
+  <data name="Qr_CardReceived" xml:space="preserve">
+    <value>カードを受信しました</value>
+  </data>
+  <data name="Qr_PartsRead" xml:space="preserve">
+    <value>{1} 個中 {0} 個のコードを読み取りました。残り: {2}。</value>
+  </data>
+  <data name="Qr_Share" xml:space="preserve">
+    <value>QR コード</value>
+  </data>
+  <data name="Qr_ShareTip" xml:space="preserve">
+    <value>カードを QR コードで表示し、別のスマートフォンやコンピューターでスキャンできるようにする</value>
+  </data>
+  <data name="Qr_ShareHeader" xml:space="preserve">
+    <value>QR コードで共有</value>
+  </data>
+  <data name="Qr_ScanTile" xml:space="preserve">
+    <value>QR コード</value>
+  </data>
+  <data name="Qr_ScanCamera" xml:space="preserve">
+    <value>カメラ</value>
+  </data>
+  <data name="Qr_ScanImage" xml:space="preserve">
+    <value>画像から</value>
+  </data>
+  <data name="Qr_ScanTip" xml:space="preserve">
+    <value>ChameLab から QR コードで共有されたカードを追加</value>
+  </data>
+  <data name="Qr_ScanImageTip" xml:space="preserve">
+    <value>スクリーンショットや写真から QR コードを読み取る</value>
+  </data>
+  <data name="Qr_CameraDenied" xml:space="preserve">
+    <value>カメラへのアクセスが拒否されています。システム設定で許可するか、コードのスクリーンショットや写真を開いてください。</value>
+  </data>
+  <data name="Qr_NoCamera" xml:space="preserve">
+    <value>使用できるカメラがありません。代わりにコードのスクリーンショットや写真を開いてください。</value>
+  </data>
+  <data name="Qr_ScannerUnavailable" xml:space="preserve">
+    <value>このデバイスでは QR スキャナーを使用できません（Google Play 開発者サービスが必要です）。代わりにコードのスクリーンショットや写真を開いてください。</value>
+  </data>
+  <data name="Compare_Button" xml:space="preserve">
+    <value>比較</value>
+  </data>
+  <data name="Compare_Tip" xml:space="preserve">
+    <value>このカードのメモリを、保存済みの別のカードやダンプファイルと比較します</value>
+  </data>
+  <data name="Compare_Header" xml:space="preserve">
+    <value>ダンプの比較</value>
+  </data>
+  <data name="Compare_Hint" xml:space="preserve">
+    <value>保存済みのカードを選ぶか、ダンプファイルを開いてください。異なるバイトは強調表示され、このカードの編集はすぐに反映されます。</value>
+  </data>
+  <data name="Compare_PickCard" xml:space="preserve">
+    <value>比較する保存済みカード</value>
+  </data>
+  <data name="Compare_OpenFile" xml:space="preserve">
+    <value>ファイル</value>
+  </data>
+  <data name="Compare_OpenFileTip" xml:space="preserve">
+    <value>ダンプファイルと比較します：JSON、Flipper .nfc、MCT、.bin、.eml などのインポート形式</value>
+  </data>
+  <data name="Compare_OpenFileTitle" xml:space="preserve">
+    <value>比較するダンプを開く</value>
+  </data>
+  <data name="Compare_NoCards" xml:space="preserve">
+    <value>この種類のメモリを持つ保存済みカードは他にありません。代わりにダンプファイルを開いてください。</value>
+  </data>
+  <data name="Compare_Identical" xml:space="preserve">
+    <value>2 枚のカードは同一です。</value>
+  </data>
+  <data name="Compare_BlocksDiffer" xml:space="preserve">
+    <value>異なるブロック：{0} / {1}、バイト：{2}</value>
+  </data>
+  <data name="Compare_PagesDiffer" xml:space="preserve">
+    <value>異なるページ：{0} / {1}、バイト：{2}</value>
+  </data>
+  <data name="Compare_OnlyDifferences" xml:space="preserve">
+    <value>差分のみ</value>
+  </data>
+  <data name="Compare_NotRead" xml:space="preserve">
+    <value>未読み取り</value>
+  </data>
+  <data name="Compare_FileHasNoMatch" xml:space="preserve">
+    <value>{0} にはこの種類のメモリを持つカードがありません。</value>
+  </data>
+  <data name="Common_BackTo" xml:space="preserve">
+    <value>{0} に戻る</value>
+  </data>
+  <data name="Common_Move" xml:space="preserve">
+    <value>移動</value>
+  </data>
+  <data name="Common_MoveFolder" xml:space="preserve">
+    <value>このフォルダーを別のフォルダーに移動</value>
+  </data>
+  <data name="Common_MovedFolder" xml:space="preserve">
+    <value>フォルダー {0} を {1} に移動しました。</value>
+  </data>
+  <data name="Common_NewFolderInside" xml:space="preserve">
+    <value>中に新しいフォルダー</value>
+  </data>
+  <data name="Common_ShowOrHideFoldersInside" xml:space="preserve">
+    <value>中のフォルダーを表示/非表示</value>
+  </data>
+  <data name="Common_FolderContentsMoveUp" xml:space="preserve">
+    <value>中身は 1 つ上の階層に移動します</value>
+  </data>
+  <data name="Common_FolderContentsMoveTo" xml:space="preserve">
+    <value>中身は削除されず、すべて {0} に移動します。</value>
+  </data>
+  <data name="Plural_DeletedFolderDictionaries" xml:space="preserve">
+    <value>フォルダー {1} を削除しました。中の {0} 個の辞書は {2} に移りました。</value>
+  </data>
+  <data name="Dictionaries_MoveThisDictionaryToAFolder" xml:space="preserve">
+    <value>この辞書をフォルダーに移動</value>
+  </data>
+  <data name="Dictionaries_NoDictionariesInThisFolderYet" xml:space="preserve">
+    <value>このフォルダーにはまだ辞書がありません。ナビゲーションペインで辞書をフォルダーにドラッグするか、ここで追加してください。</value>
+  </data>
+  <data name="Dictionaries_AddDictionary" xml:space="preserve">
+    <value>辞書を追加</value>
+  </data>
+  <data name="Dictionaries_AddADictionary" xml:space="preserve">
+    <value>辞書を追加</value>
+  </data>
+  <data name="Dictionaries_AddHint" xml:space="preserve">
+    <value>キーファイルを読み込むか、キーを入力するか、既知の辞書をダウンロードします。</value>
+  </data>
+  <data name="Dictionaries_AddTip" xml:space="preserve">
+    <value>キー辞書を読み込む、入力する、またはダウンロードする</value>
+  </data>
+  <data name="Dictionaries_TypeKeysByHand" xml:space="preserve">
+    <value>キーを手入力</value>
+  </data>
+  <data name="Dictionaries_DownloadTip" xml:space="preserve">
+    <value>Proxmark3、Flipper Zero、Unleashed プロジェクトの既知の辞書をダウンロード</value>
+  </data>
+  <data name="Dictionaries_DownloadTitle" xml:space="preserve">
+    <value>辞書をダウンロード</value>
+  </data>
+  <data name="Dictionaries_DownloadHint" xml:space="preserve">
+    <value>Proxmark3、Flipper Zero、Unleashed プロジェクトが GitHub で公開しているキーリストです。選んだ辞書は保存前に確認のため開きます。</value>
+  </data>
+  <data name="Dictionaries_DlFailed" xml:space="preserve">
+    <value>{0} をダウンロードできませんでした: {1}</value>
+  </data>
+  <data name="Slots_NonceCount" xml:space="preserve">
+    <value>収集した nonce</value>
+  </data>
+  <data name="Device_IncompleteResponse" xml:space="preserve">
+    <value>デバイスからの収集データの応答が不完全です。</value>
+  </data>
+  <data name="Slots_PasswordCount" xml:space="preserve">
+    <value>収集したパスワード</value>
   </data>
 </root>

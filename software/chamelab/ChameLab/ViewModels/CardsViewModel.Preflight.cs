@@ -94,7 +94,7 @@ public sealed partial class CardsViewModel
         {
             previous = await client.GetDeviceModeAsync();
             await client.SetDeviceModeAsync(DeviceMode.Reader);
-            if (LfProtocol.IsEm410x()) await client.Em410xScanAsync(); else await client.LfScanAsync(LfProtocol);
+            await client.LfAutoScanAsync();
             TargetSummary = Strings.Writer_LfFound;
             TargetState = TargetScanState.Found;
             _device.Journal.Add("INFO", Strings.Writer_LfFound);

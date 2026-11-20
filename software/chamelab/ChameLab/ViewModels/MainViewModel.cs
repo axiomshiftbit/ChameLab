@@ -35,7 +35,7 @@ public sealed class MainViewModel : ViewModelBase
         Firmware = new FirmwareUpdateViewModel(device, firmware, backupService) { Backups = Backups };
         _connect = new ConnectViewModel(device, Firmware);
         Chameleon = new ChameleonViewModel(device, cards, Firmware);
-        Slots = new SlotsViewModel(device, cards);
+        Slots = new SlotsViewModel(device, cards, dictionaries);
         Cards = new CardsViewModel(device, cards, dictionaries);
         Writer = new WriterViewModel(device, cards, dictionaries);
         Journal = new JournalViewModel(device.Journal);
@@ -53,22 +53,36 @@ public sealed class MainViewModel : ViewModelBase
         _currentPage = _connect;
 
         NavigateCommand = ReactiveCommand.CreateFromTask<PageViewModelBase>(NavigateAsync);
-        DisconnectCommand = ReactiveCommand.CreateFromTask(DisconnectAsync);
+        DisconnectCommand = ReactiveCommand.CreateFromTask(DisconnectAsync,
+            this.WhenAnyValue(x => x.IsNavigationLocked, locked => !locked));
         TogglePaneCommand = ReactiveCommand.Create(() => { IsPaneOpen = !IsPaneOpen; });
         AddCardCommand = ReactiveCommand.CreateFromTask(AddCardAsync,
             this.WhenAnyValue(x => x.CurrentPage, x => x.Cards.IsPickingSource,
                 (page, picking) => !(ReferenceEquals(page, Cards) && picking)));
 
+        AddDictionaryCommand = ReactiveCommand.CreateFromTask(AddDictionaryAsync,
+            this.WhenAnyValue(x => x.CurrentPage, x => x.Dictionaries.IsPickingSource,
+                (page, picking) => !(ReferenceEquals(page, Dictionaries) && picking)));
+
         // Page titles are read again by the rebuilt views; the header text is kept here.
         LocalizationService.LanguageChanged += UpdateDeviceSummary;
 
         Slots.OpenCardRequested += card => _ = OpenCardAsync(card.Id);
+        Tools.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ToolsViewModel.IsConsoleRunning)) this.RaisePropertyChanged(nameof(IsNavigationLocked));
+        };
         Cards.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(CardsViewModel.CurrentFolder)) RaiseNavSelection();
         };
+        Dictionaries.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(DictionariesViewModel.CurrentFolder)) RaiseNavSelection();
+        };
         NavPages.CollectionChanged += (_, _) => { if (!_swappingNavPages) SyncNavItems(); };
-        Cards.Folders.CollectionChanged += (_, _) => SyncNavItems();
+        Cards.FolderTree.NavFolders.CollectionChanged += (_, _) => SyncNavItems();
+        Dictionaries.FolderTree.NavFolders.CollectionChanged += (_, _) => SyncNavItems();
         SyncNavItems();
         _device.StateChanged += OnStateChanged;
         UpdateWatching();
@@ -91,6 +105,15 @@ public sealed class MainViewModel : ViewModelBase
             {
                 if (e.PropertyName == nameof(PageViewModelBase.IsBusy) && page.IsBusy) _resume?.Cancel();
             };
+        // A shared card's link that opened the web app; after start-up, once the shell is shown.
+        AppLinks.Subscribe(link => Avalonia.Threading.Dispatcher.UIThread.Post(() => _ = OpenLinkAsync(link)));
+    }
+
+    private async Task OpenLinkAsync(string link)
+    {
+        if (!ChameLab.Models.CardQr.TryParse(link, out _)) return;
+        await NavigateAsync(Cards);
+        Cards.ReceiveQrLink(link);
     }
 
     public ConnectViewModel Connect => _connect;
@@ -144,7 +167,7 @@ public sealed class MainViewModel : ViewModelBase
             _connect.StopWatching();
     }
 
-    /// <summary>The page shown, for the bottom tab bar of narrow layouts (the card folders stay in the pane).</summary>
+    /// <summary>The page shown, for the bottom tab bar of narrow layouts (the folders stay in the pane).</summary>
     public PageViewModelBase? SelectedNavPage
     {
         get => _clearingNavSelection ? null : NavPages.Contains(_currentPage) ? _currentPage : null;
@@ -154,8 +177,17 @@ public sealed class MainViewModel : ViewModelBase
         }
     }
 
-    /// <summary>The navigation list: the pages, with the card folders under Cards.</summary>
+    /// <summary>The navigation list: the pages, with the card folders under Cards and the dictionary folders under Dictionaries.</summary>
     public ObservableCollection<object> NavItems { get; } = new();
+
+    /// <summary>The page whose folders these are.</summary>
+    private PageViewModelBase PageOf(FolderBrowser tree) => ReferenceEquals(tree, Cards.FolderTree) ? Cards : Dictionaries;
+
+    /// <summary>The folder shown on the page shown, if it has folders and shows one.</summary>
+    private FolderViewModel? ShownFolder =>
+        ReferenceEquals(_currentPage, Cards) ? Cards.CurrentFolder
+        : ReferenceEquals(_currentPage, Dictionaries) ? Dictionaries.CurrentFolder
+        : null;
 
     /// <summary>Keeps <see cref="NavItems"/> in step with the pages and folders, in place (so a folder being renamed keeps its row).</summary>
     private void SyncNavItems()
@@ -164,8 +196,8 @@ public sealed class MainViewModel : ViewModelBase
         foreach (var page in NavPages)
         {
             wanted.Add(page);
-            if (!ReferenceEquals(page, Cards)) continue;
-            wanted.AddRange(Cards.Folders);
+            if (ReferenceEquals(page, Cards)) wanted.AddRange(Cards.FolderTree.NavFolders);
+            else if (ReferenceEquals(page, Dictionaries)) wanted.AddRange(Dictionaries.FolderTree.NavFolders);
         }
         for (var i = NavItems.Count - 1; i >= 0; i--)
             if (!wanted.Contains(NavItems[i])) NavItems.RemoveAt(i);
@@ -179,13 +211,13 @@ public sealed class MainViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// Two-way selection for the navigation list: the page shown, or the card folder shown. Selecting
-    /// a page navigates to it (Cards shows the cards in no folder), a folder shows its cards.
+    /// Two-way selection for the navigation list: the page shown, or the folder shown. Selecting a page
+    /// navigates to it (Cards shows the cards in no folder), a folder shows what is in it.
     /// </summary>
     public object? SelectedNavItem
     {
         get => _clearingNavSelection ? null
-            : ReferenceEquals(_currentPage, Cards) && Cards.CurrentFolder is { } folder ? folder
+            : ShownFolder is { } folder ? folder
             : NavPages.Contains(_currentPage) ? _currentPage : null;
         set
         {
@@ -193,9 +225,9 @@ public sealed class MainViewModel : ViewModelBase
             {
                 case PageViewModelBase page:
                     if (!ReferenceEquals(page, _currentPage)) _ = NavigateAsync(page);
-                    else if (ReferenceEquals(page, Cards) && Cards.CurrentFolder is not null) ShowFolder(null);
+                    else if (ShownFolder is { } shown) ShowFolder(shown.Owner, null);
                     break;
-                case CardFolderViewModel folder when !ReferenceEquals(folder, SelectedNavItem):
+                case FolderViewModel folder when !ReferenceEquals(folder, SelectedNavItem):
                     _ = OpenFolderAsync(folder);
                     break;
             }
@@ -224,20 +256,26 @@ public sealed class MainViewModel : ViewModelBase
         }, Avalonia.Threading.DispatcherPriority.Background);
     }
 
-    private async Task OpenFolderAsync(CardFolderViewModel folder)
+    private async Task OpenFolderAsync(FolderViewModel folder)
     {
-        await NavigateAsync(Cards);
-        ShowFolder(folder);
+        await NavigateAsync(PageOf(folder.Owner));
+        ShowFolder(folder.Owner, folder.Path);
     }
 
-    private void ShowFolder(CardFolderViewModel? folder)
+    private void ShowFolder(FolderBrowser tree, string? path)
     {
-        Cards.ShowFolder(folder);
+        tree.Show(path);
         RaiseNavSelection();
     }
 
     /// <summary>Set by the view when the window is too narrow to dock the pane (it overlays content).</summary>
     public bool IsCompact { get; set; }
+
+    /// <summary>
+    /// A console command is running: it has the device to itself, so the rest of the app (other pages,
+    /// Disconnect) stays out of reach until it ends or is canceled.
+    /// </summary>
+    public bool IsNavigationLocked => Tools.IsConsoleRunning;
 
     public bool IsConnected
     {
@@ -278,6 +316,7 @@ public sealed class MainViewModel : ViewModelBase
             IsPaneOpen = false;
             return true;
         }
+        if (IsNavigationLocked) return true;
         if (ReferenceEquals(CurrentPage, StartPage)) return false;
         _ = NavigateAsync(StartPage);
         return true;
@@ -305,10 +344,13 @@ public sealed class MainViewModel : ViewModelBase
     /// <summary>The navigation pane's Add card: opens Cards (from any page) and starts a new card there.</summary>
     public ICommand AddCardCommand { get; }
 
+    public ICommand AddDictionaryCommand { get; }
+
     private readonly System.Threading.SemaphoreSlim _navigation = new(1, 1);
     private async Task NavigateAsync(PageViewModelBase page)
     {
         if (page is null) return;
+        if (IsNavigationLocked && !ReferenceEquals(page, CurrentPage)) { RaiseNavSelection(); return; }
         await _navigation.WaitAsync();
         try
         {
@@ -340,6 +382,12 @@ public sealed class MainViewModel : ViewModelBase
         if (Cards.AddCommand.CanExecute(null)) Cards.AddCommand.Execute(null);
     }
 
+    private async Task AddDictionaryAsync()
+    {
+        await NavigateAsync(Dictionaries);
+        if (Dictionaries.AddCommand.CanExecute(null)) Dictionaries.AddCommand.Execute(null);
+    }
+
     private Task DisconnectAsync()
     {
         _resumeCandidate = null;
@@ -353,6 +401,8 @@ public sealed class MainViewModel : ViewModelBase
         _foreground = foreground;
         if (!foreground)
         {
+            Slots.StopCaptureRefresh();
+            Cards.PauseQrForBackground();
             _resume?.Cancel();
             _resumeCandidate = _device.Candidate?.Kind == TransportKind.Ble &&
                 (_device.State == ConnectionState.Connected || _resume is not null) ? _device.Candidate : null;
@@ -361,6 +411,7 @@ public sealed class MainViewModel : ViewModelBase
             return;
         }
 
+        if (ReferenceEquals(CurrentPage, Slots)) Slots.StartCaptureRefresh();
         var candidate = _resumeCandidate;
         _resumeCandidate = null;
         // Firmware/backup and card operations own the connection until they finish.
@@ -462,6 +513,6 @@ public sealed class MainViewModel : ViewModelBase
         var info = _device.DeviceInfo;
         DeviceSummary = !IsConnected ? Strings.Main_NotConnected
             : info is null ? Strings.Main_Connected
-            : string.Format(Strings.Main_DeviceSummary, info.ModelName, info.FirmwareVersion);
+            : string.Format(Strings.Main_DeviceSummary, info.ModelName, info.FullFirmwareVersion);
     }
 }

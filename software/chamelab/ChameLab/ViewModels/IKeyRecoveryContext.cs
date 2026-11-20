@@ -15,6 +15,9 @@ public interface IKeyRecoveryContext
     bool ShowWriteProgress { get; }
     ICommand CancelDumpCommand { get; }
     ICommand CheckRecoveryCommand { get; }
+    ICommand SkipSectorCommand { get; }
+    bool ShowSkipSector { get; }
+    string SkipSectorTip { get; }
     ICommand DarksideCommand { get; }
     ICommand DumpCommand { get; }
     string? DumpKeyCountText { get; }

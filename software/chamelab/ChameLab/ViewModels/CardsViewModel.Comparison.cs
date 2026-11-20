@@ -13,7 +13,6 @@ namespace ChameLab.ViewModels;
 
 public sealed partial class CardsViewModel
 {
-    public ICommand CompareCommand { get; private set; } = null!;
     public string? ComparisonSummary { get; private set; }
     public IReadOnlyList<ScanResultRow> ComparisonRows { get; private set; } = Array.Empty<ScanResultRow>();
 
@@ -55,7 +54,7 @@ public sealed partial class CardsViewModel
             result.IdentityMatches ? Strings.Cards_CompareIdentitySame : Strings.Cards_CompareIdentityDifferent,
             result.EqualBytes, result.DifferentBytes, result.UnknownBytes);
         ComparisonRows = result.Blocks.Select(block => new ScanResultRow(
-            string.Format(Strings.Cards_CompareBlock, block.Block, MifareClassic.SectorOfBlock(block.Block)),
+            current.Tag.IsMifareClassic() ? string.Format(Strings.Cards_CompareBlock, block.Block, MifareClassic.SectorOfBlock(block.Block)) : $"{Strings.Common_Page} {block.Block}",
             string.Format(Strings.Cards_CompareBytes, block.DifferentBytes, block.UnknownBytes))).ToArray();
         this.RaisePropertyChanged(nameof(ComparisonSummary));
         this.RaisePropertyChanged(nameof(ComparisonRows));

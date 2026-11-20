@@ -98,17 +98,6 @@
       <Setter Property="Margin" Value="-7,0,0,0" />
       <Setter Property="MinHeight" Value="0" />
     </Style>
-    <!-- The open folder's title being renamed: as big as the title it replaces. -->
-    <Style Selector="TextBox.titlebox.foldertitle">
-      <Setter Property="FontSize" Value="24" />
-      <!-- Frame and padding outside the text (border 1 + padding), so the letters stay where the title's were. -->
-      <Setter Property="Padding" Value="6,2" />
-      <Setter Property="Margin" Value="-7,-3" />
-      <Setter Property="VerticalAlignment" Value="Center" />
-    </Style>
-    <Style Selector="Panel.renaming > TextBlock.h1">
-      <Setter Property="Opacity" Value="0" />
-    </Style>
     <Style Selector="TextBox.titlebox:pointerover">
       <Setter Property="BorderBrush" Value="{actipro:ThemeResource Container1BorderBrush}" />
     </Style>
@@ -173,55 +162,68 @@
     <Grid Grid.Column="0" Classes="listpane panestack" RowDefinitions="Auto,*"
           IsEnabled="{Binding !ListLocked}">
       <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
-        <!-- Back from a folder to Cards, also when the navigation pane is hidden (narrow, or closed). -->
+        <!-- Up from a folder to the one that holds it (or Cards), also when the navigation pane is hidden
+             (narrow, or closed). -->
         <Button Grid.Column="0" Classes="icon" Margin="-8,0,6,0" VerticalAlignment="Center"
-                IsVisible="{Binding IsInFolder}" Command="{Binding ShowRootCommand}"
-                ToolTip.Tip="{x:Static loc:Strings.Cards_BackToCards}" b:DialogKeys.IsBack="True">
+                IsVisible="{Binding FolderTree.IsInFolder}" Command="{Binding FolderTree.ShowParentCommand}"
+                ToolTip.Tip="{Binding FolderTree.BackTip}" b:DialogKeys.IsBack="True">
           <PathIcon Data="{StaticResource Icon.back}" />
         </Button>
         <!-- Keep the count above the actions when the header is too narrow for two columns. -->
         <c:FlowGrid x:Name="LibraryHeader" Grid.Column="1" MinItemWidth="160" ColumnSpacing="12" RowSpacing="12">
         <StackPanel Spacing="2">
-          <!-- A folder's title, renamed in place (Rename beside Add card). -->
+          <!-- A folder's title, renamed in place by a click on it. -->
           <!-- Renaming: the title stays, unseen, so the header keeps its size; the field lies over it. -->
-          <Panel Classes.renaming="{Binding IsRenamingFolder}">
-            <TextBlock Text="{Binding ListTitle}" Classes="h1" TextTrimming="CharacterEllipsis"
-                       ToolTip.Tip="{Binding ListTitle}" />
-            <TextBox Classes="titlebox foldertitle" Text="{Binding FolderRenameText}" MaxLength="64"
-                     IsVisible="{Binding IsRenamingFolder}" b:FocusOnShow.IsEnabled="True"
+          <Panel Classes.renaming="{Binding FolderTree.IsRenamingFolder}">
+            <TextBlock Text="{Binding FolderTree.Title}" Classes="h1" TextTrimming="CharacterEllipsis"
+                       Classes.renamable="{Binding FolderTree.IsInFolder}" Tapped="OnFolderTitleTapped"
+                       ToolTip.Tip="{Binding FolderTree.Current}" />
+            <TextBox Classes="titlebox foldertitle" Text="{Binding FolderTree.FolderRenameText}" MaxLength="64"
+                     IsVisible="{Binding FolderTree.IsRenamingFolder}" b:FocusOnShow.IsEnabled="True"
                      KeyDown="OnFolderTitleKeyDown" LostFocus="OnFolderTitleLostFocus" />
           </Panel>
           <TextBlock Classes="caption" Text="{Binding CountText}" />
         </StackPanel>
-        <!-- Actions wrap with their labels. New folder only in Cards: folders are one level. -->
-        <WrapPanel ItemSpacing="8" LineSpacing="8">
-          <Button Command="{Binding RenameCurrentFolderCommand}" ToolTip.Tip="{x:Static loc:Strings.Common_RenameFolder}"
-                  IsVisible="{Binding IsInFolder}">
+        <!-- The open folder's Move and Delete (a click on its title renames it), and a new folder in the one shown; short of room
+             they drop their labels first (Add card last). -->
+        <c:ActionRow>
+          <Button ToolTip.Tip="{x:Static loc:Strings.Common_MoveFolder}" IsVisible="{Binding FolderTree.IsInFolder}">
             <StackPanel Orientation="Horizontal" Spacing="6">
-              <PathIcon Data="{StaticResource Icon.edit}" />
-              <TextBlock Text="{x:Static loc:Strings.Common_Rename}" VerticalAlignment="Center" />
+              <PathIcon Data="{StaticResource Icon.folder}" />
+              <TextBlock Text="{x:Static loc:Strings.Common_Move}" VerticalAlignment="Center" />
             </StackPanel>
+            <Button.Flyout>
+              <Flyout Placement="BottomEdgeAlignedLeft">
+                <!-- Cards (the top) or any folder outside the open one; folders in others are indented. -->
+                <ScrollViewer Width="260" MaxHeight="360" HorizontalScrollBarVisibility="Disabled">
+                  <ListBox ItemsSource="{Binding FolderTree.MoveOptions}" SelectedItem="{Binding FolderTree.MoveTarget}"
+                           Background="Transparent" BorderThickness="0"
+                           ScrollViewer.HorizontalScrollBarVisibility="Disabled" Tapped="OnFlyoutPickTapped">
+                    <ListBox.ItemTemplate>
+                      <DataTemplate x:DataType="vm:FolderOption">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" Margin="{Binding Indent}">
+                          <PathIcon Grid.Column="0" Width="16" Height="16" Opacity="0.75" VerticalAlignment="Center"
+                                    Data="{StaticResource Icon.cards}" IsVisible="{Binding IsRoot}" />
+                          <PathIcon Grid.Column="0" Width="16" Height="16" Opacity="0.75" VerticalAlignment="Center"
+                                    Data="{StaticResource Icon.folder}" IsVisible="{Binding !IsRoot}" />
+                          <TextBlock Grid.Column="1" Text="{Binding Label}" VerticalAlignment="Center"
+                                     TextWrapping="Wrap" MaxLines="2" LineSpacing="-2" TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                      </DataTemplate>
+                    </ListBox.ItemTemplate>
+                  </ListBox>
+                </ScrollViewer>
+              </Flyout>
+            </Button.Flyout>
           </Button>
           <Button Classes="danger" ToolTip.Tip="{x:Static loc:Strings.Common_DeleteFolder}"
-                  IsVisible="{Binding IsInFolder}">
+                  IsVisible="{Binding FolderTree.IsInFolder}" Command="{Binding FolderTree.DeleteCurrentCommand}">
             <StackPanel Orientation="Horizontal" Spacing="6">
               <PathIcon Data="{StaticResource Icon.delete}" />
               <TextBlock Text="{x:Static loc:Strings.Common_Delete}" VerticalAlignment="Center" />
             </StackPanel>
-            <Button.Flyout>
-              <Flyout Placement="BottomEdgeAlignedRight">
-                <StackPanel Spacing="12" MaxWidth="280" Margin="16,14">
-                  <TextBlock TextWrapping="Wrap" FontWeight="SemiBold"
-                             Text="{Binding ListTitle, StringFormat={x:Static loc:Strings.Common_DeleteFolderPrompt}}" />
-                  <TextBlock Classes="caption" TextWrapping="Wrap"
-                             Text="{x:Static loc:Strings.Common_ItsCardsAreNotDeletedThey}" />
-                  <Button Classes="danger solid" Content="{x:Static loc:Strings.Common_DeleteFolder}" HorizontalAlignment="Right"
-                          Click="OnFolderDeleteClick" />
-                </StackPanel>
-              </Flyout>
-            </Button.Flyout>
           </Button>
-          <Button Command="{Binding OpenNewFolderCommand}" IsVisible="{Binding !IsInFolder}"
+          <Button Command="{Binding FolderTree.OpenNewFolderCommand}"
                   ToolTip.Tip="{x:Static loc:Strings.Common_NewFolder}">
             <StackPanel Orientation="Horizontal" Spacing="6">
               <PathIcon Data="{StaticResource Icon.folderAdd}" />
@@ -235,7 +237,7 @@
               <TextBlock Text="{x:Static loc:Strings.Common_AddCard}" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
-        </WrapPanel>
+        </c:ActionRow>
         </c:FlowGrid>
       </Grid>
 
@@ -347,18 +349,18 @@
                 </ListBox.ItemTemplate>
               </ListBox>
 
-              <!-- Cards (no folder open): the folders after its own cards. A tile opens its folder, and cards
-                   are dragged onto it like onto a folder in the navigation pane (see ListReorder). -->
-              <StackPanel Spacing="4" Margin="8,4,8,12" IsVisible="{Binding ShowsFolderTiles}">
+              <!-- The folders in the one shown (or in Cards), after its own cards. A tile opens its folder, and
+                   cards are dragged onto it like onto a folder in the navigation pane (see ListReorder). -->
+              <StackPanel Spacing="4" Margin="8,4,8,12" IsVisible="{Binding FolderTree.ShowsTiles}">
                 <TextBlock Text="{x:Static loc:Strings.Cards_FoldersHeader}" Classes="overline" Margin="4,0" />
-                <ItemsControl ItemsSource="{Binding Folders}">
+                <ItemsControl ItemsSource="{Binding FolderTree.Subfolders}">
                   <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                       <c:TileGrid MinItemWidth="280" />
                     </ItemsPanelTemplate>
                   </ItemsControl.ItemsPanel>
                   <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:CardFolderViewModel">
+                    <DataTemplate x:DataType="vm:FolderViewModel">
                       <Button Classes="foldertile" Classes.empty="{Binding IsEmpty}"
                               Command="{Binding OpenCommand}" b:ListReorder.IsDropTarget="True"
                               ToolTip.Tip="{Binding Name}">
@@ -369,8 +371,10 @@
                             <TextBlock Grid.Column="1" Classes="foldername" Text="{Binding Name}" FontWeight="SemiBold"
                                        FontSize="15" VerticalAlignment="Center" TextWrapping="Wrap" MaxLines="2"
                                        LineSpacing="-2" TextTrimming="CharacterEllipsis" />
-                            <TextBlock Grid.Column="2" Classes="caption foldercount" VerticalAlignment="Center"
-                                       Text="{Binding CountText}" />
+                            <!-- Just the number, in a frame; the open folder's header words it (“3 cards”). -->
+                            <Border Grid.Column="2" Classes="foldercount" ToolTip.Tip="{Binding CountText}">
+                              <TextBlock Classes="caption" Text="{Binding Count}" />
+                            </Border>
                           </Grid>
                         </Border>
                       </Button>
@@ -394,8 +398,9 @@
               IsEnabled="{Binding !IsAsking}">
         <StackPanel Spacing="14">
           <Grid ColumnDefinitions="Auto,Auto,*">
-            <Button Grid.Column="0" Classes="icon backonly" Margin="-8,0,6,0"
-                    Command="{Binding CloseCommand}" ToolTip.Tip="{x:Static loc:Strings.Common_BackToTheList}"
+            <!-- A new card always offers Back: it returns to choosing a source, not to the list. -->
+            <Button Grid.Column="0" Classes="icon backonly" Classes.keepback="{Binding IsEditingNew}" Margin="-8,0,6,0"
+                    VerticalAlignment="Top" Command="{Binding CloseCommand}" ToolTip.Tip="{Binding HeaderBackTip}"
                     b:DialogKeys.IsBack="True">
               <PathIcon Data="{StaticResource Icon.back}" />
             </Button>
@@ -455,7 +460,7 @@
               <DropDownButton.Flyout>
                 <MenuFlyout Placement="BottomEdgeAlignedLeft">
                   <MenuItem Header="JSON" Command="{Binding ExportCommand}"
-                            ToolTip.Tip="{x:Static loc:Strings.Cards_CardFileCompatibleWithTheFlutter}" />
+                            ToolTip.Tip="{x:Static loc:Strings.Cards_CardFileCompatibleWithChameleonUltraGui}" />
                   <MenuItem Header="{x:Static loc:Strings.Cards_BinDump}" Command="{Binding ExportBinCommand}"
                             ToolTip.Tip="{x:Static loc:Strings.Cards_RawMemoryDumpReadableByMost}" />
                   <MenuItem Header="{x:Static loc:Strings.Cards_EmlDump}" Command="{Binding ExportEmlCommand}"
@@ -463,6 +468,19 @@
                 </MenuFlyout>
               </DropDownButton.Flyout>
             </DropDownButton>
+            <Button Command="{Binding ShareQrCommand}" c:ActionRow.Priority="1" ToolTip.Tip="{x:Static loc:Strings.Qr_ShareTip}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource Icon.qrcode}" />
+                <TextBlock Text="{x:Static loc:Strings.Qr_Share}" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+            <Button Command="{Binding CompareCommand}" IsVisible="{Binding CanCompareDump}"
+                    Classes.accent="{Binding IsCompareOpen}" ToolTip.Tip="{x:Static loc:Strings.Compare_Tip}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource Icon.compare}" />
+                <TextBlock Text="{x:Static loc:Strings.Compare_Button}" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
             <Button IsVisible="{Binding IsCardOpen}" ToolTip.Tip="{x:Static loc:Strings.Cards_MoveThisCardToAFolder}">
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <PathIcon Data="{StaticResource Icon.folder}" />
@@ -471,13 +489,14 @@
               </StackPanel>
               <Button.Flyout>
                 <Flyout Placement="BottomEdgeAlignedLeft">
-                  <!-- Fixed width: long names wrap onto a second line, tightly spaced, then trim. No folder
-                       (back to Cards) stands apart above the folders; one choice across both lists. -->
+                  <!-- Fixed width: long names wrap onto a second line, tightly spaced, then trim; folders in
+                       others are indented. No folder (back to Cards) stands apart above the folders; one choice
+                       across both lists. -->
                   <StackPanel Width="260">
-                    <ListBox ItemsSource="{Binding RootFolderOptions}" SelectedItem="{Binding SelectedCardFolder}"
+                    <ListBox ItemsSource="{Binding FolderTree.RootOptions}" SelectedItem="{Binding SelectedCardFolder}"
                              Background="Transparent" BorderThickness="0" Tapped="OnFlyoutPickTapped">
                       <ListBox.ItemTemplate>
-                        <DataTemplate x:DataType="vm:CardFolderOption">
+                        <DataTemplate x:DataType="vm:FolderOption">
                           <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
                             <PathIcon Grid.Column="0" Width="16" Height="16" Opacity="0.75" VerticalAlignment="Center"
                                       Data="{StaticResource Icon.cards}" />
@@ -486,14 +505,14 @@
                         </DataTemplate>
                       </ListBox.ItemTemplate>
                     </ListBox>
-                    <Separator Margin="0,4" IsVisible="{Binding HasFolders}" />
+                    <Separator Margin="0,4" IsVisible="{Binding FolderTree.HasFolders}" />
                     <ScrollViewer MaxHeight="320" HorizontalScrollBarVisibility="Disabled">
-                      <ListBox ItemsSource="{Binding FolderOptions}" SelectedItem="{Binding SelectedCardFolder}"
+                      <ListBox ItemsSource="{Binding FolderTree.Options}" SelectedItem="{Binding SelectedCardFolder}"
                                Background="Transparent" BorderThickness="0"
                                ScrollViewer.HorizontalScrollBarVisibility="Disabled" Tapped="OnFlyoutPickTapped">
                         <ListBox.ItemTemplate>
-                          <DataTemplate x:DataType="vm:CardFolderOption">
-                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                          <DataTemplate x:DataType="vm:FolderOption">
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" Margin="{Binding Indent}">
                               <PathIcon Grid.Column="0" Width="16" Height="16" Opacity="0.75" VerticalAlignment="Center"
                                         Data="{StaticResource Icon.folder}" />
                               <TextBlock Grid.Column="1" Text="{Binding Label}" VerticalAlignment="Center"
@@ -549,8 +568,8 @@
           <!-- Choosing a source; once a card is scanned or imported the editor below replaces it. -->
           <Border Classes="card" IsVisible="{Binding IsPickingSource}">
             <StackPanel Spacing="14">
-              <Grid ColumnDefinitions="Auto,*,Auto">
-                <Button Grid.Column="0" Classes="icon backonly" Margin="-8,0,6,0"
+              <Grid ColumnDefinitions="Auto,*">
+                <Button Grid.Column="0" Classes="icon" Margin="-8,0,6,0" VerticalAlignment="Top"
                         Command="{Binding CloseCommand}" ToolTip.Tip="{x:Static loc:Strings.Common_BackToTheList}"
                         b:DialogKeys.IsBack="True">
                   <PathIcon Data="{StaticResource Icon.back}" />
@@ -560,10 +579,6 @@
                   <TextBlock Classes="caption hint" TextWrapping="Wrap"
                              Text="{x:Static loc:Strings.Cards_HoldATagAgainstTheDevice}" />
                 </StackPanel>
-                <Button Grid.Column="2" Classes="icon" Command="{Binding CloseCommand}"
-                        ToolTip.Tip="{x:Static loc:Strings.Common_Cancel}" VerticalAlignment="Top">
-                  <PathIcon Data="{StaticResource Icon.close}" />
-                </Button>
               </Grid>
 
               <Border Classes="inset">
@@ -577,7 +592,7 @@
                 </StackPanel>
               </Border>
 
-              <UniformGrid Columns="2" ColumnSpacing="8" RowSpacing="8">
+              <c:FitGrid Columns="2" ColumnSpacing="8" RowSpacing="8">
                 <Button Classes="tile source" Command="{Binding ScanHfCommand}" IsVisible="{Binding IsConnected}"
                         ToolTip.Tip="{x:Static loc:Strings.Cards_ScanAnISO14443ATagThe}">
                   <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
@@ -626,7 +641,45 @@
                     </StackPanel>
                   </Grid>
                 </Button>
-              </UniformGrid>
+                <!-- The camera where the platform has a scanner, a screenshot or photo elsewhere. -->
+                <Button Classes="tile source" Command="{Binding ScanQrCommand}" ToolTip.Tip="{x:Static loc:Strings.Qr_ScanTip}">
+                  <Button.IsEnabled>
+                    <MultiBinding Converter="{x:Static BoolConverters.Or}">
+                      <Binding Path="HasQrCamera" />
+                      <Binding Path="CanUseFiles" />
+                    </MultiBinding>
+                  </Button.IsEnabled>
+                  <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                    <Border Classes="iconwell" VerticalAlignment="Center">
+                      <PathIcon Data="{StaticResource Icon.qrcode}" />
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                      <TextBlock Text="{x:Static loc:Strings.Qr_ScanTile}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                      <Panel>
+                        <TextBlock Text="{x:Static loc:Strings.Qr_ScanCamera}" Classes="caption" TextTrimming="CharacterEllipsis"
+                                   IsVisible="{Binding HasQrCamera}" />
+                        <TextBlock Text="{x:Static loc:Strings.Qr_ScanImage}" Classes="caption" TextTrimming="CharacterEllipsis"
+                                   IsVisible="{Binding !HasQrCamera}" />
+                      </Panel>
+                    </StackPanel>
+                  </Grid>
+                </Button>
+                <Button Classes="tile source" Command="{Binding ScanQrImageCommand}" IsEnabled="{Binding CanUseFiles}"
+                        IsVisible="{Binding HasQrCamera}" ToolTip.Tip="{x:Static loc:Strings.Qr_ScanImageTip}">
+                  <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                    <Border Classes="iconwell" VerticalAlignment="Center">
+                      <PathIcon Data="{StaticResource Icon.image}" />
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                      <TextBlock Text="{x:Static loc:Strings.Qr_ScanTile}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Text="{x:Static loc:Strings.Qr_ScanImage}" Classes="caption" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </Grid>
+                </Button>
+              </c:FitGrid>
+
+              <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding QrScanStatus}"
+                         IsVisible="{Binding QrScanStatus, Converter={x:Static ObjectConverters.IsNotNull}}" />
               <TextBlock Text="{Binding ScanCapabilitiesHint}" TextWrapping="Wrap" Classes="caption"
                          IsVisible="{Binding ScanCapabilitiesHint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
@@ -637,17 +690,6 @@
               <TextBlock Classes="caption" TextWrapping="Wrap" IsVisible="{Binding !IsConnected}"
                          Text="{x:Static loc:Strings.Cards_ConnectAChameleonToScanTags}" />
 
-              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12" IsVisible="{Binding IsConnected}">
-                <TextBlock Grid.Column="0" Text="{x:Static loc:Strings.Cards_LFProtocol}" Classes="caption" VerticalAlignment="Center" />
-                <ComboBox Grid.Column="1" HorizontalAlignment="Stretch"
-                          ItemsSource="{Binding LfProtocols}" SelectedItem="{Binding LfProtocol}">
-                  <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                      <TextBlock Text="{Binding Converter={x:Static conv:EnumLabelConverter.Instance}}" />
-                    </DataTemplate>
-                  </ComboBox.ItemTemplate>
-                </ComboBox>
-              </Grid>
             </StackPanel>
           </Border>
 
@@ -657,9 +699,125 @@
               <MultiBinding Converter="{x:Static BoolConverters.Or}">
                 <Binding Path="IsSlotsOpen" />
                 <Binding Path="IsWriteOpen" />
+                <Binding Path="IsQrOpen" />
+                <Binding Path="IsCompareOpen" />
               </MultiBinding>
             </Border.IsVisible>
             <StackPanel>
+              <!-- Share as QR code: one code, or a series that changes by itself -->
+              <StackPanel Spacing="10" b:BringIntoViewOnShow.IsEnabled="True" IsVisible="{Binding IsQrOpen}">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="{x:Static loc:Strings.Qr_ShareHeader}" Classes="overline" />
+                    <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding QrHint}" />
+                  </StackPanel>
+                  <Button Grid.Column="1" Classes="icon" Command="{Binding ShareQrCommand}"
+                          ToolTip.Tip="{x:Static loc:Strings.Common_Close}" VerticalAlignment="Top">
+                    <PathIcon Data="{StaticResource Icon.close}" />
+                  </Button>
+                </Grid>
+                <c:QrCodeView Text="{Binding QrText}" MaxWidth="360" HorizontalAlignment="Center" />
+                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" IsVisible="{Binding IsQrSeries}">
+                  <Button Classes="icon" Command="{Binding QrPreviousCommand}" ToolTip.Tip="{x:Static loc:Strings.Qr_Previous}">
+                    <PathIcon Data="{StaticResource Icon.chevronleft}" />
+                  </Button>
+                  <Button Classes="icon" Command="{Binding QrPlayPauseCommand}" ToolTip.Tip="{Binding QrPlayPauseTip}">
+                    <Panel>
+                      <PathIcon Data="{StaticResource Icon.pause}" IsVisible="{Binding IsQrPlaying}" />
+                      <PathIcon Data="{StaticResource Icon.play}" IsVisible="{Binding !IsQrPlaying}" />
+                    </Panel>
+                  </Button>
+                  <TextBlock Text="{Binding QrPartLabel}" VerticalAlignment="Center" MinWidth="90" TextAlignment="Center" />
+                  <Button Classes="icon" Command="{Binding QrNextCommand}" ToolTip.Tip="{x:Static loc:Strings.Qr_Next}">
+                    <PathIcon Data="{StaticResource Icon.chevronright}" />
+                  </Button>
+                </StackPanel>
+              </StackPanel>
+
+              <!-- Compare with another saved card or a dump file -->
+              <StackPanel Spacing="10" b:BringIntoViewOnShow.IsEnabled="True" IsVisible="{Binding IsCompareOpen}">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="{x:Static loc:Strings.Compare_Header}" Classes="overline" />
+                    <TextBlock Classes="caption" TextWrapping="Wrap" Text="{x:Static loc:Strings.Compare_Hint}" />
+                  </StackPanel>
+                  <Button Grid.Column="1" Classes="icon" Command="{Binding CompareCommand}"
+                          ToolTip.Tip="{x:Static loc:Strings.Common_Close}" VerticalAlignment="Top">
+                    <PathIcon Data="{StaticResource Icon.close}" />
+                  </Button>
+                </Grid>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                  <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding CompareTargets}"
+                            SelectedItem="{Binding CompareTarget}" IsEnabled="{Binding HasCompareTargets}"
+                            PlaceholderText="{x:Static loc:Strings.Compare_PickCard}">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate x:DataType="vm:CompareTargetViewModel">
+                        <StackPanel>
+                          <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                          <TextBlock Text="{Binding Detail}" Classes="caption" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                  <Button Grid.Column="1" Command="{Binding CompareFileCommand}" IsEnabled="{Binding CanUseFiles}"
+                          ToolTip.Tip="{x:Static loc:Strings.Compare_OpenFileTip}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <PathIcon Data="{StaticResource Icon.import}" />
+                      <TextBlock Text="{x:Static loc:Strings.Compare_OpenFile}" VerticalAlignment="Center" />
+                    </StackPanel>
+                  </Button>
+                </Grid>
+                <TextBlock Classes="caption" TextWrapping="Wrap" IsVisible="{Binding !HasCompareTargets}"
+                           Text="{x:Static loc:Strings.Compare_NoCards}" />
+
+                <StackPanel Spacing="10" IsVisible="{Binding HasComparison}">
+                  <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="8">
+                    <TextBlock Text="A" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="1" Text="{Binding CompareNameA}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Row="1" Text="B" FontWeight="SemiBold" />
+                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CompareNameB}" TextTrimming="CharacterEllipsis" />
+                  </Grid>
+                  <TextBlock Text="{Binding CompareSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                  <ItemsControl ItemsSource="{Binding CompareFields}" IsVisible="{Binding HasCompareFields}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:CompareFieldRow">
+                        <Grid ColumnDefinitions="56,16,*" RowDefinitions="Auto,Auto" Margin="0,2">
+                          <TextBlock Grid.RowSpan="2" Text="{Binding Label}" Classes="caption" />
+                          <TextBlock Grid.Column="1" Text="A" Classes="caption" VerticalAlignment="Center" />
+                          <SelectableTextBlock Grid.Column="2" Text="{Binding A}" FontFamily="{x:Static c:AppFonts.Mono}"
+                                               TextWrapping="Wrap" />
+                          <TextBlock Grid.Row="1" Grid.Column="1" Text="B" Classes="caption" VerticalAlignment="Center" />
+                          <SelectableTextBlock Grid.Row="1" Grid.Column="2" Text="{Binding B}"
+                                               FontFamily="{x:Static c:AppFonts.Mono}" TextWrapping="Wrap" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <CheckBox Content="{x:Static loc:Strings.Compare_OnlyDifferences}" IsChecked="{Binding CompareOnlyDifferences}" />
+                  <ItemsControl ItemsSource="{Binding CompareRows}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:CompareBlockRow">
+                        <StackPanel Spacing="2" Margin="0,4">
+                          <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding Sector}" Classes="caption" VerticalAlignment="Center"
+                                       IsVisible="{Binding Sector, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                          </StackPanel>
+                          <Grid ColumnDefinitions="16,*" RowDefinitions="Auto,Auto">
+                            <TextBlock Text="A" Classes="caption" VerticalAlignment="Center" />
+                            <c:HexDiffText Grid.Column="1" Bytes="{Binding A}" Other="{Binding B}"
+                                           MissingText="{x:Static loc:Strings.Compare_NotRead}" />
+                            <TextBlock Grid.Row="1" Text="B" Classes="caption" VerticalAlignment="Center" />
+                            <c:HexDiffText Grid.Row="1" Grid.Column="1" Bytes="{Binding B}" Other="{Binding A}"
+                                           MissingText="{x:Static loc:Strings.Compare_NotRead}" />
+                          </Grid>
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </StackPanel>
+
               <!-- Assign to slot -->
               <StackPanel Spacing="10" b:BringIntoViewOnShow.IsEnabled="True" IsVisible="{Binding IsSlotsOpen}">
                 <Grid ColumnDefinitions="*,Auto">
@@ -899,6 +1057,33 @@
                            IsVisible="{Binding ShowDumpHint}" />
               </StackPanel>
               <StackPanel Spacing="8">
+                <StackPanel Spacing="8" IsVisible="{Binding IsMfkey32WaitingForSlot}"
+                            b:BringIntoViewOnShow.IsEnabled="True">
+                  <TextBlock Text="{x:Static loc:Strings.Cards_Mfkey32LoadIntoSlot}" TextWrapping="Wrap" />
+                  <TextBlock Classes="caption" TextWrapping="Wrap"
+                             Text="{x:Static loc:Strings.Cards_TheCardReplacesTheSlotsCurrent}" />
+                  <ItemsControl ItemsSource="{Binding SlotTargets}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate><UniformGrid Columns="2" ColumnSpacing="8" RowSpacing="8" /></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:SlotTargetViewModel">
+                        <Button Classes="slottarget"
+                                Command="{Binding $parent[ItemsControl].((vm:CardsViewModel)DataContext).Mfkey32SelectSlotCommand}"
+                                CommandParameter="{Binding}">
+                          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                            <Border Classes="slotnum" Classes.active="{Binding IsActive}" Width="28" Height="28" CornerRadius="14">
+                              <TextBlock Text="{Binding Index}" FontWeight="Bold"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Grid.Column="1" Text="{Binding Label}" VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" Classes.dim="{Binding IsEmpty}" />
+                          </Grid>
+                        </Button>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
                 <!-- Actions and progress share a fixed-height slot to keep the sector grid still. -->
                 <c:KeyRecoveryPanel>
                   <!-- Hidden when it has nothing to show, so its empty slot adds no spacing above the page map. -->
@@ -1393,7 +1578,7 @@
                 <TextBlock Text="{x:Static loc:Strings.Common_Cancel}" VerticalAlignment="Center" />
               </StackPanel>
             </Button>
-            <Button Command="{Binding DiscardAndLeaveCommand}" c:ActionRow.Priority="1"
+            <Button Classes="danger" Command="{Binding DiscardAndLeaveCommand}" c:ActionRow.Priority="1"
                     ToolTip.Tip="{x:Static loc:Strings.Common_Discard}">
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <PathIcon Data="{StaticResource Icon.delete}" />

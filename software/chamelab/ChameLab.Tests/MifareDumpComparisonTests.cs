@@ -33,6 +33,19 @@ public class MifareDumpComparisonTests
     }
 
     [Fact]
+    public void UltralightDifferentCapacitiesRetainThreeByteStates()
+    {
+        var a = new CardSave { Tag = TagSpecificType.Ntag213, Data = [new byte[] { 0, 1, 2, 3 }] };
+        var b = new CardSave { Tag = TagSpecificType.Ntag215, Data = [new byte[] { 0, 9, 2, 3 }, new byte[4]] };
+        var result = DumpComparison.Compare(a, b);
+        Assert.Equal(new[] { DumpByteState.Equal, DumpByteState.Different, DumpByteState.Equal, DumpByteState.Equal }, result.Blocks[0].States);
+        Assert.All(result.Blocks[1].States, state => Assert.Equal(DumpByteState.Unknown, state));
+        Assert.Equal(1, result.DifferentBytes);
+        Assert.Equal(4, result.UnknownBytes);
+        Assert.False(result.Blocks[1].ByteDiffers(0));
+    }
+
+    [Fact]
     public void UnknownKeysAndUnreadBlocksNeverCountAsEqualOrDifferent()
     {
         var source = Card();
@@ -60,7 +73,7 @@ public class MifareDumpComparisonTests
         var source = Card(); var target = Card();
         target.Data = [new byte[15]];
         Assert.Equal(4096, MifareDumpComparison.Compare(source, target).UnknownBytes);
-        target.Tag = TagSpecificType.Mifare1024;
+        target.Tag = TagSpecificType.Ntag213;
         Assert.False(MifareDumpComparison.CanCompare(source, target));
         Assert.Throws<ArgumentException>(() => MifareDumpComparison.Compare(source, target));
     }

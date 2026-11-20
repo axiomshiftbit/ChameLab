@@ -20,6 +20,9 @@ public static class AppServices
     public static IKeyRecoveryEngine KeyRecovery { get; private set; } = new ManagedKeyRecoveryEngine();
     public static WakeLockService WakeLock { get; private set; } = new();
 
+    /// <summary>The camera QR scanner of the platform; null where QR codes are read from images only.</summary>
+    public static IQrCamera? QrCamera { get; private set; }
+
     public static DeviceService Device =>
         _device ??= Build(Enumerable.Empty<ITransportScanner>());
 
@@ -43,7 +46,7 @@ public static class AppServices
     public static void Register(IEnumerable<ITransportScanner> platformScanners, IKeyValueStore? store = null,
         IEnumerable<IDfuLocator>? dfu = null, IFeedbackPlayer? feedback = null,
         IHardnestedEngine? hardnested = null, IKeyRecoveryEngine? keyRecovery = null,
-        WakeLockService? wakeLock = null)
+        WakeLockService? wakeLock = null, IQrCamera? qrCamera = null)
     {
         _device = Build(platformScanners);
         if (store is not null) _store = store;
@@ -52,6 +55,7 @@ public static class AppServices
         Hardnested = hardnested ?? new UnavailableHardnestedEngine();
         KeyRecovery = keyRecovery ?? new ManagedKeyRecoveryEngine();
         WakeLock = wakeLock ?? new WakeLockService();
+        QrCamera = qrCamera;
     }
 
     private static DeviceService Build(IEnumerable<ITransportScanner> platformScanners)

@@ -29,7 +29,7 @@ namespace ChameLab.Android
             AppServices.Register([], store: new MemoryKeyValueStore());
 #else
             AppServices.Register(new ITransportScanner[] { new UsbCdcScanner(new AndroidUsbCdcHost()), new BleScanner() }, dfu: new IDfuLocator[] { new BleDfuLocator() },
-                feedback: new AndroidFeedbackPlayer(), hardnested: new ManagedHardnestedEngine(), wakeLock: new WakeLockService(AndroidWakeLock.AcquireAsync));
+                feedback: new AndroidFeedbackPlayer(), hardnested: new ManagedHardnestedEngine(), wakeLock: new WakeLockService(AndroidWakeLock.AcquireAsync), qrCamera: new AndroidQrCamera());
 #endif
             return base.CustomizeAppBuilder(builder)
             .WithInterFont()

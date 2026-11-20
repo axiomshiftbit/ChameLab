@@ -14,6 +14,23 @@ public class EncryptedDeviceBackupTests
     private const string Password = "synthetic backup password";
 
     [Fact]
+    public void CycleModeSurvivesEncryptionAndParticipatesInReadbackVerification()
+    {
+        var snapshot = Snapshot();
+        snapshot.Slots[0] = snapshot.Slots[0] with
+        {
+            LfCycle = snapshot.Slots[0].LfCycle! with { Mode = LfCycleMode.WhilePresent, Bursts = 7, GapSteps = 23 },
+        };
+        var restored = EncryptedDeviceBackup.Decrypt(EncryptedDeviceBackup.Encrypt(snapshot, Password), Password);
+        Assert.True(DeviceBackupService.Equivalent(snapshot, restored));
+        Assert.Equal(7, restored.Slots[0].LfCycle!.Bursts);
+        restored.Slots[0] = restored.Slots[0] with { LfCycle = restored.Slots[0].LfCycle! with { GapSteps = 22 } };
+        Assert.False(DeviceBackupService.Equivalent(snapshot, restored));
+        snapshot.Slots[0] = snapshot.Slots[0] with { LfCycle = snapshot.Slots[0].LfCycle! with { Bursts = 11 } };
+        Assert.Throws<InvalidDataException>(() => EncryptedDeviceBackup.Encrypt(snapshot, Password));
+    }
+
+    [Fact]
     public void RoundTripPreservesSlotsSettingsAndEmulatorData()
     {
         var expected = Snapshot();

@@ -37,6 +37,44 @@ public static class BackupService
     /// <summary>Imports a backup, appending its cards and dictionaries. Returns the counts added.</summary>
     public static (int cards, int dictionaries) Import(byte[] data, CardLibrary cards, DictionaryLibrary dictionaries)
     {
+        foreach (var error in new[] { cards.LoadError, dictionaries.LoadError, cards.FolderTree.LoadError,
+                     dictionaries.FolderTree.LoadError, dictionaries.KnownKeys.LoadError })
+            if (error is not null) throw new InvalidOperationException(error);
+        // Parse, migrate and validate the entire input against an isolated copy first.
+        // No real library or file changes until all records and both folder trees are valid.
+        var cardKeys = new[] { "cards", "cardFolders", "cardFolderTree" };
+        var dictionaryKeys = new[] { "dictionaries", "dictionaryFolderTree", KnownCardKeys.Id };
+        var staged = new MemoryKeyValueStore();
+        foreach (var key in cardKeys) if (cards.Store.Read(key) is { } value) staged.Write(key, value);
+        foreach (var key in dictionaryKeys) if (dictionaries.Store.Read(key) is { } value) staged.Write(key, value);
+        var nextCards = new CardLibrary(staged);
+        var nextDictionaries = new DictionaryLibrary(staged);
+        var result = ImportCore(data, nextCards, nextDictionaries);
+        var writes = cardKeys.Select(key => (Store: cards.Store, Key: key))
+            .Concat(dictionaryKeys.Select(key => (Store: dictionaries.Store, Key: key)))
+            .Select(w => (w.Store, w.Key, Old: w.Store.Read(w.Key), New: staged.Read(w.Key))).ToArray();
+        var attempted = 0;
+        try
+        {
+            foreach (var write in writes)
+            {
+                attempted++;
+                if (write.New is not null) write.Store.Write(write.Key, write.New);
+            }
+        }
+        catch
+        {
+            foreach (var write in writes.Take(attempted).Reverse())
+                if (write.New is not null) write.Store.Write(write.Key, write.Old ?? (write.Key == KnownCardKeys.Id ? "{}" : "[]"));
+            throw;
+        }
+        cards.Accept(nextCards); dictionaries.Accept(nextDictionaries);
+        cards.NotifyImport(); dictionaries.NotifyImport();
+        return result;
+    }
+
+    private static (int cards, int dictionaries) ImportCore(byte[] data, CardLibrary cards, DictionaryLibrary dictionaries)
+    {
         var text = Encoding.UTF8.GetString(data).TrimStart('﻿');
         if (JsonNode.Parse(text) is not JsonObject o)
             throw new FormatException(Strings.Backup_Invalid);
@@ -50,23 +88,21 @@ public static class BackupService
             ? da.Where(n => n is not null).Select(n => KeyDictionary.FromJson(n!)).ToList()
             : new();
 
-        var cardFolders = PlanFolders(cards.FolderTree, o["cardFolderTree"]);
-        var dictionaryFolders = PlanFolders(dictionaries.FolderTree, o["dictionaryFolderTree"]);
+        var cardFolders = PlanFolders(cards.FolderTree, o["cardFolderTree"], o["cardFolders"], importedCards.Select(c => c.Folder));
+        var dictionaryFolders = PlanFolders(dictionaries.FolderTree, o["dictionaryFolderTree"], o["dictionaryFolders"], importedDicts.Select(d => d.Folder));
         foreach (var card in importedCards)
         {
-            card.FolderId = card.FolderId is { } id ? cardFolders.Map.GetValueOrDefault(id) : null;
+            card.FolderId = card.FolderId is { } id ? cardFolders.Map.GetValueOrDefault(id) : cardFolders.Paths.FirstOrDefault(p => FolderPath.Same(p.Value, FolderPath.Normalize(card.Folder))).Key;
             if (card.FolderId is { } mapped) card.Folder = cardFolders.Paths[mapped];
         }
         foreach (var dictionary in importedDicts)
         {
-            dictionary.FolderId = dictionary.FolderId is { } id ? dictionaryFolders.Map.GetValueOrDefault(id) : null;
+            dictionary.FolderId = dictionary.FolderId is { } id ? dictionaryFolders.Map.GetValueOrDefault(id) : dictionaryFolders.Paths.FirstOrDefault(p => FolderPath.Same(p.Value, FolderPath.Normalize(dictionary.Folder))).Key;
             if (dictionary.FolderId is { } mapped) dictionary.Folder = dictionaryFolders.Paths[mapped];
         }
         // Both hierarchies and all records have been parsed before applying either tree.
         cards.ReplaceFolders(cardFolders.Folders);
         dictionaries.ReplaceFolders(dictionaryFolders.Folders);
-        if (o["cardFolders"] is JsonArray legacyFolders)
-            foreach (var folder in legacyFolders) cards.AddFolder((string?)folder ?? "");
         if (o["knownCardKeys"] is { } knownKeys) dictionaries.KnownKeys.Merge(knownKeys);
         if (importedCards.Count > 0) cards.AddRange(importedCards);
         if (importedDicts.Count > 0) dictionaries.AddRange(importedDicts);
@@ -74,10 +110,25 @@ public static class BackupService
     }
 
     private static (List<SavedFolder> Folders, Dictionary<string, string> Map, IReadOnlyDictionary<string, string> Paths)
-        PlanFolders(FolderLibrary target, JsonNode? node)
+        PlanFolders(FolderLibrary target, JsonNode? node, JsonNode? legacy, IEnumerable<string> itemPaths)
     {
         if (target.LoadError is { } error) throw new InvalidOperationException(error);
         var incoming = node is JsonArray array ? array.Select(n => SavedFolder.FromJson(n!)).ToList() : new List<SavedFolder>();
+        if (node is null)
+        {
+            var names = legacy is JsonArray arrayNames ? arrayNames.Select(n => (string?)n ?? "") : [];
+            foreach (var path in names.Concat(itemPaths).Select(FolderPath.Normalize))
+            {
+                string? parent = null;
+                foreach (var part in path.Split('/', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var name = part.Trim();
+                    var folder = incoming.FirstOrDefault(f => f.ParentId == parent && FolderPath.Same(f.Name, name));
+                    if (folder is null) { folder = new SavedFolder(Guid.NewGuid().ToString(), name, CardSave.DefaultColor, parent); incoming.Add(folder); }
+                    parent = folder.Id;
+                }
+            }
+        }
         var sourcePaths = SavedFolder.Paths(incoming);
         var folders = target.Items.ToList(); var paths = target.Paths;
         var map = incoming.ToDictionary(f => f.Id, f => paths.FirstOrDefault(p =>

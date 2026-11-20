@@ -82,6 +82,44 @@ public static class CardTags
           or TagSpecificType.Ntag210 or TagSpecificType.Ntag212
           or TagSpecificType.Ntag213 or TagSpecificType.Ntag215 or TagSpecificType.Ntag216;
 
+    /// <summary>
+    /// Model from an 8-byte GET_VERSION answer: product type (byte 2) and storage size (byte 6).
+    /// Clones often put a wrong product type in; their size still tells the model, except that
+    /// NTAG210 / NTAG212 share theirs with Ultralight EV1, which is then assumed. Null for an
+    /// unknown size, or a larger Ultralight (AES) the app has no type for.
+    /// </summary>
+    public static TagSpecificType? UltralightFromVersion(byte[] version) => (version[2], version[6]) switch
+    {
+        (0x04, 0x0B) => TagSpecificType.Ntag210,
+        (0x04, 0x0E) => TagSpecificType.Ntag212,
+        (_, 0x0B) => TagSpecificType.Mf0Ul11,
+        (_, 0x0E) => TagSpecificType.Mf0Ul21,
+        (0x03, _) => null,
+        (_, 0x0F) => TagSpecificType.Ntag213,
+        (_, 0x11) => TagSpecificType.Ntag215,
+        (_, 0x13) => TagSpecificType.Ntag216,
+        _ => null,
+    };
+
+    /// <summary>
+    /// Type for an Ultralight-family card whose GET_VERSION answer names no known model, from
+    /// that answer (empty without one) and the pages it actually has: product type 0x04 is an
+    /// NTAG, anything else up to 41 pages an Ultralight EV1 (which shares its sizes with
+    /// NTAG210 / NTAG212); larger cards the smallest NTAG that holds them.
+    /// </summary>
+    public static TagSpecificType UltralightForUnknownVersion(byte[] version, int pages)
+    {
+        var ntag = version.Length > 2 && version[2] == 0x04;
+        return pages switch
+        {
+            <= 20 => ntag ? TagSpecificType.Ntag210 : TagSpecificType.Mf0Ul11,
+            <= 41 => ntag ? TagSpecificType.Ntag212 : TagSpecificType.Mf0Ul21,
+            <= 45 => TagSpecificType.Ntag213,
+            <= 135 => TagSpecificType.Ntag215,
+            _ => TagSpecificType.Ntag216,
+        };
+    }
+
     public static TagSpecificType MifareClassicForBlocks(int blocks) => blocks switch
     {
         <= 20 => TagSpecificType.MifareMini,
@@ -144,7 +182,7 @@ public static class CardTags
         t.IsMifareClassic()
         || t.UltralightPages() > 0
         || t is TagSpecificType.HidProx or TagSpecificType.IoProx or TagSpecificType.Viking
-             or TagSpecificType.Pac or TagSpecificType.Jablotron or TagSpecificType.Idteck
+             or TagSpecificType.Pac or TagSpecificType.Jablotron or TagSpecificType.Idteck or TagSpecificType.FarpointePyramid
         || t.IsEm410x();
 
     /// <summary>Expected emulator-ID length for an LF tag type (0 = unknown / any).</summary>
@@ -165,8 +203,8 @@ public static class CardTags
 }
 
 /// <summary>
-/// Builds <see cref="CardSave"/>s from scans, dumps and the file formats the
-/// Flutter app imports: its own JSON, Proxmark3 JSON, Flipper NFC / RFID,
+/// Builds <see cref="CardSave"/>s from scans, dumps and the file formats
+/// ChameleonUltraGUI imports: its own JSON, Proxmark3 JSON, Flipper NFC / RFID,
 /// MIFARE Classic Tool, plus raw <c>.bin</c> / <c>.eml</c> dumps.
 /// </summary>
 public static class CardFormats
@@ -224,6 +262,47 @@ public static class CardFormats
         foreach (var s in card.Extra.UnknownKeyB.Where(s => s < dump.SectorCount)) dump.KeyBUnknown[s] = true;
         return dump;
     }
+
+    /// <summary>
+    /// The dump to write onto a card. Block 0 carries the card's UID: built from the identity when the
+    /// card has no block 0 (only scanned, or sector 0 never read), and with the UID (and the BCC of a
+    /// 4-byte UID) put in when block 0 holds another one, so the UID shown is the UID written.
+    /// </summary>
+    public static MifareDump ToMifareWriteDump(this CardSave card, bool includeBlock0 = true)
+    {
+        var dump = card.ToMifareDump();
+        if (!includeBlock0) return dump;
+        var uid = card.Uid;
+        if (uid.Length is not (4 or 7 or 10)) return dump;
+
+        var b0 = dump.GetBlock(0) is { Length: 16 } existing ? (byte[])existing.Clone() : null;
+        if (b0 is null)
+        {
+            // UID(4) BCC SAK ATQA(2) and the common magic-card manufacturer bytes 62..69,
+            // or UID(7/10) SAK ATQA(2) with the rest zero: what ChameleonUltraGUI writes too.
+            b0 = MifareClassic.BlankBlock(0);
+            uid.CopyTo(b0, 0);
+            var at = uid.Length;
+            if (uid.Length == 4)
+            {
+                b0[at++] = Bcc(uid);
+                for (var i = 8; i < 16; i++) b0[i] = (byte)(0x62 + i - 8);
+            }
+            b0[at++] = card.Sak;
+            if (card.Atqa.Length == 2) card.Atqa.CopyTo(b0, at);
+        }
+        else if (!b0.AsSpan(0, uid.Length).SequenceEqual(uid))
+        {
+            uid.CopyTo(b0, 0);
+            if (uid.Length == 4) b0[4] = Bcc(uid);
+        }
+        else return dump;
+
+        dump.SetBlock(0, b0);
+        return dump;
+    }
+
+    private static byte Bcc(byte[] uid) => (byte)(uid[0] ^ uid[1] ^ uid[2] ^ uid[3]);
 
     /// <summary>Best guess of the slot tag type from SAK (and ATQA for Ultralight).</summary>
     public static TagSpecificType GuessHfType(byte sak, byte[] atqa) => sak switch
@@ -296,9 +375,36 @@ public static class CardFormats
                 blocks.Add(Hex.Parse(v.ToString()));
 
         card.Data = blocks;
-        card.Tag = blocks.Count > 0 && blocks[0].Length > 16
-            ? TagSpecificType.Undefined
-            : CardTags.MifareClassicForBlocks(blocks.Count);
+        if (root["FileType"]?.ToString() == "mfu" || blocks.Count > 0 && blocks[0].Length == 4)
+        {
+            // Ultralight / NTAG: 4-byte pages; the model comes from GET_VERSION, else the page count.
+            var version = Hex.Parse(info["Version"]?.ToString() ?? string.Empty);
+            card.Tag = (version.Length == 8 ? CardTags.UltralightFromVersion(version) : null)
+                ?? (version.Length == 0 && blocks.Count <= 16 ? TagSpecificType.Mf0Icu1
+                    : version.Length == 0 && blocks.Count == 48 ? TagSpecificType.Mf0Icu2
+                    : CardTags.UltralightForUnknownVersion(version, blocks.Count));
+            if (version.Length == 8) card.Extra.UltralightVersion = version;
+            if (Hex.Parse(info["Signature"]?.ToString() ?? string.Empty) is { Length: 32 } sig)
+                card.Extra.UltralightSignature = sig;
+            for (var i = 0; info[$"Counter{i}"]?.ToString() is { } hex; i++)
+            {
+                var c = Hex.Parse(hex);
+                if (c.Length < 3) break;
+                card.Extra.UltralightCounters.Add(c[0] | (c[1] << 8) | (c[2] << 16));
+            }
+            // The mfu file has no SAK / ATQA.
+            if (card.Atqa.Length == 0 && card.Tag.DefaultSakAtqa(card.Uid.Length == 7) is { } id)
+            {
+                card.Sak = id.Sak;
+                card.Atqa = id.Atqa;
+            }
+        }
+        else
+        {
+            card.Tag = blocks.Count > 0 && blocks[0].Length > 16
+                ? TagSpecificType.Undefined
+                : CardTags.MifareClassicForBlocks(blocks.Count);
+        }
         card.Name = card.UidHex;
         return card;
     }
@@ -441,11 +547,10 @@ public static class CardFormats
     /// <summary>Takes UID/SAK/ATQA from block 0 when the dump came without them.</summary>
     private static void FillIdentityFromBlock0(CardSave card)
     {
-        if (card.Data.Count == 0 || card.Data[0].Length < 16) return;
-        var b0 = card.Data[0];
-        if (card.Uid.Length == 0) card.Uid = b0[..4];
-        if (card.Sak == 0) card.Sak = b0[5];
-        if (card.Atqa.Length == 0) card.Atqa = b0[6..8];
+        if (card.Data.Count == 0 || MifareClassic.DecodeBlock0(card.Data[0]) is not (var uid, var sak, var atqa)) return;
+        if (card.Uid.Length == 0) card.Uid = uid;
+        if (card.Sak == 0) card.Sak = sak;
+        if (card.Atqa.Length == 0) card.Atqa = atqa;
     }
 
     private static string? Match(string text, string pattern)

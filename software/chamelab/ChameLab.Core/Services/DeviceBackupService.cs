@@ -136,6 +136,9 @@ public sealed class DeviceBackupService(DeviceService device, IKeyValueStore sto
                 if (slot.Lf is { } lf) required.Add(ChameleonClient.LfEmulatorSetCommand(lf.Card.Tag));
             }
             if (snapshot.Slots.Any(s => s.LfCycle is not null)) required.Add(Command.LfSetCycle);
+            if (snapshot.Slots.Any(s => s.LfCycle is { } c &&
+                (c.Mode != LfCycleMode.PerField || c.Bursts != 1 || c.GapSteps != 0)))
+                required.AddRange([Command.LfSetCycleMode, Command.LfGetCycleMode]);
             if (snapshot.Slots.Any(s => s.Emulator.Mf1?.Prng is not null)) required.Add(Command.Mf1SetPrngType);
             if (snapshot.Slots.Any(s => s.Emulator.Mf1?.FieldOffReset is not null)) required.Add(Command.Mf1SetFieldOffDoReset);
             if (snapshot.Slots.Any(s => s.Emulator.Mf0?.Detection is not null)) required.Add(Command.Mf0NtagSetDetectionEnable);

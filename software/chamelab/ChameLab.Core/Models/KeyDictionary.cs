@@ -90,7 +90,8 @@ public sealed class KeyDictionary
         {
             var line = raw.Split('#')[0].Trim().TrimStart('\uFEFF');
             if (line.Length == 0) continue;
-            if (!Hex.TryParse(line, out var key) || !IsSupportedSize(key.Length)) continue;
+            if (!Hex.TryParse(line, out var key)) continue;
+            if (!IsSupportedSize(key.Length)) throw new FormatException(Strings.Import_DictionaryKeySize);
             if (dict.Keys.Count == 0) dict.KeySize = key.Length;
             if (key.Length != dict.KeySize) throw new FormatException(Strings.Import_DictionaryKeySize);
             if (seen.Add(Convert.ToHexString(key))) dict.Keys.Add(key);

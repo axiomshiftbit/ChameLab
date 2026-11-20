@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace ChameLab.Cli;
 
@@ -17,15 +18,15 @@ public sealed record CommandSpec(string Name, string Description, OptionSpec[] O
 
 public static class CommandCatalog
 {
-    private static T Read<T>(string name)
+    private static T Read<T>(string name, JsonTypeInfo<T> type)
     {
         using var stream = typeof(CommandCatalog).Assembly.GetManifestResourceStream("ChameLab.Cli." + name)
             ?? throw new InvalidOperationException("Missing command resource: " + name);
-        return (T)JsonSerializer.Deserialize(stream, typeof(T), CommandJsonContext.Default)!;
+        return JsonSerializer.Deserialize(stream, type)!;
     }
 
-    public static IReadOnlyList<CommandSpec> Commands { get; } = Read<CommandSpec[]>("CommandCatalog.json");
-    private static readonly Dictionary<string, Dictionary<string, int>> Enums = Read<Dictionary<string, Dictionary<string, int>>>("EnumCatalog.json");
+    public static IReadOnlyList<CommandSpec> Commands { get; } = Read("CommandCatalog.json", CommandJsonContext.Default.CommandSpecArray);
+    private static readonly Dictionary<string, Dictionary<string, int>> Enums = Read("EnumCatalog.json", CommandJsonContext.Default.DictionaryStringDictionaryStringInt32);
 
     public static int EnumValue(string type, string value) => Enums[type].TryGetValue(value, out var n) ? n
         : throw new ArgumentException($"Unknown {type}: {value}");
@@ -38,6 +39,18 @@ public static class CommandCatalog
             if (Commands.FirstOrDefault(c => c.Name == path) is { } c) return (c, words[i..]);
         }
         return (null, words);
+    }
+
+    /// <summary>Completions for the text before the cursor: command paths, then the found command's options.</summary>
+    public static string[] Complete(string prefix)
+    {
+        var paths = Commands.Select(c => c.Name).Where(n => n.StartsWith(prefix, StringComparison.Ordinal)).ToArray();
+        if (paths.Length > 0) return paths;
+        var (command, _) = Find(prefix.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+        if (command is null) return [];
+        var last = prefix.LastIndexOf(' ') + 1;
+        return command.Options.SelectMany(o => o.Names).Where(n => n.StartsWith(prefix[last..], StringComparison.Ordinal))
+            .Select(n => prefix[..last] + n).ToArray();
     }
 
     public static void Help(TextWriter output, CommandSpec? command = null, string prefix = "")

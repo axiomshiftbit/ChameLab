@@ -2198,6 +2198,55 @@
         "choices": null,
         "help": "Known key",
         "const": null
+      },
+      {
+        "names": [
+          "--method"
+        ],
+        "dest": "method",
+        "required": false,
+        "action": "_StoreAction",
+        "nargs": null,
+        "type": "str",
+        "default": "all-sectors",
+        "choices": [
+          "single-key",
+          "all-sectors",
+          "one-sector"
+        ],
+        "help": "Dictionary search: single-key (one check at a time), all-sectors (batches across sectors, default), or one-sector (batches for one sector/key type)",
+        "const": null
+      },
+      {
+        "names": [
+          "--start-sector"
+        ],
+        "dest": "start_sector",
+        "required": false,
+        "action": "_StoreAction",
+        "nargs": null,
+        "type": "int",
+        "default": 0,
+        "choices": null,
+        "help": "Start at sector N (zero-based, default: 0); sequential order wraps around the card",
+        "const": null
+      },
+      {
+        "names": [
+          "--sector-order"
+        ],
+        "dest": "sector_order",
+        "required": false,
+        "action": "_StoreAction",
+        "nargs": null,
+        "type": "str",
+        "default": "sequential",
+        "choices": [
+          "sequential",
+          "random"
+        ],
+        "help": "Sector order: sequential (default) or random; the start sector is always first",
+        "const": null
       }
     ],
     "groups": [],
@@ -4822,6 +4871,15 @@
     "scopedSlot": false
   },
   {
+    "name": "lf search",
+    "description": "Scan an LF tag of any supported protocol and print its type and id",
+    "options": [],
+    "groups": [],
+    "reader": true,
+    "device": true,
+    "scopedSlot": false
+  },
+  {
     "name": "lf em 410x read",
     "description": "Scan em410x tag and print id",
     "options": [],
@@ -5872,8 +5930,21 @@
     "scopedSlot": false
   },
   {
+    "name": "lf pyramid write",
+    "description": "Write a Farpointe/Pyramid frame to T55xx and verify by reading it back",
+    "options": [
+      { "names": ["--raw"], "dest": "raw", "required": false, "action": "_StoreAction", "nargs": null, "type": "str", "default": null, "choices": null, "help": "Raw 128-bit frame (16 bytes hex)", "const": null },
+      { "names": ["--fc"], "dest": "fc", "required": false, "action": "_StoreAction", "nargs": null, "type": "int", "default": null, "choices": null, "help": "Facility code (26-bit format)", "const": null },
+      { "names": ["--cn"], "dest": "cn", "required": false, "action": "_StoreAction", "nargs": null, "type": "int", "default": null, "choices": null, "help": "Card number (26-bit format)", "const": null }
+    ],
+    "groups": [],
+    "reader": true,
+    "device": true,
+    "scopedSlot": false
+  },
+  {
     "name": "lf clone",
-    "description": "Clone a LF card ID onto a blank T55xx tag.\nSupported types: em410x, electra, hid, ioprox, pac, viking, idteck.\nOnly supported on Chameleon Ultra (Lite has no LF writer).",
+    "description": "Clone a LF card ID onto a blank T55xx tag.\nSupported types: em410x, electra, hid, ioprox, pac, viking, idteck, pyramid.\nOnly supported on Chameleon Ultra (Lite has no LF writer).",
     "options": [
       {
         "names": [
@@ -5893,9 +5964,10 @@
           "ioprox",
           "pac",
           "viking",
-          "idteck"
+          "idteck",
+          "pyramid"
         ],
-        "help": "Card type: em410x, electra, hid, ioprox, pac, viking, idteck",
+        "help": "Card type: em410x, electra, hid, ioprox, pac, viking, idteck, pyramid",
         "const": null
       },
       {
@@ -5909,7 +5981,7 @@
         "type": "str",
         "default": null,
         "choices": null,
-        "help": "Card ID in hex: 10 for em410x, 26 for electra, 8 for viking, 8 or 16 for idteck; 8 ASCII chars for pac",
+        "help": "Card ID in hex: 10 for em410x, 26 for electra, 8 for viking, 8 or 16 for idteck, 32 for pyramid; 8 ASCII chars for pac",
         "const": null
       },
       {
@@ -5970,7 +6042,7 @@
         "type": "int",
         "default": null,
         "choices": null,
-        "help": "Facility code (HID / ioProx)",
+        "help": "Facility code (HID / ioProx / Pyramid)",
         "const": null
       },
       {
@@ -5984,7 +6056,7 @@
         "type": "int",
         "default": null,
         "choices": null,
-        "help": "Card number (HID / ioProx)",
+        "help": "Card number (HID / ioProx / Pyramid)",
         "const": null
       },
       {

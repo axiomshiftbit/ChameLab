@@ -77,8 +77,9 @@ public sealed class CardEditorViewModel : ViewModelBase, IProtectionSettings
 
     public string Id => _source.Id;
 
+    // SEOS is left out: a slot needs its data and keys, which only the CLI (hf seos eload/keys) uploads.
     private static readonly IReadOnlyList<TagSpecificType> AllTagTypes =
-        TagTypeExtensions.All().Where(t => t != TagSpecificType.Undefined).ToArray();
+        TagTypeExtensions.All().Where(t => t is not (TagSpecificType.Undefined or TagSpecificType.Seos)).ToArray();
 
     /// <summary>Tag types offered in the type picker.</summary>
     public IReadOnlyList<TagSpecificType> TagChoices { get; }
@@ -88,7 +89,7 @@ public sealed class CardEditorViewModel : ViewModelBase, IProtectionSettings
 
     public bool CanChangeTag => TagChoices.Count > 1;
 
-    /// <summary>Preset accents (Flutter app color picker defaults).</summary>
+    /// <summary>Preset accents (ChameleonUltraGUI color picker defaults).</summary>
     public static IReadOnlyList<string> Palette => SlotColors.Palette;
 
     public string Name { get => _name; set { this.RaiseAndSetIfChanged(ref _name, value); Touch(); } }

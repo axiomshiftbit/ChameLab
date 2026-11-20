@@ -14,6 +14,8 @@ public partial class DictionariesView : UserControl
         InitializeComponent();
         // Opening dictionaries, and dragging them into place in manual order.
         _ = new ListReorder(DictList, ListScroll);
+        // Going back up a folder returns the list to where it was left.
+        _ = new FolderScrollMemory(this, dc => (dc as ViewModels.DictionariesViewModel)?.FolderTree, ListPaneScroll, ListScroll);
         KnownList.LayoutUpdated += OnKnownLayoutUpdated;
     }
 
@@ -38,12 +40,31 @@ public partial class DictionariesView : UserControl
             var narrow = list.Bounds.Width < 520;
             if (list.Classes.Contains("narrow") == narrow) return;
             list.Classes.Set("narrow", narrow);
-            LibraryHeader.ColumnDefinitions = new ColumnDefinitions(narrow ? "*" : "Auto,*");
         }
     }
 
-    // Picking a swatch closes the palette flyout it lives in.
-    private void OnSwatchTapped(object? sender, TappedEventArgs e)
+    // ---- The open folder's title: renamed in place ----
+
+    // A click on the open folder's title starts renaming it (Cards and Dictionaries themselves are not renamed).
+    private void OnFolderTitleTapped(object? sender, TappedEventArgs e)
+    {
+        if (DataContext is ViewModels.DictionariesViewModel vm && vm.FolderTree.IsInFolder) vm.FolderTree.RenameCurrentCommand.Execute(null);
+    }
+
+    private void OnFolderTitleKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (DataContext is not ViewModels.DictionariesViewModel vm) return;
+        if (e.Key == Key.Enter) vm.FolderTree.CommitFolderRename();
+        else if (e.Key == Key.Escape) vm.FolderTree.CancelFolderRename();
+        else return;
+        e.Handled = true;
+    }
+
+    private void OnFolderTitleLostFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e) =>
+        (DataContext as ViewModels.DictionariesViewModel)?.FolderTree.CommitFolderRename();
+
+    // Picking a swatch (or a folder) closes the flyout it lives in.
+    private void OnFlyoutPickTapped(object? sender, TappedEventArgs e)
     {
         // The flyout's popup is logically parented to the button that opened it.
         if (sender is Control c && c.FindLogicalAncestorOfType<Button>() is { Flyout: { } flyout })

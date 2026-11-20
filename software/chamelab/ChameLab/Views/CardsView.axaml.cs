@@ -6,6 +6,7 @@ using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using System.Linq;
 using Avalonia.VisualTree;
+using Avalonia.Threading;
 using ChameLab.Behaviors;
 using ChameLab.ViewModels;
 
@@ -20,6 +21,7 @@ public partial class CardsView : UserControl
         InitializeComponent();
         // Opening cards, and dragging them into place in manual order.
         _ = new ListReorder(CardList, ListScroll);
+        _ = new FolderScrollMemory(this, dc => (dc as CardsViewModel)?.FolderTree, ListPaneScroll, ListScroll);
     }
 
     private void OnMemoryLoaded(object? sender, RoutedEventArgs e)
@@ -39,13 +41,30 @@ public partial class CardsView : UserControl
     /// The memory scroll has already brought the caret into view; the request must
     /// not travel on to the pane scroll, which would scroll to the caret's position
     /// as if the inner scroll weren't there (jumping up to the card details). The
-    /// pane only needs to show the memory scroll itself; a no-op when it is visible.
+    /// pane shows the part of the memory scroll where the caret now is: on a phone
+    /// with the keyboard open the pane can be shorter than the memory scroll, and
+    /// showing all of it would leave a caret low in it under the keyboard. Once laid
+    /// out, so the inner scroll's new offset is in place.
     /// </summary>
     private void OnMemoryBringIntoView(object? sender, RequestBringIntoViewEventArgs e)
     {
         if (e.TargetObject == _memoryScroll) return;
         e.Handled = true;
-        _memoryScroll?.BringIntoView();
+        if (_memoryScroll is null) return;
+        if (e.TargetObject is not { } target)
+        {
+            _memoryScroll.BringIntoView();
+            return;
+        }
+        var rect = e.TargetRect;
+        Dispatcher.UIThread.Post(() =>
+        {
+            var shown = new Rect(_memoryScroll.Bounds.Size);
+            var spot = target.TransformToVisual(_memoryScroll) is { } toScroll
+                ? rect.TransformToAABB(toScroll).Intersect(shown)
+                : default;
+            _memoryScroll.BringIntoView(spot.Height > 0 ? spot : shown);
+        }, DispatcherPriority.Background);
     }
 
     /// <summary>
@@ -61,26 +80,25 @@ public partial class CardsView : UserControl
         if (Math.Abs(scroll.MaxHeight - max) >= 1) scroll.MaxHeight = max;
     }
 
-    // ---- The open folder's title: renamed in place, deleted after a confirmation ----
+    // ---- The open folder's title: renamed in place ----
+
+    // A click on the open folder's title starts renaming it (Cards and Dictionaries themselves are not renamed).
+    private void OnFolderTitleTapped(object? sender, TappedEventArgs e)
+    {
+        if (DataContext is CardsViewModel vm && vm.FolderTree.IsInFolder) vm.FolderTree.RenameCurrentCommand.Execute(null);
+    }
 
     private void OnFolderTitleKeyDown(object? sender, KeyEventArgs e)
     {
         if (DataContext is not CardsViewModel vm) return;
-        if (e.Key == Key.Enter) vm.CommitFolderRename();
-        else if (e.Key == Key.Escape) vm.CancelFolderRename();
+        if (e.Key == Key.Enter) vm.FolderTree.CommitFolderRename();
+        else if (e.Key == Key.Escape) vm.FolderTree.CancelFolderRename();
         else return;
         e.Handled = true;
     }
 
     private void OnFolderTitleLostFocus(object? sender, RoutedEventArgs e) =>
-        (DataContext as CardsViewModel)?.CommitFolderRename();
-
-    // Confirming closes the flyout first: the folder (and its title) goes away with the delete.
-    private void OnFolderDeleteClick(object? sender, RoutedEventArgs e)
-    {
-        if (sender is Control c && c.FindLogicalAncestorOfType<Button>() is { Flyout: { } flyout }) flyout.Hide();
-        (DataContext as CardsViewModel)?.DeleteCurrentFolder();
-    }
+        (DataContext as CardsViewModel)?.FolderTree.CommitFolderRename();
 
     // Picking a swatch (or a folder) closes the flyout it lives in.
     private void OnFlyoutPickTapped(object? sender, TappedEventArgs e)

@@ -40,21 +40,41 @@ public sealed class CardLibrary
     /// <summary>Set when the stored library could not be parsed (it is left untouched on disk).</summary>
     public string? LoadError { get; private set; }
 
-    public void ReplaceFolders(IEnumerable<SavedFolder> folders)
+    public void ReplaceFolders(IEnumerable<SavedFolder> folders, IReadOnlyDictionary<string, string?>? assignments = null)
     {
         if (LoadError is { } error) throw new InvalidOperationException(error);
-        var oldPaths = FolderTree.Paths.Values.ToHashSet();
-        FolderTree.Replace(folders);
-        var paths = FolderTree.Paths;
-        _folders.RemoveAll(oldPaths.Contains);
-        foreach (var card in _cards.Where(c => c.FolderId is not null))
+        var replacement = folders.ToList();
+        var paths = SavedFolder.Paths(replacement);
+        var values = _cards.Select(item =>
         {
-            card.Folder = paths.GetValueOrDefault(card.FolderId!) ?? "";
-            if (!paths.ContainsKey(card.FolderId!)) card.FolderId = null;
-        }
-        foreach (var path in paths.Values) AddFolderName(path);
-        Save();
+            var id = assignments is not null && assignments.TryGetValue(item.Id, out var chosen) ? chosen : item.FolderId;
+            var path = id is not null ? paths.GetValueOrDefault(id) ?? "" : assignments is not null && assignments.ContainsKey(item.Id) ? "" : item.Folder;
+            if (id is not null && !paths.ContainsKey(id)) id = null;
+            return (Item: item, Id: id, Path: path);
+        }).ToList();
+        var json = new JsonArray(values.Select(v =>
+        {
+            var node = v.Item.ToJson(); node["folderId"] = v.Id; node["folder"] = v.Path;
+            return (JsonNode)node;
+        }).ToArray());
+        var writes = new Dictionary<string, string> { [StoreKey] = json.ToJsonString() };
+        var names = paths.Values.Concat(values.Select(v => v.Path)).Where(p => p.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(p => p, FolderPath.TreeOrder).ToList();
+        writes[FoldersKey] = new JsonArray(names.Select(p => (JsonNode)p).ToArray()).ToJsonString();
+        FolderTree.Commit(replacement, writes);
+        foreach (var value in values) { value.Item.FolderId = value.Id; value.Item.Folder = value.Path; }
+        _folders.Clear(); _folders.AddRange(names);
+        Changed?.Invoke();
     }
+
+    internal IKeyValueStore Store => _store;
+    internal void Accept(CardLibrary source)
+    {
+        _cards.Clear(); _cards.AddRange(source.Cards);
+        FolderTree.Accept(source.FolderTree);
+        _folders.Clear(); _folders.AddRange(source.Folders);
+    }
+    internal void NotifyImport() => Changed?.Invoke();
 
     public event Action? Changed;
 
@@ -222,60 +242,27 @@ public sealed class CardLibrary
     }
 
     /// <summary>Creates an empty folder. False when the name is empty or taken.</summary>
-    public bool AddFolder(string name)
-    {
-        var n = CardSave.NormalizeFolder(name);
-        if (n.Length == 0 || FindFolder(n) is not null) return false;
-        AddFolderName(n);
-        Save();
-        return true;
-    }
+    public bool AddFolder(string name) => new FolderBrowserLibrary(this).AddFolder(name) is not null;
 
-    /// <summary>Renames a folder and refiles its cards. False when the new name is empty or taken.</summary>
+    /// <summary>Renames or relocates a folder by its full path, retaining IDs and descendants.</summary>
     public bool RenameFolder(string from, string to)
     {
-        var n = CardSave.NormalizeFolder(to);
-        if (FindFolder(from) is not { } old || n.Length == 0) return false;
-        // Only the spelling may change to that of another folder: its own.
-        if (FindFolder(n) is { } taken && taken != old) return false;
-        if (n == old) return true;
-        if (FolderTree.Paths.FirstOrDefault(p => p.Value == old).Key is { } folderId)
-        {
-            ReplaceFolders(FolderTree.Items.Select(f => f.Id == folderId ? f with { Name = n, ParentId = null } : f));
-            return true;
-        }
-        _folders.Remove(old);
-        AddFolderName(n);
-        foreach (var card in _cards.Where(c => c.Folder == old)) card.Folder = n;
-        Save();
-        return true;
+        var path = FolderPath.Normalize(to);
+        return path.Length > 0 && new FolderBrowserLibrary(this).Relocate(from, FolderPath.Parent(path), FolderPath.Name(path)) is not null;
     }
 
-    /// <summary>Deletes a folder; its cards stay in the library, in no folder.</summary>
-    public void RemoveFolder(string name)
-    {
-        if (FindFolder(name) is not { } old) return;
-        var paths = FolderTree.Paths;
-        if (paths.FirstOrDefault(p => p.Value == old).Key is { } folderId)
-        {
-            // GUI deletion keeps records; plugin subtree deletion is explicit and separate.
-            ReplaceFolders(FolderTree.Items.Where(f => f.Id != folderId).Select(f => f.ParentId == folderId
-                ? f with { ParentId = null, Name = paths[f.Id] } : f));
-        }
-        _folders.Remove(old);
-        foreach (var card in _cards.Where(c => c.Folder == old)) { card.Folder = string.Empty; card.FolderId = null; }
-        Save();
-    }
+    /// <summary>Deletes a subtree; its cards move to the parent folder.</summary>
+    public void RemoveFolder(string name) => new FolderBrowserLibrary(this).RemoveFolder(name);
 
     /// <summary>Files a card in a folder (empty for none), creating the folder if needed.</summary>
     public void MoveToFolder(CardSave card, string folder)
     {
-        var n = FindFolder(folder) ?? CardSave.NormalizeFolder(folder);
-        if (_cards.FirstOrDefault(c => c.Id == card.Id) is not { } saved || saved.Folder == n) return;
-        saved.Folder = n;
-        saved.FolderId = FolderTree.Paths.FirstOrDefault(p => p.Value == n).Key;
-        if (!ReferenceEquals(saved, card)) { card.Folder = n; card.FolderId = saved.FolderId; }
-        AddFolderName(n);
-        Save();
+        var path = FolderPath.Normalize(folder);
+        if (_cards.FirstOrDefault(c => c.Id == card.Id) is not { } saved) return;
+        var browser = new FolderBrowserLibrary(this);
+        if (path.Length > 0 && browser.FindFolder(path) is null) browser.AddFolder(path);
+        var id = FolderTree.Paths.FirstOrDefault(p => FolderPath.Same(p.Value, path)).Key;
+        ReplaceFolders(FolderTree.Items, new Dictionary<string, string?> { [saved.Id] = id });
+        if (!ReferenceEquals(saved, card)) { card.Folder = saved.Folder; card.FolderId = saved.FolderId; }
     }
 }

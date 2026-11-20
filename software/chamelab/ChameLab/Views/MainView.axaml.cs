@@ -8,6 +8,7 @@ using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Threading;
 using ChameLab.Behaviors;
+using ChameLab.Controls;
 using ChameLab.Services;
 using ChameLab.ViewModels;
 
@@ -55,6 +56,7 @@ public partial class MainView : UserControl
         if (_vm is not null) _vm.PropertyChanged += OnViewModelPropertyChanged;
         StorageService.TopLevelAccessor = _topLevelAccessor;
         _topLevel.BackRequested += OnBackRequested;
+        SystemBack.Handler = HandleBack;
         _inputPane = _topLevel.InputPane;
         if (_inputPane is not null) _inputPane.StateChanged += OnInputPaneChanged;
         _insets = _topLevel.InsetsManager;
@@ -70,6 +72,7 @@ public partial class MainView : UserControl
         if (ReferenceEquals(StorageService.TopLevelAccessor, _topLevelAccessor))
             StorageService.TopLevelAccessor = null;
         if (_topLevel is not null) _topLevel.BackRequested -= OnBackRequested;
+        if (SystemBack.Handler?.Target == this) SystemBack.Handler = null;
         if (_inputPane is not null) _inputPane.StateChanged -= OnInputPaneChanged;
         if (_insets is not null) _insets.SafeAreaChanged -= OnSafeAreaChanged;
         _topLevel = null;
@@ -108,15 +111,21 @@ public partial class MainView : UserControl
     /// </summary>
     private void OnBackRequested(object? sender, RoutedEventArgs e)
     {
-        if (e.Handled || _topLevel is null || DataContext is not MainViewModel vm) return;
-        e.Handled = CloseTopPopup(_topLevel)
-                    || DialogKeys.TryCancel(_topLevel)
-                    // Busy device operations must keep their modal open until they finish.
-                    || vm.Firmware.IsDialogOpen || vm.Backups.IsOpen
-                    || DialogKeys.TryGoBack(_topLevel)
-                    || vm.TryGoBack()
-                    // Only phones and the browser tab close on an unhandled Back; desktop ignores it.
-                    || (OperatingSystem.IsAndroid() || OperatingSystem.IsBrowser()) && (!vm.ConfirmExit() || Quit(vm));
+        if (!e.Handled) e.Handled = HandleBack();
+    }
+
+    /// <summary>The Back of <see cref="OnBackRequested"/>; true when the app took it.</summary>
+    private bool HandleBack()
+    {
+        if (_topLevel is null || DataContext is not MainViewModel vm) return false;
+        return CloseTopPopup(_topLevel)
+               || DialogKeys.TryCancel(_topLevel)
+               // Nothing to cancel while firmware installs, and Back must not leave the dialog either.
+               || vm.Firmware.IsDialogOpen || vm.Backups.IsOpen
+               || DialogKeys.TryGoBack(_topLevel)
+               || vm.TryGoBack()
+               // Only phones and the browser tab close on an unhandled Back; desktop ignores it.
+               || (OperatingSystem.IsAndroid() || OperatingSystem.IsBrowser()) && (!vm.ConfirmExit() || Quit(vm));
     }
 
     /// <summary>
@@ -131,29 +140,20 @@ public partial class MainView : UserControl
         return true;
     }
 
-    // ---- Card folder names, edited in place ----------------------------------
+    // ---- Folder names, edited in place ----------------------------------
 
     private void OnFolderNameKeyDown(object? sender, KeyEventArgs e)
     {
-        if (sender is not Control { DataContext: CardFolderViewModel folder } || _vm is null) return;
-        if (e.Key == Key.Enter) _vm.Cards.CommitRename(folder);
-        else if (e.Key == Key.Escape) CardsViewModel.CancelRename(folder);
+        if (sender is not Control { DataContext: FolderViewModel folder }) return;
+        if (e.Key == Key.Enter) folder.Owner.CommitRename(folder);
+        else if (e.Key == Key.Escape) FolderBrowser.CancelRename(folder);
         else return;
         e.Handled = true;
     }
 
-    // Confirming closes the flyout before the folder (and the row it opened from) goes away. The
-    // folder is taken first: closing the flyout detaches its content from the row's DataContext.
-    private void OnFolderDeleteClick(object? sender, RoutedEventArgs e)
-    {
-        if (sender is not Control { DataContext: CardFolderViewModel folder } c) return;
-        if (c.FindLogicalAncestorOfType<Button>() is { Flyout: { } flyout }) flyout.Hide();
-        folder.DeleteCommand.Execute(null);
-    }
-
     private void OnFolderNameLostFocus(object? sender, RoutedEventArgs e)
     {
-        if (sender is Control { DataContext: CardFolderViewModel folder }) _vm?.Cards.CommitRename(folder);
+        if (sender is Control { DataContext: FolderViewModel folder }) folder.Owner.CommitRename(folder);
     }
 
     /// <summary>Closes the most recently opened flyout or drop-down, if any.</summary>
@@ -238,7 +238,7 @@ public partial class MainView : UserControl
         if (_inputPane is not null)
             KeepClearOfKeyboard(_inputPane.State == InputPaneState.Open ? _inputPane.OccludedRect : default);
         // Likely made shorter for the keyboard by the platform itself.
-        if (shrank && _topLevel?.FocusManager?.GetFocusedElement() is TextBox) RevealFocused();
+        if (shrank && _topLevel?.FocusManager?.GetFocusedElement() is TextBox or HexEditor) RevealFocused();
     }
 
     // Pages differ in how much room they need, so the pane may dock or overlay on navigation.

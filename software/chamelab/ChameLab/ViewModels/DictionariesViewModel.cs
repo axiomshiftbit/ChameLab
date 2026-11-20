@@ -46,8 +46,8 @@ public sealed class DictionaryEditorViewModel : ViewModelBase
     public int KeyLength { get; }
 
     private readonly string _id;
-    private readonly string? _folderId;
-    private readonly string _folder;
+    // The dictionary opened: its folder may change (moved from the list) while it is being edited.
+    private readonly KeyDictionary _source;
     private readonly string _baseline;
     private readonly List<byte[]> _rows;
     // Rows whose key already appears higher up, with the row it repeats.
@@ -59,8 +59,7 @@ public sealed class DictionaryEditorViewModel : ViewModelBase
     public DictionaryEditorViewModel(KeyDictionary source)
     {
         _id = source.Id;
-        _folderId = source.FolderId;
-        _folder = source.Folder;
+        _source = source;
         _name = source.Name;
         _color = source.Color;
         KeyLength = source.KeySize;
@@ -162,8 +161,8 @@ public sealed class DictionaryEditorViewModel : ViewModelBase
         return new KeyDictionary
         {
             Id = _id,
-            FolderId = _folderId,
-            Folder = _folder,
+            FolderId = _source.FolderId,
+            Folder = _source.Folder,
             Name = _name.Trim(),
             Color = CardSave.NormalizeColor(_color),
             KeySize = KeyLength,
@@ -173,7 +172,37 @@ public sealed class DictionaryEditorViewModel : ViewModelBase
 }
 
 /// <summary>What the right-hand pane of the Dictionaries page shows.</summary>
-public enum DictionariesPane { None, New, Dictionary, KnownKeys }
+/// <remarks><see cref="Add"/> offers where a new dictionary comes from; <see cref="Download"/> lists the known ones.</remarks>
+public enum DictionariesPane { None, New, Dictionary, KnownKeys, Add, Download }
+
+/// <summary>A known dictionary of the Proxmark3 or Flipper Zero project, downloaded with a click.</summary>
+public sealed class KnownDictionaryItemViewModel : ViewModelBase
+{
+    public KnownDictionaryItemViewModel(KnownDictionary source, Action<KnownDictionaryItemViewModel> download)
+    {
+        Source = source;
+        DownloadCommand = ReactiveCommand.Create(() => download(this));
+    }
+
+    public KnownDictionary Source { get; }
+
+    /// <summary>The cards it is for (“MIFARE Classic”), its row's label under the project's heading.</summary>
+    public string Card => Source.Card;
+
+    public string FileName => Source.FileName;
+
+    public ICommand DownloadCommand { get; }
+
+    /// <summary>Being downloaded: its tile shows a progress ring.</summary>
+    public bool IsDownloading
+    {
+        get;
+        set => this.RaiseAndSetIfChanged(ref field, value);
+    }
+}
+
+/// <summary>The known dictionaries one project publishes, under its name.</summary>
+public sealed record KnownDictionarySection(string Title, IReadOnlyList<KnownDictionaryItemViewModel> Items);
 
 /// <summary>Order of the dictionary list; <see cref="Manual"/> is the library's own order, changed by dragging.</summary>
 /// <remarks><see cref="Size"/> is largest first, <see cref="SizeAsc"/> smallest first.</remarks>
@@ -197,7 +226,7 @@ public static class DictionarySortExtensions
 /// in place, saved from the bar below) with duplicate / export / delete actions. Dumps use the
 /// dictionaries (plus the built-in defaults) when recovering a card.
 /// </summary>
-public sealed class DictionariesViewModel : PageViewModelBase, IReorderableList
+public sealed class DictionariesViewModel : PageViewModelBase, IReorderableList, IDropOutList
 {
     private readonly DictionaryLibrary _library;
     private DictionaryItemViewModel? _selected;
@@ -213,6 +242,15 @@ public sealed class DictionariesViewModel : PageViewModelBase, IReorderableList
     public DictionariesViewModel(DictionaryLibrary library, CardLibrary? cards = null) : base(() => Strings.Nav_Dictionaries, "key")
     {
         _library = library;
+        FolderTree = new FolderBrowser(new FolderBrowserLibrary(library), "dictionaryFoldersExpanded", () => Strings.Nav_Dictionaries,
+            n => Loc.Plural(Strings.Plural_Dictionaries, n),
+            (n, name, to) => Loc.Plural(Strings.Plural_DeletedFolderDictionaries, n, name, to),
+            Notify, ReportError);
+        FolderTree.CurrentChanged += Rebuild;
+        FolderTree.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(FolderBrowser.CurrentFolder)) this.RaisePropertyChanged(nameof(CurrentFolder));
+        };
         KnownEditor = new KnownKeysEditorViewModel(library.KnownKeys, cards ?? AppServices.Cards);
         KnownEditor.PropertyChanged += (_, e) =>
         {
@@ -224,6 +262,14 @@ public sealed class DictionariesViewModel : PageViewModelBase, IReorderableList
         var hasForm = this.WhenAnyValue(x => x.Form).Select(f => f is not null);
 
         NewCommand = ReactiveCommand.Create(() => LeaveThen(BeginNew));
+        AddCommand = ReactiveCommand.Create(() => LeaveThen(BeginAdd),
+            this.WhenAnyValue(x => x.Pane).Select(p => p != DictionariesPane.Add));
+        ShowDownloadsCommand = ReactiveCommand.Create(() => { Pane = DictionariesPane.Download; });
+        BackToAddCommand = ReactiveCommand.Create(BeginAdd);
+        DownloadSections = KnownDictionaries.All.GroupBy(d => d.Project)
+            .Select(g => new KnownDictionarySection(g.Key.ToUpperInvariant(),
+                g.Select(d => new KnownDictionaryItemViewModel(d, item => _ = DownloadAsync(item))).ToArray()))
+            .ToArray();
         OpenKnownKeysCommand = ReactiveCommand.Create(() => LeaveThen(() =>
         {
             SetSelected(null);
@@ -270,11 +316,22 @@ public sealed class DictionariesViewModel : PageViewModelBase, IReorderableList
             Loc.Plural(Strings.Plural_Keys, _library.KnownKeys.KeyCount))
         + (_library.KnownKeys.PasswordCount > 0 ? Loc.Plural(Strings.Plural_NtagPasswords, _library.KnownKeys.PasswordCount) : "");
     public bool IsKnownKeys => _pane == DictionariesPane.KnownKeys;
-    public bool IsEditorPane => HasPane && !IsKnownKeys;
+    public bool IsEditorPane => _pane is DictionariesPane.New or DictionariesPane.Dictionary;
 
-    public bool IsEmpty => _library.Dictionaries.Count == 0;
-    public bool NoMatches => !IsEmpty && Dictionaries.Count == 0;
-    public string CountText => Loc.Plural(Strings.Plural_Dictionaries, _library.Dictionaries.Count);
+    public bool IsEmpty => _library.Dictionaries.Count == 0 && !FolderTree.HasFolders;
+
+    /// <summary>The search or the key length hides every dictionary of the folder (or of Dictionaries) shown.</summary>
+    public bool NoMatches => HasFilters && Dictionaries.Count == 0 && _library.Dictionaries.Any(InView);
+
+    /// <summary>The open folder has no dictionaries and no folders.</summary>
+    public bool IsFolderEmpty => FolderTree.IsInFolder && !FolderTree.ShowsTiles && !_library.Dictionaries.Any(InView);
+
+    private bool HasFilters => !string.IsNullOrWhiteSpace(_filter);
+
+    public string CountText => Loc.Plural(Strings.Plural_Dictionaries, _library.Dictionaries.Count(InView));
+
+    /// <summary>The dictionary belongs where the list is: the folder shown, or no folder for Dictionaries.</summary>
+    private bool InView(KeyDictionary dict) => dict.Folder == FolderTree.Location;
     public bool CanUseFiles => StorageService.IsAvailable;
 
     public string? Filter
@@ -339,10 +396,12 @@ public sealed class DictionariesViewModel : PageViewModelBase, IReorderableList
     {
         this.RaisePropertyChanged(nameof(KnownKeysCountText));
         var selectedId = _selected?.Dictionary.Id;
+        FolderTree.Rebuild();
         _rebuilding = true;
         try
         {
             var items = _library.Dictionaries
+                .Where(InView)
                 .Select(d => new DictionaryItemViewModel(d))
                 .Where(d => d.Matches(_filter));
             items = _sort switch
@@ -374,8 +433,76 @@ public sealed class DictionariesViewModel : PageViewModelBase, IReorderableList
 
         this.RaisePropertyChanged(nameof(IsEmpty));
         this.RaisePropertyChanged(nameof(NoMatches));
+        this.RaisePropertyChanged(nameof(IsFolderEmpty));
         this.RaisePropertyChanged(nameof(CountText));
+        this.RaisePropertyChanged(nameof(SelectedDictionaryFolder));
+        this.RaisePropertyChanged(nameof(DictionaryFolderLabel));
     }
+
+    // ---- Folders ---------------------------------------------------------
+
+    /// <summary>The dictionaries' nested folders: the one shown, the navigation pane's rows, the tiles and the pickers.</summary>
+    public FolderBrowser FolderTree { get; }
+
+    /// <summary>The folder shown, or null for the dictionaries in no folder.</summary>
+    public FolderViewModel? CurrentFolder => FolderTree.CurrentFolder;
+
+    /// <summary>Shows the dictionaries of a folder, or those in no folder for null.</summary>
+    public void ShowFolder(FolderViewModel? folder) => FolderTree.Show(folder?.Path);
+
+    /// <summary>The open dictionary's folder; picking another moves it, and the list follows it there.</summary>
+    public FolderOption? SelectedDictionaryFolder
+    {
+        get => _selected is { } s ? new FolderOption(s.Dictionary.Folder, string.Empty) : null;
+        set
+        {
+            if (_rebuilding || value is null || _selected is not { } s || s.Dictionary.Folder == value.Path) return;
+            FolderTree.Show(value.Path);
+            _library.MoveToFolder(s.Dictionary, value.Path);
+            Notify(MovedText(s.Name, value.Path));
+        }
+    }
+
+    /// <summary>Label of the open dictionary's folder button.</summary>
+    public string DictionaryFolderLabel =>
+        _selected is { Dictionary.Folder: { Length: > 0 } folder } ? FolderPath.Name(folder) : Strings.Cards_Folder;
+
+    private static string MovedText(string name, string folder) => folder.Length == 0
+        ? string.Format(Strings.Cards_MovedOutOfFolder, name)
+        : string.Format(Strings.Cards_MovedToFolder, name, FolderPath.Name(folder));
+
+    /// <summary>
+    /// Moves a dictionary to a folder (empty for none). Taking the open one out of the folder shown
+    /// closes it, so unsaved edits are asked about first.
+    /// </summary>
+    private void MoveDictionary(KeyDictionary dict, string folder)
+    {
+        var name = string.IsNullOrWhiteSpace(dict.Name) ? Strings.Common_NoName : dict.Name;
+        void Move()
+        {
+            _library.MoveToFolder(dict, folder);
+            Notify(MovedText(name, folder));
+        }
+        if (folder != FolderTree.Location && _selected?.Dictionary.Id == dict.Id) LeaveThen(Move);
+        else Move();
+    }
+
+    // Dictionaries are dropped onto a folder (its row in the navigation pane, its tile), or onto Dictionaries
+    // to take them out of theirs.
+    bool IDropOutList.CanDropOut(object item, object target) =>
+        item is DictionaryItemViewModel d && TargetFolder(target) is { } folder && d.Dictionary.Folder != folder;
+
+    void IDropOutList.DropOut(object item, object target)
+    {
+        if (item is DictionaryItemViewModel d && TargetFolder(target) is { } folder) MoveDictionary(d.Dictionary, folder);
+    }
+
+    private string? TargetFolder(object target) => target switch
+    {
+        FolderViewModel f when ReferenceEquals(f.Owner, FolderTree) => f.Path,
+        DictionariesViewModel d when ReferenceEquals(d, this) => string.Empty,
+        _ => null,
+    };
 
     private void SelectById(string id) => SetSelected(Dictionaries.FirstOrDefault(d => d.Dictionary.Id == id));
 
@@ -406,6 +533,8 @@ public sealed class DictionariesViewModel : PageViewModelBase, IReorderableList
     {
         if (ReferenceEquals(value, _selected)) return;
         this.RaiseAndSetIfChanged(ref _selected, value, nameof(Selected));
+        this.RaisePropertyChanged(nameof(SelectedDictionaryFolder));
+        this.RaisePropertyChanged(nameof(DictionaryFolderLabel));
         IsConfirmingDelete = false;
         if (value is not null)
         {
@@ -422,8 +551,16 @@ public sealed class DictionariesViewModel : PageViewModelBase, IReorderableList
     private void ClosePane()
     {
         if (_pane == DictionariesPane.Dictionary) { SetSelected(null); return; }
+        // A new dictionary dropped unsaved goes back to where it came from: the downloads (to pick
+        // another) or the choice of source. The source choice and the downloads step back as well.
+        var back = _pane switch
+        {
+            DictionariesPane.New => _newFromDownload ? DictionariesPane.Download : DictionariesPane.Add,
+            DictionariesPane.Download => DictionariesPane.Add,
+            _ => DictionariesPane.None,
+        };
         Form = null;
-        Pane = DictionariesPane.None;
+        Pane = back;
     }
 
     // ---- Pane ----------------------------------------------------------
@@ -460,6 +597,9 @@ public sealed class DictionariesViewModel : PageViewModelBase, IReorderableList
             this.RaisePropertyChanged(nameof(IsNew));
             this.RaisePropertyChanged(nameof(IsOpen));
             this.RaisePropertyChanged(nameof(IsDirty));
+            this.RaisePropertyChanged(nameof(IsPickingSource));
+            this.RaisePropertyChanged(nameof(IsPickingDownload));
+            this.RaisePropertyChanged(nameof(EditorBackTip));
             IsConfirmingDelete = false;
         }
     }
@@ -476,7 +616,7 @@ public sealed class DictionariesViewModel : PageViewModelBase, IReorderableList
     public bool IsDirty => _pane == DictionariesPane.KnownKeys ? KnownEditor.IsDirty
         : _pane == DictionariesPane.Dictionary && _form?.IsDirty == true;
 
-    /// <summary>Where the new dictionary came from (“New dictionary”, “Imported from x.dic”).</summary>
+    /// <summary>Where the new dictionary came from (“Imported from x.dic”); null for one typed by hand.</summary>
     public string? FormSource
     {
         get;
@@ -485,10 +625,66 @@ public sealed class DictionariesViewModel : PageViewModelBase, IReorderableList
 
     public static IReadOnlyList<string> Palette => CardEditorViewModel.Palette;
 
+    /// <summary>A new, empty dictionary, its keys typed by hand.</summary>
     public ICommand NewCommand { get; }
     public ICommand ImportCommand { get; }
     public ICommand DownloadCommand { get; }
     public IReadOnlyList<DictionarySource> DownloadSources => DictionaryDownload.Sources;
+
+    /// <summary>The list's Add: offers importing a file, typing the keys or downloading a known dictionary.</summary>
+    public ICommand AddCommand { get; }
+    public ICommand ShowDownloadsCommand { get; }
+
+    /// <summary>From the downloads back to where a new dictionary comes from.</summary>
+    public ICommand BackToAddCommand { get; }
+
+    /// <summary>Choosing where a new dictionary comes from.</summary>
+    public bool IsPickingSource => _pane == DictionariesPane.Add;
+
+    /// <summary>Choosing a known dictionary to download.</summary>
+    public bool IsPickingDownload => _pane == DictionariesPane.Download;
+
+    /// <summary>The known dictionaries, a section per project (Proxmark3, Flipper Zero, Flipper Unleashed).</summary>
+    public IReadOnlyList<KnownDictionarySection> DownloadSections { get; }
+
+    public string DownloadBackTip => string.Format(Strings.Common_BackTo, Strings.Dictionaries_AddADictionary);
+
+    /// <summary>The editor's Back: a new dictionary returns to where it came from, a saved one to the list.</summary>
+    public string EditorBackTip => _pane != DictionariesPane.New ? Strings.Common_BackToTheList
+        : _newFromDownload ? string.Format(Strings.Common_BackTo, Strings.Dictionaries_DownloadTitle)
+        : DownloadBackTip;
+
+    private void BeginAdd()
+    {
+        if (_selected is not null) SetSelected(null);
+        Form = null;
+        Pane = DictionariesPane.Add;
+    }
+
+    /// <summary>Downloads a known dictionary and opens it, like an imported one, to be reviewed before it is saved.</summary>
+    private Task DownloadAsync(KnownDictionaryItemViewModel item) => RunAsync(async () =>
+    {
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => item.IsDownloading = true);
+        try
+        {
+            KeyDictionary dict;
+            try { dict = await KnownDictionaries.DownloadAsync(item.Source, item.Source.Name); }
+            catch (Exception ex) when (ex is not FormatException)
+            {
+                throw new InvalidOperationException(string.Format(Strings.Dictionaries_DlFailed, item.FileName, ex.Message), ex);
+            }
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                // Only while the downloads are still shown: going elsewhere meanwhile drops it.
+                if (_pane != DictionariesPane.Download) return;
+                dict.Folder = FolderTree.Location;
+                OpenNew(dict, null);
+                _newFromDownload = true;
+                this.RaisePropertyChanged(nameof(EditorBackTip));
+            });
+        }
+        finally { Avalonia.Threading.Dispatcher.UIThread.Post(() => item.IsDownloading = false); }
+    });
     public ICommand CloseCommand { get; }
     public ICommand SaveCommand { get; }
     public ICommand DiscardCommand { get; }
@@ -499,10 +695,20 @@ public sealed class DictionariesViewModel : PageViewModelBase, IReorderableList
     public ICommand CancelDeleteCommand { get; }
     public ICommand ConfirmDeleteCommand { get; }
 
-    private void BeginNew() => OpenNew(new KeyDictionary { Name = Strings.Dictionaries_NewDictionary }, Strings.Dictionaries_NewDictionary);
+    /// <summary>The new dictionary was downloaded: dropping it returns to the downloads.</summary>
+    private bool _newFromDownload;
 
-    private void OpenNew(KeyDictionary dict, string source)
+    private void BeginNew() => OpenNew(new KeyDictionary
     {
+        Name = Strings.Dictionaries_NewDictionary,
+        Folder = FolderTree.Location,
+        KeySize = 6,
+    }, null);
+
+    /// <param name="source">Where it came from, under its name; none for one typed by hand.</param>
+    private void OpenNew(KeyDictionary dict, string? source)
+    {
+        _newFromDownload = false;
         if (_selected is not null) SetSelected(null);
         Form = new DictionaryEditorViewModel(dict);
         FormSource = source;
@@ -653,6 +859,8 @@ public sealed class DictionariesViewModel : PageViewModelBase, IReorderableList
         if (string.IsNullOrWhiteSpace(dict.Name)) dict.Name = name;
         // A fresh id, so a re-import never stands in for the saved original.
         dict.Id = Guid.NewGuid().ToString();
+        // Filed in the folder shown, like a new one.
+        dict.Folder = FolderTree.Location;
 
         // Reviewed (name, color, keys) before it is saved, like a new one.
         Avalonia.Threading.Dispatcher.UIThread.Post(() => OpenNew(dict, string.Format(Strings.Common_ImportedFrom, file.Name)));

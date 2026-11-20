@@ -48,7 +48,7 @@ public sealed record CardTypeOption(TagSpecificType? Tag)
 }
 
 /// <summary>Which action panel is open under a saved card.</summary>
-public enum CardAction { None, Slots, Write, Delete }
+public enum CardAction { None, Slots, Write, Delete, Qr, Compare }
 
 /// <summary>
 /// Card library in one place: the list of saved cards, adding a card (scan
@@ -69,8 +69,6 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
     private CardBand _band;
     private CardTypeOption _typeFilter = CardTypeOption.Any;
     private CardSort _sort = LoadSort();
-    // The folder shown; null shows the cards in no folder.
-    private string? _folder;
     private bool _isConnected;
     private IReadOnlyList<SlotInfo> _slotInfos = Array.Empty<SlotInfo>();
 
@@ -136,6 +134,16 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         _device = device;
         _library = library;
         _dictionaries = dictionaries;
+        FolderTree = new FolderBrowser(new FolderBrowserLibrary(library), "cardFoldersExpanded", () => Strings.Nav_Cards,
+            n => Loc.Plural(Strings.Plural_Cards, n),
+            (n, name, to) => Loc.Plural(Strings.Plural_DeletedFolderCards, n, name, to),
+            Notify, ReportError);
+        FolderTree.CurrentChanged += Rebuild;
+        FolderTree.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(FolderBrowser.CurrentFolder)) this.RaisePropertyChanged(nameof(CurrentFolder));
+        };
+
         _isConnected = device.State == ConnectionState.Connected;
         WriteRecovery = new MifareKeyRecoveryViewModel(() => _device.Client, _dictionaries,
             () => _slotInfos, SourceWriteKeys, work => RunAwakeAsync(work), cancelWrite: CancelWrite,
@@ -190,11 +198,16 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         CheckRecoveryCommand = ReactiveCommand.CreateFromTask(CheckRecoveryAsync, recoveryIdle);
         AutoRecoveryCommand = ReactiveCommand.CreateFromTask(() => RecoverKeysAsync(null),
             recoveryIdle.CombineLatest(this.WhenAnyValue(x => x.ShowAutoRecovery), (idle, show) => idle && show));
-        this.WhenAnyValue(x => x.IsBusy).Subscribe(_ => RaiseMfkey32Availability());
+        this.WhenAnyValue(x => x.IsConnected, x => x.IsBusy).Subscribe(_ => RaiseMfkey32Availability());
         Mfkey32Command = ReactiveCommand.CreateFromTask(() => _mfkey32Task = RunMfkey32Async(),
             this.WhenAnyValue(x => x.CanRunMfkey32));
+        Mfkey32SelectSlotCommand = ReactiveCommand.Create<SlotTargetViewModel>(
+            target => _mfkey32SlotChoice?.TrySetResult(target),
+            this.WhenAnyValue(x => x.IsMfkey32WaitingForSlot));
         CancelDumpCommand = ReactiveCommand.Create(CancelDump);
         InitializeReadDataActions();
+        SkipSectorCommand = ReactiveCommand.Create(SkipSector, this.WhenAnyValue(x => x.ShowSkipSector));
+        InitQr();
         ImportCommand = ReactiveCommand.CreateFromTask(ImportAsync);
         ManualCommand = ReactiveCommand.Create(BeginManual);
         CancelAddCommand = ReactiveCommand.Create(CancelAdd);
@@ -207,8 +220,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
 
         DuplicateCommand = ReactiveCommand.Create(Duplicate, cardOpen);
         ExportCommand = ReactiveCommand.CreateFromTask(ExportAsync, actionable);
-        CompareCommand = ReactiveCommand.CreateFromTask(CompareAsync,
-            hasForm.CombineLatest(this.WhenAnyValue(x => x.IsBusy), (form, busy) => form && !busy));
+        InitCompare();
         ExportBinCommand = ReactiveCommand.CreateFromTask(() => ExportDumpAsync(bin: true), actionable);
         ExportEmlCommand = ReactiveCommand.CreateFromTask(() => ExportDumpAsync(bin: false), actionable);
         AssignCommand = ReactiveCommand.Create(() => Toggle(CardAction.Slots), actionableOnline);
@@ -240,10 +252,6 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         StopInspectionCommand = ReactiveCommand.Create(() => _inspectCts?.Cancel());
         this.WhenAnyValue(x => x.HasWriteTarget, x => x.IsBusy).Subscribe(_ => this.RaisePropertyChanged(nameof(CanConfirmTarget)));
         ResetFiltersCommand = ReactiveCommand.Create(ResetFilters, this.WhenAnyValue(x => x.HasFilters));
-        NewFolderCommand = ReactiveCommand.Create(NewFolder);
-        OpenNewFolderCommand = ReactiveCommand.Create(OpenNewFolder);
-        RenameCurrentFolderCommand = ReactiveCommand.Create(BeginRenameCurrentFolder);
-        ShowRootCommand = ReactiveCommand.Create(() => ShowFolder(null));
 
         // Library edits made on the UI thread rebuild synchronously so a new card can be selected right away.
         _library.Changed += () =>
@@ -280,11 +288,12 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
 
     public ObservableCollection<CardItemViewModel> Cards { get; } = new();
 
-    public bool IsEmpty => _library.Cards.Count == 0;
+    /// <summary>No cards and no folders: the list shows how to add a card instead.</summary>
+    public bool IsEmpty => _library.Cards.Count == 0 && !FolderTree.HasFolders;
     /// <summary>The search or filters hide every card of the folder (or of Cards) shown.</summary>
     public bool NoMatches => HasFilters && Cards.Count == 0 && _library.Cards.Any(InView);
-    /// <summary>The open folder has no cards (Cards with every card in a folder shows the folder tiles instead).</summary>
-    public bool IsFolderEmpty => !IsEmpty && _folder is not null && !_library.Cards.Any(InView);
+    /// <summary>The open folder has no cards and no folders.</summary>
+    public bool IsFolderEmpty => !IsEmpty && FolderTree.IsInFolder && !FolderTree.ShowsTiles && !_library.Cards.Any(InView);
 
     public string CountText
     {
@@ -296,10 +305,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
     }
 
     /// <summary>The card belongs where the list is: the folder shown, or no folder for Cards.</summary>
-    private bool InView(CardSave card) => card.Folder == (_folder ?? string.Empty);
-
-    /// <summary>The page title: the open folder, or Cards for the cards in no folder.</summary>
-    public string ListTitle => _folder ?? Strings.Nav_Cards;
+    private bool InView(CardSave card) => card.Folder == FolderTree.Location;
     public bool CanUseFiles => StorageService.IsAvailable;
 
     public string? Filter
@@ -452,8 +458,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         if (_library.Cards.All(c => c.Id != id)) return;
         if (Cards.All(c => c.Card.Id != id))
         {
-            var folder = _library.Cards.First(c => c.Id == id).Folder;
-            SetFolder(folder.Length == 0 ? null : folder);
+            FolderTree.Show(_library.Cards.First(c => c.Id == id).Folder);
             ResetFilters();
         }
         SetSelected(Cards.FirstOrDefault(c => c.Card.Id == id));
@@ -551,6 +556,8 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
             RaiseAddStage();
             RaiseCardInfo();
             RebuildTargets();
+            RefreshComparison();
+            this.RaisePropertyChanged(nameof(CanCompareDump));
         }
     }
 
@@ -558,7 +565,8 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
     {
         if (e.PropertyName is nameof(CardEditorViewModel.HasData) or nameof(CardEditorViewModel.Tag)
             or nameof(CardEditorViewModel.Uid) or nameof(CardEditorViewModel.Sak)
-            or nameof(CardEditorViewModel.Atqa) or nameof(CardEditorViewModel.Ats)) ClearComparison();
+            or nameof(CardEditorViewModel.Atqa) or nameof(CardEditorViewModel.Ats))
+        { ClearComparison(); RefreshComparison(); this.RaisePropertyChanged(nameof(CanCompareDump)); }
         if (e.PropertyName == nameof(CardEditorViewModel.SelectedSector))
             this.RaisePropertyChanged(nameof(RecoverySelectedSector));
         if (e.PropertyName == nameof(CardEditorViewModel.Memory))
@@ -628,8 +636,20 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
     /// </summary>
     public bool IsEditingNew => _pane == CardsPane.Add && _form is not null;
 
+    /// <summary>
+    /// The new card is not in the library yet: the save bar is offered and leaving asks first.
+    /// A scan matching a saved card has nothing to lose, so neither happens.
+    /// </summary>
+    public bool IsNewCardUnsaved => IsEditingNew && !HasScanMatches;
+
+    /// <summary>The header's Back: a new card returns to choosing a source, a saved one to the list.</summary>
+    public string HeaderBackTip => IsEditingNew
+        ? string.Format(Strings.Common_BackTo, Strings.Cards_AddACard)
+        : Strings.Common_BackToTheList;
+
     private void RaiseAddStage()
     {
+        this.RaisePropertyChanged(nameof(HeaderBackTip));
         this.RaisePropertyChanged(nameof(IsPickingSource));
         this.RaisePropertyChanged(nameof(IsEditingNew));
         this.RaisePropertyChanged(nameof(ShowCardHeader));
@@ -773,6 +793,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
     private void OnDumpKey(MifareKeyProgress p)
     {
         if (p.Sector < 0 || p.Sector >= DumpSectors.Count) return;
+        if (_dumpSectorControl?.IsSkipped(p.Sector) == true && p.Phase != MifareKeyPhase.Found) return;
         DumpSectors[p.Sector].ApplyKey(p);
         UpdateRecoveryMethods();
         var key = p.KeyType == MfKeyType.A ? "A" : "B";
@@ -782,6 +803,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
             MifareKeyPhase.NotFound => string.Format(Strings.Cards_NotFoundChecked, p.Tried, p.Total),
             _ => string.Format(Strings.Cards_CheckingKey, Math.Min(p.Tried + 1, p.Total), p.Total),
         };
+        var current = p.Phase == MifareKeyPhase.Searching ? Math.Min(p.Tried + 1, p.Total) : p.Tried;
         DumpProgressText = p.Phase switch
         {
             MifareKeyPhase.Found => Strings.Common_DictKeyFound,
@@ -789,7 +811,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
             _ => Strings.Common_CheckingDictKeys,
         };
         DumpProgressDetail = p.IsBatch
-            ? string.Format(Strings.Cards_CheckingKey, Math.Min(p.Tried + 1, p.Total), p.Total)
+            ? string.Format(Strings.Cards_CheckingKey, current, p.Total)
             : string.Format(Strings.Cards_SectorBlockKeyDetail, p.Sector, MifareClassic.SectorTrailerBlock(p.Sector), key, detail);
         IsDumpProgressSuccess = p.Phase == MifareKeyPhase.Found;
         IsDumpProgressError = p.Phase == MifareKeyPhase.NotFound;
@@ -843,6 +865,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
     private void Rebuild()
     {
         var selectedId = _selected?.Card.Id;
+        FolderTree.Rebuild();
         _rebuilding = true;
         try
         {
@@ -892,220 +915,44 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
             SetSelected(reselect);
         }
 
-        RebuildFolders();
         this.RaisePropertyChanged(nameof(IsEmpty));
         this.RaisePropertyChanged(nameof(NoMatches));
         this.RaisePropertyChanged(nameof(IsFolderEmpty));
         this.RaisePropertyChanged(nameof(CountText));
-        this.RaisePropertyChanged(nameof(ListTitle));
-    }
-
-    // ---- Folders ---------------------------------------------------------
-
-    /// <summary>The library's folders, A–Z, listed in the navigation pane.</summary>
-    public ObservableCollection<CardFolderViewModel> Folders { get; } = new();
-
-    /// <summary>The folder shown, or null when the list shows every card.</summary>
-    public CardFolderViewModel? CurrentFolder => _folder is null ? null : Folders.FirstOrDefault(f => f.Name == _folder);
-
-    public ICommand NewFolderCommand { get; }
-
-    /// <summary>Back from a folder to Cards (the list's own back button, for when the navigation pane is hidden).</summary>
-    public ICommand ShowRootCommand { get; }
-
-    public bool IsInFolder => _folder is not null;
-
-    public bool HasFolders => Folders.Count > 0;
-
-    /// <summary>Cards (no folder open) lists the folders after its own cards.</summary>
-    public bool ShowsFolderTiles => _folder is null && Folders.Count > 0;
-
-    /// <summary>Where the open card can be moved: no folder (back to Cards), apart from the folders below it.</summary>
-    public IReadOnlyList<CardFolderOption> RootFolderOptions { get; } = new[] { new CardFolderOption(string.Empty) };
-
-    /// <summary>Where the open card can be moved: every folder.</summary>
-    public ObservableCollection<CardFolderOption> FolderOptions { get; } = new();
-
-    /// <summary>The open card's folder; picking another moves the card, and the list follows it there.</summary>
-    public CardFolderOption? SelectedCardFolder
-    {
-        get => _selected is { } s ? new CardFolderOption(s.Card.Folder) : null;
-        set
-        {
-            if (_rebuilding || value is null || _selected is not { } s || s.Card.Folder == value.Name) return;
-            SetFolder(value.Name.Length == 0 ? null : value.Name);
-            _library.MoveToFolder(s.Card, value.Name);
-            Notify(value.Name.Length == 0 ? string.Format(Strings.Cards_MovedOutOfFolder, s.Name) : string.Format(Strings.Cards_MovedToFolder, s.Name, value.Name));
-        }
-    }
-
-    /// <summary>Label of the open card's folder button.</summary>
-    public string CardFolderLabel => _selected is { Card.Folder: { Length: > 0 } folder } ? folder : Strings.Cards_Folder;
-
-    /// <summary>Shows the cards of a folder, or all of them for null.</summary>
-    public void ShowFolder(CardFolderViewModel? folder)
-    {
-        SetFolder(folder?.Name);
-        Rebuild();
-    }
-
-    private void SetFolder(string? name)
-    {
-        if (_folder == name) return;
-        _folder = name;
-        IsRenamingFolder = false;
-        this.RaisePropertyChanged(nameof(CurrentFolder));
-        this.RaisePropertyChanged(nameof(IsInFolder));
-        this.RaisePropertyChanged(nameof(ShowsFolderTiles));
-    }
-
-    /// <summary>Syncs <see cref="Folders"/> with the library in place, so selection and an edit in progress survive.</summary>
-    private void RebuildFolders()
-    {
-        var names = _library.Folders;
-        if (_folder is not null && !names.Contains(_folder)) SetFolder(null);
-        var counts = _library.Cards.GroupBy(c => c.Folder).ToDictionary(g => g.Key, g => g.Count());
-        for (var i = Folders.Count - 1; i >= 0; i--)
-            if (!names.Contains(Folders[i].Name)) Folders.RemoveAt(i);
-        for (var i = 0; i < names.Count; i++)
-        {
-            var at = -1;
-            for (var j = i; j < Folders.Count; j++)
-                if (Folders[j].Name == names[i]) { at = j; break; }
-            if (at < 0) Folders.Insert(i, new CardFolderViewModel(names[i], f => ShowFolder(f), BeginRename, DeleteFolder));
-            else if (at != i) Folders.Move(at, i);
-            Folders[i].Count = counts.GetValueOrDefault(names[i]);
-        }
-
-        var options = names.Select(n => new CardFolderOption(n, counts.GetValueOrDefault(n))).ToList();
-        // Rebuilt when a name or a count changed (options compare by name alone).
-        if (!options.Select(o => (o.Name, o.Count)).SequenceEqual(FolderOptions.Select(o => (o.Name, o.Count))))
-        {
-            _rebuilding = true;
-            try
-            {
-                FolderOptions.Clear();
-                foreach (var option in options) FolderOptions.Add(option);
-            }
-            finally { _rebuilding = false; }
-        }
-        this.RaisePropertyChanged(nameof(CurrentFolder));
-        this.RaisePropertyChanged(nameof(HasFolders));
-        this.RaisePropertyChanged(nameof(ShowsFolderTiles));
         this.RaisePropertyChanged(nameof(SelectedCardFolder));
         this.RaisePropertyChanged(nameof(CardFolderLabel));
     }
 
-    /// <summary>The list's New folder: opens the new folder with its title being renamed, as the navigation
-    /// pane (where <see cref="NewFolderCommand"/> renames it) may be hidden.</summary>
-    public ICommand OpenNewFolderCommand { get; }
+    // ---- Folders ---------------------------------------------------------
 
-    private void NewFolder()
-    {
-        if (AddFolder() is { } folder) BeginRename(folder);
-    }
+    /// <summary>The cards' nested folders: the one shown, the navigation pane's rows, the tiles and the pickers.</summary>
+    public FolderBrowser FolderTree { get; }
 
-    private void OpenNewFolder()
-    {
-        if (AddFolder() is not { } folder) return;
-        ShowFolder(folder);
-        BeginRenameCurrentFolder();
-    }
+    /// <summary>The folder shown, or null for the cards in no folder.</summary>
+    public FolderViewModel? CurrentFolder => FolderTree.CurrentFolder;
 
-    private CardFolderViewModel? AddFolder()
+    /// <summary>The open card's folder; picking another moves the card, and the list follows it there.</summary>
+    public FolderOption? SelectedCardFolder
     {
-        var name = Strings.Common_NewFolder;
-        for (var n = 2; _library.FindFolder(name) is not null; n++) name = string.Format(Strings.Cards_NewFolderN, n);
-        return _library.AddFolder(name) ? Folders.FirstOrDefault(f => f.Name == name) : null;
-    }
-
-    private void BeginRename(CardFolderViewModel folder)
-    {
-        foreach (var other in Folders.Where(f => f.IsEditing && f != folder)) other.IsEditing = false;
-        folder.EditName = folder.Name;
-        folder.IsEditing = true;
-    }
-
-    /// <summary>Ends an edit of a folder's name; a name another folder has is refused.</summary>
-    public void CommitRename(CardFolderViewModel folder)
-    {
-        if (!folder.IsEditing) return;
-        folder.IsEditing = false;
-        RenameFolder(folder, folder.EditName);
-    }
-
-    /// <summary>Renames a folder; a name another folder has is refused.</summary>
-    private void RenameFolder(CardFolderViewModel folder, string? newName)
-    {
-        var old = folder.Name;
-        var name = CardSave.NormalizeFolder(newName);
-        if (name.Length == 0 || name == old) return;
-        if (_library.FindFolder(name) is { } taken && taken != old)
+        get => _selected is { } s ? new FolderOption(s.Card.Folder, string.Empty) : null;
+        set
         {
-            ReportError(string.Format(Strings.Cards_FolderExists, taken));
-            return;
+            if (_rebuilding || value is null || _selected is not { } s || s.Card.Folder == value.Path) return;
+            FolderTree.Show(value.Path);
+            _library.MoveToFolder(s.Card, value.Path);
+            Notify(MovedText(s.Name, value.Path));
         }
-        // Renamed in place first, so the row (and the selection on it) is kept.
-        folder.Name = name;
-        if (_folder == old) _folder = name;
-        if (_library.RenameFolder(old, name)) return;
-        folder.Name = old;
-        if (_folder == name) _folder = old;
     }
 
-    public static void CancelRename(CardFolderViewModel folder) => folder.IsEditing = false;
+    private static string MovedText(string name, string folder) => folder.Length == 0
+        ? string.Format(Strings.Cards_MovedOutOfFolder, name)
+        : string.Format(Strings.Cards_MovedToFolder, name, FolderPath.Name(folder));
 
-    // ---- The open folder's own header: rename in place, delete ------------
+    /// <summary>Label of the open card's folder button.</summary>
+    public string CardFolderLabel => _selected is { Card.Folder: { Length: > 0 } folder } ? FolderPath.Name(folder) : Strings.Cards_Folder;
 
-    /// <summary>The open folder's title is a field.</summary>
-    public bool IsRenamingFolder
-    {
-        get;
-        private set => this.RaiseAndSetIfChanged(ref field, value);
-    }
-
-    public string? FolderRenameText
-    {
-        get;
-        set => this.RaiseAndSetIfChanged(ref field, value);
-    }
-
-    public ICommand RenameCurrentFolderCommand { get; }
-
-    private void BeginRenameCurrentFolder()
-    {
-        if (CurrentFolder is not { } folder) return;
-        FolderRenameText = folder.Name;
-        IsRenamingFolder = true;
-    }
-
-    public void CommitFolderRename()
-    {
-        if (!IsRenamingFolder) return;
-        IsRenamingFolder = false;
-        if (CurrentFolder is { } folder) RenameFolder(folder, FolderRenameText);
-    }
-
-    public void CancelFolderRename() => IsRenamingFolder = false;
-
-    /// <summary>Deletes the open folder (confirmed in the view); Cards shows its cards then.</summary>
-    public void DeleteCurrentFolder()
-    {
-        if (CurrentFolder is { } folder) DeleteFolder(folder);
-    }
-
-    /// <summary>Deletes a folder; its cards stay, in no folder.</summary>
-    private void DeleteFolder(CardFolderViewModel folder)
-    {
-        if (_folder == folder.Name) SetFolder(null);
-        var count = folder.Count;
-        _library.RemoveFolder(folder.Name);
-        Notify(count switch
-        {
-            0 => string.Format(Strings.Cards_DeletedFolder, folder.Name),
-            _ => Loc.Plural(Strings.Plural_DeletedFolderCards, count, folder.Name),
-        });
-    }
+    /// <summary>Shows the cards of a folder, or those in no folder for null.</summary>
+    public void ShowFolder(FolderViewModel? folder) => FolderTree.Show(folder?.Path);
 
     /// <summary>
     /// Moves a card to a folder (empty for none). Taking the open card out of the folder shown
@@ -1117,13 +964,13 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         void Move()
         {
             _library.MoveToFolder(card, folder);
-            Notify(folder.Length == 0 ? string.Format(Strings.Cards_MovedOutOfFolder, name) : string.Format(Strings.Cards_MovedToFolder, name, folder));
+            Notify(MovedText(name, folder));
         }
-        if (folder != (_folder ?? string.Empty) && _selected?.Card.Id == card.Id) LeaveThen(Move);
+        if (folder != FolderTree.Location && _selected?.Card.Id == card.Id) LeaveThen(Move);
         else Move();
     }
 
-    // Cards are dropped onto a folder in the navigation pane, or onto Cards to take them out of theirs.
+    // Cards are dropped onto a folder (its row in the navigation pane, its tile), or onto Cards to take them out of theirs.
     bool IDropOutList.CanDropOut(object item, object target) =>
         item is CardItemViewModel card && TargetFolder(target) is { } folder && card.Card.Folder != folder;
 
@@ -1134,7 +981,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
 
     private string? TargetFolder(object target) => target switch
     {
-        CardFolderViewModel f => f.Name,
+        FolderViewModel f when ReferenceEquals(f.Owner, FolderTree) => f.Path,
         CardsViewModel c when ReferenceEquals(c, this) => string.Empty,
         _ => null,
     };
@@ -1165,6 +1012,8 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
     private void ClosePane()
     {
         if (_pane == CardsPane.Card) { SetSelected(null); return; }
+        // Back from a scanned or imported card returns to choosing a source, not to an empty pane.
+        if (IsEditingNew) { CancelAdd(); return; }
         Form = null;
         Pane = CardsPane.None;
     }
@@ -1185,20 +1034,6 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
     public ICommand ManualCommand { get; }
     public ICommand CancelAddCommand { get; }
     public ICommand OpenScanMatchCommand { get; }
-
-    /// <summary>LF protocols that can be scanned for.</summary>
-    public IReadOnlyList<TagSpecificType> LfProtocols { get; } = new[]
-    {
-        TagSpecificType.Em410x, TagSpecificType.HidProx, TagSpecificType.IoProx,
-        TagSpecificType.Viking, TagSpecificType.Pac, TagSpecificType.Jablotron,
-        TagSpecificType.FarpointePyramid,
-    };
-
-    public TagSpecificType LfProtocol
-    {
-        get;
-        set => this.RaiseAndSetIfChanged(ref field, value);
-    } = TagSpecificType.Em410x;
 
     /// <summary>Why the last scan produced no card (“No HF tag detected.”); null otherwise.</summary>
     public string? ScanMissText
@@ -1328,6 +1163,8 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
     {
         this.RaisePropertyChanged(nameof(ShowRecoveryTools));
         this.RaisePropertyChanged(nameof(IsDumpRunning));
+        this.RaisePropertyChanged(nameof(ShowSkipSector));
+        this.RaisePropertyChanged(nameof(SkipSectorTip));
         this.RaisePropertyChanged(nameof(ShowDumpActions));
         this.RaisePropertyChanged(nameof(ShowDumpNotice));
         this.RaisePropertyChanged(nameof(ShowDumpPassword));
@@ -1674,23 +1511,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         if (client is null) return;
         await client.SetDeviceModeAsync(DeviceMode.Reader);
 
-        if (LfProtocol == TagSpecificType.Em410x)
-        {
-            var tag = await WithMissFeedback(client.Em410xScanAsync());
-            ScanFeedback.Found();
-            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-            {
-                ResetAddState();
-                FormSource = string.Format(Strings.Cards_SourceTag, tag.Type.DisplayName());
-                var card = CardFormats.FromEm410x(tag);
-                Form = new CardEditorViewModel(card, sameFrequency: true);
-                SetScanMatches(card);
-            });
-            Notify(Strings.Cards_Em410xRead);
-            return;
-        }
-
-        var result = await WithMissFeedback(client.LfScanAsync(LfProtocol));
+        var result = await WithMissFeedback(client.LfAutoScanAsync());
         ScanFeedback.Found();
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
@@ -1705,7 +1526,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
             Form = new CardEditorViewModel(card, sameFrequency: true);
             SetScanMatches(card);
         });
-        Notify(string.Format(Strings.Cards_LfTagRead, LfProtocol.DisplayName()));
+        Notify(string.Format(Strings.Cards_LfTagRead, result.Type.DisplayName()));
     });
 
     // Buzzes when a scan or dump fails outright (no tag, card lost); a cancel stays quiet.
@@ -1723,6 +1544,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         if (_classicDump is null && Form is { } form) _classicDump = form.Build().ToMifareDump();
         using var cts = new CancellationTokenSource();
         _dumpCts = cts;
+        BeginSectorControl();
         var keys = BuildKeyDictionary();
         try
         {
@@ -1734,8 +1556,8 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
                 DumpProgressText = Strings.Common_CheckingDictKeys;
                 var progress = new PostedProgress<MifareKeyProgress>(IfKept<MifareKeyProgress>(cts, OnDumpKey));
                 await client.FindMifareKeysAsync(complete, keys, progress, cts.Token,
-                    KeySearchSettings.CreateOptions(RecoverySelectedSector));
-                // The explicit search already exhausted the dictionary; read with its results.
+                    KeySearchSettings.CreateOptions(RecoverySelectedSector) with { SectorControl = _dumpSectorControl });
+                // The explicit search already exhausted the dictionary; continue reading with its results.
                 keys = Array.Empty<byte[]>();
             }
             await MifareDumpBodyAsync(client, keys, DumpFormType(), cts, finish: false);
@@ -1756,17 +1578,18 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         using var cts = new CancellationTokenSource();
         _dumpCts = cts;
         _autoRecoveryNotice = null;
+        BeginSectorControl();
         DumpProgressText = Strings.Common_StartingRecovery;
         try
         {
-            var recovery = new MifareKeyRecovery(client, AppServices.Hardnested, _dictionaries.KnownKeys);
+            var recovery = new MifareKeyRecovery(client, AppServices.Hardnested, _dictionaries.KnownKeys, sectorControl: _dumpSectorControl);
             var progress = new PostedProgress<KeyRecoveryProgress>(IfKept<KeyRecoveryProgress>(cts, OnRecoverProgress));
             MifareAutoRecoveryResult? result = null;
             try
             {
                 if (method is { } selected) await recovery.RecoverAsync(dump, selected, progress, cts.Token);
                 else result = await recovery.RecoverAutomaticallyAsync(dump, BuildKeyDictionary(), progress, cts.Token,
-                    KeySearchSettings.CreateOptions(RecoverySelectedSector),
+                    KeySearchSettings.CreateOptions(RecoverySelectedSector) with { SectorControl = _dumpSectorControl },
                     useKnownUidKeys: DumpKeySources.Any(s => s.IsKnownCardKeys && s.IsSelected));
             }
             catch (OperationCanceledException) when (cts.IsCancellationRequested) { }
@@ -1791,6 +1614,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
 
     private void FinishClassicOperation()
     {
+        _dumpSectorControl = null;
         foreach (var sector in DumpSectors)
             foreach (var kt in new[] { MfKeyType.A, MfKeyType.B })
                 if ((kt == MfKeyType.A ? sector.KeyAState : sector.KeyBState) == KeyCellState.Searching)
@@ -1806,6 +1630,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
     /// <summary>Maps a recovery tick onto the dump's per-sector key grid and status line.</summary>
     private void OnRecoverProgress(KeyRecoveryProgress p)
     {
+        if (_dumpSectorControl?.IsSkipped(p.Sector) == true && p.Mark != KeyMark.Found) return;
         DumpProgressText = p.Status;
         DumpProgressDetail = p.Detail;
         SetDumpKeyProgress(p.Tried, p.Total);
@@ -1862,7 +1687,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
             // is handled the same as a completed one and can still be saved.
             var dump = read
                 ? await WithMissFeedback(client.ReadMifareClassicAsync(keys, progress, cts.Token, blockProgress, keyProgress, type, _classicDump,
-                    KeySearchSettings.CreateOptions(RecoverySelectedSector)))
+                    KeySearchSettings.CreateOptions(RecoverySelectedSector) with { SectorControl = _dumpSectorControl }))
                 : _classicDump!;
             learnedDump = dump;
             _device.Journal.Add(cts.IsCancellationRequested ? "CANCEL" : "INFO", string.Format(Strings.Journal_ReadResult, dump.RecoveredBlocks, dump.BlockCount));
@@ -2095,16 +1920,19 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         DumpKeySources.Clear();
         DumpKeySources.Add(NewKeySource(KnownCardKeys.Id, KnownCardKeys.Name,
             _classicDump is { } dump ? _dictionaries.KnownKeys.ForUid(dump.Uid) : Array.Empty<byte[]>()));
-        DumpKeySources.Add(NewKeySource(DumpKeySourceViewModel.BuiltInId, Strings.Common_BuiltInKeys, MifareClassic.DefaultKeys));
+        DumpKeySources.Add(NewKeySource(DumpKeySourceViewModel.BuiltInId, Strings.Common_BuiltInKeys, MifareClassic.DefaultKeys, separatorAfter: true));
+        // MIFARE Classic keys are 6 bytes: those of every dictionary that has some.
         foreach (var d in _dictionaries.Dictionaries.Where(d => d.KeySize == 6))
-            DumpKeySources.Add(NewKeySource(d.Id, string.IsNullOrWhiteSpace(d.Name) ? Strings.Common_Untitled : d.Name, d.Keys));
+            DumpKeySources.Add(NewKeySource(d.Id, string.IsNullOrWhiteSpace(d.Name) ? Strings.Common_Untitled : d.Name, d.Keys, d.Color,
+                folder: d.Folder));
         WriteRecovery.SetKeySources(DumpKeySources);
         UpdateDumpKeyCount();
     }
 
-    private DumpKeySourceViewModel NewKeySource(string id, string name, IReadOnlyList<byte[]> keys)
+    private DumpKeySourceViewModel NewKeySource(string id, string name, IReadOnlyList<byte[]> keys, string? color = null,
+        bool separatorAfter = false, string folder = "")
     {
-        var source = new DumpKeySourceViewModel(id, name, keys, KeySourceSelection.IsSelected(id));
+        var source = new DumpKeySourceViewModel(id, name, keys, KeySourceSelection.IsSelected(id), color, separatorAfter, folder);
         source.WhenAnyValue(x => x.IsSelected).Skip(1).Subscribe(on =>
         {
             if (!DumpKeySources.Contains(source)) return;
@@ -2173,8 +2001,8 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
                 return;
             }
             // A whole library export goes straight in (the open folder takes cards that have none).
-            if (_folder is not null)
-                foreach (var card in cards.Where(c => c.Folder.Length == 0)) card.Folder = _folder;
+            if (FolderTree.Current is { } folder)
+                foreach (var card in cards.Where(c => c.Folder.Length == 0)) card.Folder = folder;
             _library.AddRange(cards);
             SelectById(cards[^1].Id);
             Notify(Loc.Plural(Strings.Plural_ImportedCards, cards.Count));
@@ -2194,7 +2022,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
 
         var isNew = _pane == CardsPane.Add;
         var previous = isNew ? null : _selected?.Card;
-        if (isNew && card.Folder.Length == 0 && _folder is not null) card.Folder = _folder;
+        if (isNew && card.Folder.Length == 0 && FolderTree.Current is { } folder) card.Folder = folder;
         try
         {
             if (isNew) _library.Add(card); else _library.Update(card);
@@ -2372,10 +2200,14 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
             this.RaisePropertyChanged(nameof(IsSlotsOpen));
             this.RaisePropertyChanged(nameof(IsWriteOpen));
             this.RaisePropertyChanged(nameof(IsConfirmingDelete));
+            this.RaisePropertyChanged(nameof(IsQrOpen));
+            this.RaisePropertyChanged(nameof(IsCompareOpen));
             this.RaisePropertyChanged(nameof(IsAsking));
             this.RaisePropertyChanged(nameof(ListLocked));
             this.RaisePropertyChanged(nameof(ShowEditor));
             this.RaisePropertyChanged(nameof(ShowMemoryEditor));
+            OnQrActionChanged();
+            OnCompareActionChanged();
         }
     }
 
@@ -2898,7 +2730,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
         var resume = _writeSession is not null;
         if (!resume) _writeTargetHadDefaultKeys = _assumeDefaultWriteKeys || HasOnlyDefaultKeys(WriteRecovery.Target);
         var session = card.Tag.IsMifareClassic()
-            ? _writeSession ??= new MifareWriteSession(card.ToMifareDump(), SelectedGeneration, WriteGen2Block0, WriteRecovery.Target)
+            ? _writeSession ??= new MifareWriteSession(card.ToMifareWriteDump(IncludeWriteBlock0),SelectedGeneration, WriteGen2Block0, WriteRecovery.Target)
             : null;
         var succeeded = false;
         using var cts = new CancellationTokenSource();
@@ -2965,7 +2797,7 @@ public sealed partial class CardsViewModel : PageViewModelBase, IReorderableList
             }
             else if (session is not null)
             {
-                failed = await client.WriteMifareDumpToCardAsync(card.ToMifareDump(), writeKeys,
+                failed = await client.WriteMifareDumpToCardAsync(card.ToMifareWriteDump(IncludeWriteBlock0), writeKeys,
                     SelectedGeneration, progress, cts.Token, blockProgress, keyProgress,
                     session.TargetKeys, WriteGen2Block0, session,
                     ParseGen4Password());

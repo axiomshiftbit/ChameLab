@@ -22,17 +22,25 @@ public class SettingRow : Panel
     public static readonly StyledProperty<double> MinTextWidthProperty =
         AvaloniaProperty.Register<SettingRow, double>(nameof(MinTextWidth), 200);
 
+    /// <summary>
+    /// Stack only when the title doesn't fit on one line beside the control (at least
+    /// <see cref="MinTextWidth"/> still applies), for rows with a short title and a wide control.
+    /// </summary>
+    public static readonly StyledProperty<bool> FitTitleProperty =
+        AvaloniaProperty.Register<SettingRow, bool>(nameof(FitTitle));
+
     /// <summary>Set while stacked, so styles can make the control narrower.</summary>
     public const string StackedClass = "stacked";
 
     static SettingRow()
     {
-        AffectsMeasure<SettingRow>(SpacingProperty, RowSpacingProperty, MinTextWidthProperty);
+        AffectsMeasure<SettingRow>(SpacingProperty, RowSpacingProperty, MinTextWidthProperty, FitTitleProperty);
     }
 
     public double Spacing { get => GetValue(SpacingProperty); set => SetValue(SpacingProperty, value); }
     public double RowSpacing { get => GetValue(RowSpacingProperty); set => SetValue(RowSpacingProperty, value); }
     public double MinTextWidth { get => GetValue(MinTextWidthProperty); set => SetValue(MinTextWidthProperty, value); }
+    public bool FitTitle { get => GetValue(FitTitleProperty); set => SetValue(FitTitleProperty, value); }
 
     private bool _stacked;
     private Control? _wideControl;
@@ -72,7 +80,8 @@ public class SettingRow : Panel
         var lead = icon.Width > 0 ? icon.Width + Spacing : 0;
         var trail = _wideControlWidth > 0 ? _wideControlWidth + Spacing : 0;
         var textWidth = width - lead - trail;
-        if (_stacked && (double.IsInfinity(width) || textWidth >= MinTextWidth))
+        var minText = FitTitle ? Math.Max(MinTextWidth, Measure(Child(1), double.PositiveInfinity).Width) : MinTextWidth;
+        if (_stacked && (double.IsInfinity(width) || textWidth >= minText))
         {
             // On expansion, refresh the width in case its content changed while narrow.
             SetStacked(false);
@@ -80,7 +89,7 @@ public class SettingRow : Panel
             trail = _wideControlWidth > 0 ? _wideControlWidth + Spacing : 0;
             textWidth = width - lead - trail;
         }
-        _stacked = !double.IsInfinity(width) && textWidth < MinTextWidth;
+        _stacked = !double.IsInfinity(width) && textWidth < minText;
         SetStacked(_stacked);
         var control = Measure(input, _stacked ? width : double.PositiveInfinity);
         if (!_stacked)

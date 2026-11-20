@@ -126,6 +126,8 @@ public static class EncryptedDeviceBackup
             if (slot.LfCycle is { } cycle)
             {
                 Require(slot.Lf is not null && cycle.Extras is { Length: <= 7 } && cycle.Extras.All(c => c is not null && c.Id is not null && c.IsValid));
+                Require(Enum.IsDefined(cycle.Mode) && cycle.Bursts is >= 1 and <= LfCardCycle.MaxBursts
+                    && cycle.GapSteps is >= 0 and <= LfCardCycle.MaxGapSteps);
             }
             Require((slot.Hf?.Card.Tag.IsMifareClassic() == true) == (slot.Emulator!.Mf1 is not null));
             Require((slot.Hf?.Card.Tag.IsUltralight() == true) == (slot.Emulator.Mf0 is not null));

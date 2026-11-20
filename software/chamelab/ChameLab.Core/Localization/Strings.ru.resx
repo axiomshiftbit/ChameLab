@@ -358,7 +358,7 @@
     <value>Сохранить копию этой карты</value>
   </data>
   <data name="Cards_SaveAsJSONCompatibleWithThe" xml:space="preserve">
-    <value>Сохранить в JSON (совместим с приложением на Flutter)</value>
+    <value>Сохранить в JSON (совместим с ChameleonUltraGUI)</value>
   </data>
   <data name="Cards_SaveTheCardToAFile" xml:space="preserve">
     <value>Сохранить карту в файл</value>
@@ -883,7 +883,7 @@
     <value>Нет устройства. Откройте «Подключение», чтобы подключить его.</value>
   </data>
   <data name="Main_Offline" xml:space="preserve">
-    <value>Не в сети</value>
+    <value>Нет устройства</value>
   </data>
   <data name="Main_Online" xml:space="preserve">
     <value>В сети</value>
@@ -997,7 +997,7 @@
     <value>По умолчанию</value>
   </data>
   <data name="Slots_DragCardsToChangeTheOrder" xml:space="preserve">
-    <value>Перетаскивайте карты, чтобы изменить порядок. При каждом появлении поля считывателя устройство выдаёт следующую карту по очереди.</value>
+    <value>Перетаскивайте карты, чтобы изменить порядок.</value>
   </data>
   <data name="Slots_EmulationSlots" xml:space="preserve">
     <value>Слоты эмуляции</value>
@@ -1438,7 +1438,7 @@
     <value>Данные производителя</value>
   </data>
   <data name="Cards_Mfkey32LoadIntoSlot" xml:space="preserve">
-    <value>Перед запуском mfkey32 загрузите эту карту в слот.</value>
+    <value>Загрузите карту в слот чтобы продолжить</value>
   </data>
   <data name="Cards_Mfkey32NeedsClassic" xml:space="preserve">
     <value>Для mfkey32 нужна карта MIFARE Classic.</value>
@@ -2014,7 +2014,7 @@
     <value>Подключено</value>
   </data>
   <data name="Main_DeviceSummary" xml:space="preserve">
-    <value>{0} · прошивка {1}</value>
+    <value>{0} {1}</value>
   </data>
   <data name="Main_NotConnected" xml:space="preserve">
     <value>Не подключено</value>
@@ -2113,7 +2113,7 @@
     <value>{0} карта|{0} карты|{0} карт</value>
   </data>
   <data name="Plural_DeletedFolderCards" xml:space="preserve">
-    <value>Папка {1} удалена; её {0} карта осталась в «Картах».|Папка {1} удалена; её {0} карты остались в «Картах».|Папка {1} удалена; её {0} карт остались в «Картах».</value>
+    <value>Папка {1} удалена; её {0} карта теперь в «{2}».|Папка {1} удалена; её {0} карты теперь в «{2}».|Папка {1} удалена; её {0} карт теперь в «{2}».</value>
   </data>
   <data name="Plural_Dictionaries" xml:space="preserve">
     <value>{0} словарь|{0} словаря|{0} словарей</value>
@@ -2194,7 +2194,7 @@
     <value>Перед запуском mfkey32 отсканируйте целевую карту.</value>
   </data>
   <data name="Recovery_SectorKeyDetail" xml:space="preserve">
-    <value>Сектор {0} · ключ {1} · {2}</value>
+    <value>Сектор {0}{1} · {2}</value>
   </data>
   <data name="Recovery_SectorKeyProgress" xml:space="preserve">
     <value>Сектор {0} · ключ {1} · {2}/{3}</value>
@@ -4034,5 +4034,545 @@
   </data>
   <data name="Dictionaries_KnownPassword" xml:space="preserve">
     <value>Пароль</value>
+  </data>
+  <data name="Cards_GenerateRandomUid" xml:space="preserve">
+    <value>Сгенерировать случайный UID</value>
+  </data>
+  <data name="Cards_CardFileCompatibleWithChameleonUltraGui" xml:space="preserve">
+    <value>Файл карты, совместимый с ChameleonUltraGUI</value>
+  </data>
+  <data name="Main_SupportUs" xml:space="preserve">
+    <value>Поддержите нас на {0}</value>
+  </data>
+  <data name="Slots_SwitchCards" xml:space="preserve">
+    <value>Переключать карты</value>
+  </data>
+  <data name="Slots_CyclePerField" xml:space="preserve">
+    <value>По касанию</value>
+  </data>
+  <data name="Slots_CycleWhilePresent" xml:space="preserve">
+    <value>В поле</value>
+  </data>
+  <data name="Slots_CyclePerFieldHint" xml:space="preserve">
+    <value>При каждом появлении поля считывателя устройство выдаёт следующую карту по очереди. Чтобы переключить карту, уберите устройство от считывателя и поднесите снова.</value>
+  </data>
+  <data name="Slots_CycleWhilePresentHint" xml:space="preserve">
+    <value>Пока поле считывателя есть, устройство выдаёт карты по очереди. Последняя выданная карта запоминается, и следующий перебор начинается с неё.</value>
+  </data>
+  <data name="Slots_TimePerCardBursts" xml:space="preserve">
+    <value>Время на карту, бурсты</value>
+  </data>
+  <data name="Slots_TimePerCardTip" xml:space="preserve">
+    <value>1–10 бурстов на карту; один бурст — десять кадров карты: около 0,33 с для EM410x, от 0,16 (Viking, IDTECK) до 0,66 (Electra, Jablotron) для остальных типов</value>
+  </data>
+  <data name="Slots_OneBurstByCardType" xml:space="preserve">
+    <value>Один бурст ≈ 0,16–0,66 с в зависимости от типа.</value>
+  </data>
+  <data name="Slots_SilenceBetweenCardsS" xml:space="preserve">
+    <value>Пауза между картами, с</value>
+  </data>
+  <data name="Slots_CollectNonces" xml:space="preserve">
+    <value>Собирать nonce</value>
+  </data>
+  <data name="Device_NoLfTag" xml:space="preserve">
+    <value>Нет метки LF: {0}</value>
+  </data>
+  <data name="Dictionaries_Type" xml:space="preserve">
+    <value>Тип словаря</value>
+  </data>
+  <data name="Tools_T55xxPassword" xml:space="preserve">
+    <value>Смена пароля T55XX</value>
+  </data>
+  <data name="Tools_T55xxDictionaryHint" xml:space="preserve">
+    <value>Перебор паролей из словарей</value>
+  </data>
+  <data name="Tools_Console" xml:space="preserve">
+    <value>Консоль</value>
+  </data>
+  <data name="Tools_ConsoleHint" xml:space="preserve">
+    <value>Команды консольного клиента</value>
+  </data>
+  <data name="Tools_ConsoleIntro" xml:space="preserve">
+    <value>Выполняет команды консольного клиента на подключённом Chameleon. Введите help, чтобы увидеть список, или команду с --help, чтобы увидеть её параметры.</value>
+  </data>
+  <data name="Tools_ConsoleFolder" xml:space="preserve">
+    <value>Файлы без полного пути сохраняются в {0}</value>
+  </data>
+  <data name="Tools_ConsolePlaceholder" xml:space="preserve">
+    <value>Введите команду; Tab дополняет её</value>
+  </data>
+  <data name="Tools_ConsolePlaceholderTouch" xml:space="preserve">
+    <value>Введите команду; нажмите подсказку, чтобы добавить её</value>
+  </data>
+  <data name="Tools_ConsoleFilesInApp" xml:space="preserve">
+    <value>Файлы, которые сохраняют команды, остаются внутри ChameLab на этом устройстве.</value>
+  </data>
+  <data name="Tools_ConsoleFilesBrowser" xml:space="preserve">
+    <value>Файлы, которые сохраняют команды, остаются на этой странице и пропадают при её перезагрузке.</value>
+  </data>
+  <data name="Tools_ConsoleRun" xml:space="preserve">
+    <value>Выполнить</value>
+  </data>
+  <data name="Tools_ConsoleWrap" xml:space="preserve">
+    <value>Перенос</value>
+  </data>
+  <data name="Tools_ConsoleAutoscroll" xml:space="preserve">
+    <value>Прокрутка</value>
+  </data>
+  <data name="Tools_ConsoleChooseFolder" xml:space="preserve">
+    <value>Выберите папку для файлов команд</value>
+  </data>
+  <data name="Tools_ConsoleDefaultFolder" xml:space="preserve">
+    <value>Вернуть папку по умолчанию</value>
+  </data>
+  <data name="Tools_FromTheConsole" xml:space="preserve">
+    <value>Из консоли</value>
+  </data>
+  <data name="Tools_T55xxDescription" xml:space="preserve">
+    <value>Положите метку T55XX на считыватель. Ключ проверяется записью другого ID и чтением результата. Когда ключ подходит, исходный ID восстанавливается и устанавливается новый пароль.</value>
+  </data>
+  <data name="Tools_T55xxNewKey" xml:space="preserve">
+    <value>Новый ключ (4 байта, hex)</value>
+  </data>
+  <data name="Tools_T55xxDefaultKeyHint" xml:space="preserve">
+    <value>Оставьте пустым, чтобы использовать 20206666.</value>
+  </data>
+  <data name="Tools_T55xxUnsupported" xml:space="preserve">
+    <value>Эта прошивка не поддерживает запись пароля T55XX. Обновите прошивку; требуется Chameleon Ultra.</value>
+  </data>
+  <data name="Tools_T55xxProgress" xml:space="preserve">
+    <value>Проверено ключей: {0} / {1}</value>
+  </data>
+  <data name="Tools_T55xxComplete" xml:space="preserve">
+    <value>Исходный ID восстановлен и проверен.</value>
+  </data>
+  <data name="Tools_T55xxCancelled" xml:space="preserve">
+    <value>Отменено.</value>
+  </data>
+  <data name="Tools_T55xxFoundKey" xml:space="preserve">
+    <value>Подошедший ключ: {0}</value>
+  </data>
+  <data name="Tools_T55xxUnprotected" xml:space="preserve">
+    <value>Метка не защищена паролем.</value>
+  </data>
+  <data name="Tools_T55xxNotFound" xml:space="preserve">
+    <value>Не найден</value>
+  </data>
+  <data name="Tools_T55xxNotSet" xml:space="preserve">
+    <value>Не установлен</value>
+  </data>
+  <data name="Tools_T55xxNoMatch" xml:space="preserve">
+    <value>В выбранных словарях подходящий ключ не найден.</value>
+  </data>
+  <data name="Tools_T55xxReadOriginalFailed" xml:space="preserve">
+    <value>Не удалось прочитать поддерживаемый LF ID. Держите метку на считывателе.</value>
+  </data>
+  <data name="Tools_T55xxProbeFailed" xml:space="preserve">
+    <value>Не удалось подтвердить тестовый ID. Подбор остановлен, выполнена попытка восстановить исходный ID.</value>
+  </data>
+  <data name="Tools_T55xxRestoreFailed" xml:space="preserve">
+    <value>Не удалось восстановить ID {0}: {1}. Проверяемый ключ: {2}; новый ключ: {3}. Сохраните этот ID и оба ключа для восстановления. {4}</value>
+  </data>
+  <data name="Tools_T55xxOriginalId" xml:space="preserve">
+    <value>Исходный ID {0}: {1}</value>
+  </data>
+  <data name="Dictionaries_KeyLength" xml:space="preserve">
+    <value>Длина ключа (байт)</value>
+  </data>
+  <data name="Dictionaries_AllKeyLengths" xml:space="preserve">
+    <value>Все длины ключей</value>
+  </data>
+  <data name="Dictionaries_InvalidKeyLength" xml:space="preserve">
+    <value>Длина ключа должна быть от 4 до 16 байт.</value>
+  </data>
+  <data name="Dictionaries_BadKeyLine" xml:space="preserve">
+    <value>Строка {0}: ожидается шестнадцатеричный ключ длиной {1} байт.</value>
+  </data>
+  <data name="Plural_Bytes" xml:space="preserve">
+    <value>{0} байт|{0} байта|{0} байт</value>
+  </data>
+  <data name="Hex_InsertByte" xml:space="preserve">
+    <value>Вставить байт</value>
+  </data>
+  <data name="Hex_DeleteBytes" xml:space="preserve">
+    <value>Удалить байты</value>
+  </data>
+  <data name="Hex_TypeToAddByte" xml:space="preserve">
+    <value>введите, чтобы добавить байт</value>
+  </data>
+  <data name="Dictionaries_KeyTooShort" xml:space="preserve">
+    <value>Ключ {0} короче {1} байт</value>
+  </data>
+  <data name="Tools_T55xxKeepKey" xml:space="preserve">
+    <value>Оставить</value>
+  </data>
+  <data name="Tools_T55xxKeepKeyHint" xml:space="preserve">
+    <value>Текущий пароль и режим защиты будут сохранены.</value>
+  </data>
+  <data name="Tools_T55xxSetNewKey" xml:space="preserve">
+    <value>Установить</value>
+  </data>
+  <data name="Tools_T55xxCurrentKey" xml:space="preserve">
+    <value>Текущий ключ</value>
+  </data>
+  <data name="Tools_T55xxKnowKey" xml:space="preserve">
+    <value>Знаю</value>
+  </data>
+  <data name="Tools_T55xxDictionaryAttack" xml:space="preserve">
+    <value>Перебор по словарю</value>
+  </data>
+  <data name="Tools_T55xxKnownKey" xml:space="preserve">
+    <value>Известный пароль</value>
+  </data>
+  <data name="Tools_T55xxNewKeyTitle" xml:space="preserve">
+    <value>Новый ключ</value>
+  </data>
+  <data name="Tools_T55xxDefaultKeyWillBeSet" xml:space="preserve">
+    <value>Будет установлен ключ по умолчанию {0}.</value>
+  </data>
+  <data name="Tools_T55xxUid" xml:space="preserve">
+    <value>UID</value>
+  </data>
+  <data name="Tools_T55xxFound" xml:space="preserve">
+    <value>Найденный</value>
+  </data>
+  <data name="Tools_T55xxNew" xml:space="preserve">
+    <value>Новый</value>
+  </data>
+  <data name="Cards_SaveKeys" xml:space="preserve">
+    <value>Сохранить ключи</value>
+  </data>
+  <data name="Cards_SaveTheCardsKeys" xml:space="preserve">
+    <value>Сохранить ключи карты: в буфер обмена, словарь или файл</value>
+  </data>
+  <data name="Cards_KeysToClipboard" xml:space="preserve">
+    <value>Копировать в буфер обмена</value>
+  </data>
+  <data name="Cards_KeysToDictionary" xml:space="preserve">
+    <value>Добавить в словарь</value>
+  </data>
+  <data name="Cards_ExportKeysTitle" xml:space="preserve">
+    <value>Сохранить ключи (.dic)</value>
+  </data>
+  <data name="Cards_KeysCopied" xml:space="preserve">
+    <value>Скопировано: {0}.</value>
+  </data>
+  <data name="Cards_KeysAddedTo" xml:space="preserve">
+    <value>Добавлено в «{1}»: {0}.</value>
+  </data>
+  <data name="Cards_KeysAlreadyInDictionary" xml:space="preserve">
+    <value>Все эти ключи уже есть в «{0}».</value>
+  </data>
+  <data name="Cards_KeysSavedToNewDictionary" xml:space="preserve">
+    <value>Создан словарь «{1}»: {0}.</value>
+  </data>
+  <data name="Plural_T55xxPasswords" xml:space="preserve">
+    <value> · {0} пароль T55XX| · {0} пароля T55XX| · {0} паролей T55XX</value>
+  </data>
+  <data name="Relay_DisplayName" xml:space="preserve">
+    <value>Общее устройство {0}</value>
+  </data>
+  <data name="Relay_Network" xml:space="preserve">
+    <value>Общее устройство (интернет)</value>
+  </data>
+  <data name="Relay_InvalidCode" xml:space="preserve">
+    <value>С этим кодом никто не делится устройством. Проверьте код или попросите новый.</value>
+  </data>
+  <data name="Relay_Busy" xml:space="preserve">
+    <value>К этому устройству уже подключён кто-то другой.</value>
+  </data>
+  <data name="Relay_HostLeft" xml:space="preserve">
+    <value>Общее устройство недоступно: на другой стороне доступ закрыли.</value>
+  </data>
+  <data name="Relay_Closed" xml:space="preserve">
+    <value>Связь с relay-сервером потеряна.</value>
+  </data>
+  <data name="Relay_Unreachable" xml:space="preserve">
+    <value>Не удаётся связаться с relay-сервером {0}.</value>
+  </data>
+  <data name="Relay_UnexpectedReply" xml:space="preserve">
+    <value>Relay-сервер прислал неожиданный ответ.</value>
+  </data>
+  <data name="Relay_InvalidCodeFormat" xml:space="preserve">
+    <value>Код выглядит так: TR1-ABCD-1234 — сервер, затем 8 букв и цифр.</value>
+  </data>
+  <data name="Share_AlreadySharing" xml:space="preserve">
+    <value>Устройство уже открыто для доступа.</value>
+  </data>
+  <data name="Share_NotLocal" xml:space="preserve">
+    <value>Поделиться можно только устройством, подключённым к этому компьютеру.</value>
+  </data>
+  <data name="Share_DeviceLost" xml:space="preserve">
+    <value>Общее устройство отключилось от этого компьютера.</value>
+  </data>
+  <data name="Connect_SharedDevice" xml:space="preserve">
+    <value>Подключиться к общему устройству</value>
+  </data>
+  <data name="Connect_SharedDeviceHint" xml:space="preserve">
+    <value>Введите код, который видит в ChameLab человек, открывший доступ к своему хамелеону.</value>
+  </data>
+  <data name="Share_Title" xml:space="preserve">
+    <value>Поделиться устройством</value>
+  </data>
+  <data name="Share_Hint" xml:space="preserve">
+    <value>Позвольте кому-то пользоваться выбранным хамелеоном с другого компьютера через интернет. Подключаются по коду, показанному здесь.</value>
+  </data>
+  <data name="Share_Warning" xml:space="preserve">
+    <value>Тот, у кого есть код, получает полный контроль над устройством, пока вы не закроете доступ.</value>
+  </data>
+  <data name="Share_Start" xml:space="preserve">
+    <value>Поделиться</value>
+  </data>
+  <data name="Share_Stop" xml:space="preserve">
+    <value>Закрыть доступ</value>
+  </data>
+  <data name="Share_Starting" xml:space="preserve">
+    <value>Запуск…</value>
+  </data>
+  <data name="Share_Waiting" xml:space="preserve">
+    <value>Ждём подключения…</value>
+  </data>
+  <data name="Share_PeerConnected" xml:space="preserve">
+    <value>Кто-то подключился и работает с устройством.</value>
+  </data>
+  <data name="Share_CodeLabel" xml:space="preserve">
+    <value>Код для подключения</value>
+  </data>
+  <data name="Relay_UnknownRegion" xml:space="preserve">
+    <value>Код начинается с {0}, но relay-сервера с таким именем нет.</value>
+  </data>
+  <data name="Relay_NoServers" xml:space="preserve">
+    <value>Ни один relay-сервер не отвечает. Проверьте подключение к интернету.</value>
+  </data>
+  <data name="Tools_FrameTime" xml:space="preserve">
+    <value>+{0:F3} мс</value>
+  </data>
+  <data name="Tools_FrameGap" xml:space="preserve">
+    <value>Δ {0:F1} мкс</value>
+  </data>
+  <data name="Tools_FrameTimingHint" xml:space="preserve">
+    <value>Время от начала захвата; Δ — пауза после окончания предыдущего кадра.</value>
+  </data>
+  <data name="Share_TrafficToDevice" xml:space="preserve">
+    <value>Отправлено на устройство</value>
+  </data>
+  <data name="Share_TrafficFromDevice" xml:space="preserve">
+    <value>Получено с устройства</value>
+  </data>
+  <data name="Share_PeerConnectedName" xml:space="preserve">
+    <value>{0} подключился и работает с устройством.</value>
+  </data>
+  <data name="Main_SelectBootloader" xml:space="preserve">
+    <value>Выбрать загрузчик</value>
+  </data>
+  <data name="Firmware_PickBootloaderUsb" xml:space="preserve">
+    <value>Ожидание загрузчика… В первый раз браузеру нужно ваше разрешение: нажмите «Выбрать загрузчик» и выберите DFU-порт Chameleon в списке.</value>
+  </data>
+  <data name="Firmware_PickBootloaderBle" xml:space="preserve">
+    <value>Ожидание загрузчика… В первый раз браузеру нужно ваше разрешение: нажмите «Выбрать загрузчик» и выберите в списке устройство CU-… (CL-… для Lite).</value>
+  </data>
+  <data name="Firmware_BootloaderNotPicked" xml:space="preserve">
+    <value>Загрузчик не был выбран вовремя. Если мигают светодиоды 4 и 5, устройство ждёт в загрузчике: нажмите «Повторить» и выберите его.</value>
+  </data>
+  <data name="Recovery_SkipSector" xml:space="preserve">
+    <value>Пропустить сектор</value>
+  </data>
+  <data name="Recovery_SkipSectorTip" xml:space="preserve">
+    <value>Пропустить сектор {0} и перейти к следующему. Найденные ключи сохранятся.</value>
+  </data>
+  <data name="Recovery_KeyProgress" xml:space="preserve">
+    <value>ключ {0} из {1}</value>
+  </data>
+  <data name="Qr_Damaged" xml:space="preserve">
+    <value>Из этих QR-кодов не получается карта. Отсканируйте их заново.</value>
+  </data>
+  <data name="Qr_PartOf" xml:space="preserve">
+    <value>Код {0} из {1}</value>
+  </data>
+  <data name="Qr_Pause" xml:space="preserve">
+    <value>Пауза</value>
+  </data>
+  <data name="Qr_Play" xml:space="preserve">
+    <value>Воспроизвести</value>
+  </data>
+  <data name="Qr_Previous" xml:space="preserve">
+    <value>Предыдущий код</value>
+  </data>
+  <data name="Qr_Next" xml:space="preserve">
+    <value>Следующий код</value>
+  </data>
+  <data name="Qr_SingleHint" xml:space="preserve">
+    <value>QR-код содержит данные карты, включая сохранённые ключи. Передавайте его только тем, кому доверяете. Сканирование в ChameLab: Добавить карту → QR-код.</value>
+  </data>
+  <data name="Qr_SeriesHint" xml:space="preserve">
+    <value>Карта занимает несколько кодов. Сканируйте все части в ChameLab. Коды содержат данные карты и сохранённые ключи; шифрования нет.</value>
+  </data>
+  <data name="Qr_PointAtCode" xml:space="preserve">
+    <value>Наведите камеру на QR-код карты ChameLab</value>
+  </data>
+  <data name="Qr_OpenImageTitle" xml:space="preserve">
+    <value>Открыть изображение с QR-кодом</value>
+  </data>
+  <data name="Qr_NoCodeInImage" xml:space="preserve">
+    <value>В {0} не найден QR-код.</value>
+  </data>
+  <data name="Qr_NotACardCode" xml:space="preserve">
+    <value>Этот QR-код — не карта ChameLab.</value>
+  </data>
+  <data name="Qr_FromQrCode" xml:space="preserve">
+    <value>Из QR-кода</value>
+  </data>
+  <data name="Qr_CardReceived" xml:space="preserve">
+    <value>Карта получена</value>
+  </data>
+  <data name="Qr_PartsRead" xml:space="preserve">
+    <value>Прочитано кодов: {0} из {1}. Осталось: {2}.</value>
+  </data>
+  <data name="Qr_Share" xml:space="preserve">
+    <value>QR-код</value>
+  </data>
+  <data name="Qr_ShareTip" xml:space="preserve">
+    <value>Показать карту QR-кодом, чтобы отсканировать её другим телефоном или компьютером</value>
+  </data>
+  <data name="Qr_ShareHeader" xml:space="preserve">
+    <value>ПОДЕЛИТЬСЯ QR-КОДОМ</value>
+  </data>
+  <data name="Qr_ScanTile" xml:space="preserve">
+    <value>QR-код</value>
+  </data>
+  <data name="Qr_ScanCamera" xml:space="preserve">
+    <value>Камера</value>
+  </data>
+  <data name="Qr_ScanImage" xml:space="preserve">
+    <value>Из изображения</value>
+  </data>
+  <data name="Qr_ScanTip" xml:space="preserve">
+    <value>Добавить карту, которой поделились из ChameLab QR-кодом</value>
+  </data>
+  <data name="Qr_ScanImageTip" xml:space="preserve">
+    <value>Прочитать QR-код со скриншота или фото</value>
+  </data>
+  <data name="Qr_CameraDenied" xml:space="preserve">
+    <value>Доступ к камере запрещён. Разрешите его в настройках системы или откройте скриншот или фото кода.</value>
+  </data>
+  <data name="Qr_NoCamera" xml:space="preserve">
+    <value>Камера недоступна. Откройте вместо этого скриншот или фото кода.</value>
+  </data>
+  <data name="Qr_ScannerUnavailable" xml:space="preserve">
+    <value>QR-сканер недоступен на этом устройстве (нужны сервисы Google Play). Откройте вместо этого скриншот или фото кода.</value>
+  </data>
+  <data name="Compare_Button" xml:space="preserve">
+    <value>Сравнить</value>
+  </data>
+  <data name="Compare_Tip" xml:space="preserve">
+    <value>Сравнить память этой карты с другой сохранённой картой или файлом дампа</value>
+  </data>
+  <data name="Compare_Header" xml:space="preserve">
+    <value>СРАВНЕНИЕ ДАМПОВ</value>
+  </data>
+  <data name="Compare_Hint" xml:space="preserve">
+    <value>Выберите сохранённую карту или откройте файл дампа. Отличающиеся байты подсвечены; правки этой карты видны сразу.</value>
+  </data>
+  <data name="Compare_PickCard" xml:space="preserve">
+    <value>Сохранённая карта для сравнения</value>
+  </data>
+  <data name="Compare_OpenFile" xml:space="preserve">
+    <value>Файл</value>
+  </data>
+  <data name="Compare_OpenFileTip" xml:space="preserve">
+    <value>Сравнить с файлом дампа: JSON, Flipper .nfc, MCT, .bin, .eml и другие форматы импорта</value>
+  </data>
+  <data name="Compare_OpenFileTitle" xml:space="preserve">
+    <value>Открыть дамп для сравнения</value>
+  </data>
+  <data name="Compare_NoCards" xml:space="preserve">
+    <value>У других сохранённых карт нет такой памяти. Откройте файл дампа.</value>
+  </data>
+  <data name="Compare_Identical" xml:space="preserve">
+    <value>Карты одинаковые.</value>
+  </data>
+  <data name="Compare_BlocksDiffer" xml:space="preserve">
+    <value>Отличаются блоков: {0} из {1}; байт: {2}</value>
+  </data>
+  <data name="Compare_PagesDiffer" xml:space="preserve">
+    <value>Отличаются страниц: {0} из {1}; байт: {2}</value>
+  </data>
+  <data name="Compare_OnlyDifferences" xml:space="preserve">
+    <value>Только отличия</value>
+  </data>
+  <data name="Compare_NotRead" xml:space="preserve">
+    <value>не прочитан</value>
+  </data>
+  <data name="Compare_FileHasNoMatch" xml:space="preserve">
+    <value>В {0} нет карты с такой памятью.</value>
+  </data>
+  <data name="Common_BackTo" xml:space="preserve">
+    <value>Назад в «{0}»</value>
+  </data>
+  <data name="Common_Move" xml:space="preserve">
+    <value>Переместить</value>
+  </data>
+  <data name="Common_MoveFolder" xml:space="preserve">
+    <value>Переместить папку в другую</value>
+  </data>
+  <data name="Common_MovedFolder" xml:space="preserve">
+    <value>Папка {0} перемещена в «{1}».</value>
+  </data>
+  <data name="Common_NewFolderInside" xml:space="preserve">
+    <value>Новая папка внутри</value>
+  </data>
+  <data name="Common_ShowOrHideFoldersInside" xml:space="preserve">
+    <value>Показать или скрыть вложенные папки</value>
+  </data>
+  <data name="Common_FolderContentsMoveUp" xml:space="preserve">
+    <value>Её содержимое переместится на уровень выше</value>
+  </data>
+  <data name="Common_FolderContentsMoveTo" xml:space="preserve">
+    <value>Её содержимое не удаляется: всё переместится в «{0}».</value>
+  </data>
+  <data name="Plural_DeletedFolderDictionaries" xml:space="preserve">
+    <value>Папка {1} удалена; её {0} словарь теперь в «{2}».|Папка {1} удалена; её {0} словаря теперь в «{2}».|Папка {1} удалена; её {0} словарей теперь в «{2}».</value>
+  </data>
+  <data name="Dictionaries_MoveThisDictionaryToAFolder" xml:space="preserve">
+    <value>Переместить словарь в папку</value>
+  </data>
+  <data name="Dictionaries_NoDictionariesInThisFolderYet" xml:space="preserve">
+    <value>В этой папке пока нет словарей. Перетащите на неё словари в панели навигации или добавьте словарь здесь.</value>
+  </data>
+  <data name="Dictionaries_AddDictionary" xml:space="preserve">
+    <value>Добавить словарь</value>
+  </data>
+  <data name="Dictionaries_AddADictionary" xml:space="preserve">
+    <value>Новый словарь</value>
+  </data>
+  <data name="Dictionaries_AddHint" xml:space="preserve">
+    <value>Импортируйте файл с ключами, введите ключи вручную или скачайте известный словарь.</value>
+  </data>
+  <data name="Dictionaries_AddTip" xml:space="preserve">
+    <value>Импортировать, ввести вручную или скачать словарь ключей</value>
+  </data>
+  <data name="Dictionaries_TypeKeysByHand" xml:space="preserve">
+    <value>Ввести ключи вручную</value>
+  </data>
+  <data name="Dictionaries_DownloadTip" xml:space="preserve">
+    <value>Скачать известный словарь из проекта Proxmark3, Flipper Zero или Unleashed</value>
+  </data>
+  <data name="Dictionaries_DownloadTitle" xml:space="preserve">
+    <value>Скачать словарь</value>
+  </data>
+  <data name="Dictionaries_DownloadHint" xml:space="preserve">
+    <value>Списки ключей, которые проекты Proxmark3, Flipper Zero и Unleashed публикуют на GitHub. Выбранный словарь откроется для проверки перед сохранением.</value>
+  </data>
+  <data name="Dictionaries_DlFailed" xml:space="preserve">
+    <value>Не удалось скачать {0}: {1}</value>
+  </data>
+  <data name="Slots_NonceCount" xml:space="preserve">
+    <value>Собрано nonce</value>
+  </data>
+  <data name="Device_IncompleteResponse" xml:space="preserve">
+    <value>Неполный ответ устройства с данными сбора.</value>
+  </data>
+  <data name="Slots_PasswordCount" xml:space="preserve">
+    <value>Собрано паролей</value>
   </data>
 </root>

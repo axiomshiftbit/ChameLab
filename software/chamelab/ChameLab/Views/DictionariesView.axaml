@@ -9,6 +9,7 @@
              xmlns:conv="using:ChameLab.Converters"
              xmlns:b="using:ChameLab.Behaviors"
              xmlns:c="using:ChameLab.Controls"
+             xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
              x:Class="ChameLab.Views.DictionariesView"
              x:DataType="vm:DictionariesViewModel">
 
@@ -31,10 +32,21 @@
     <Style Selector="Grid.dictionary-list.narrow Button.library-clear">
       <Setter Property="Grid.Row" Value="1" />
     </Style>
-    <Style Selector="Grid.dictionary-list.narrow c|ActionRow.library-actions">
-      <Setter Property="Grid.Column" Value="0" />
-      <Setter Property="Grid.Row" Value="1" />
-      <Setter Property="HorizontalAlignment" Value="Left" />
+    <!-- A known dictionary to download: a plain row, no frame, highlighted under the pointer. -->
+    <Style Selector="Button.dlrow">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="8,5" />
+      <!-- Indented under the project's heading. -->
+      <Setter Property="Margin" Value="12,0,-8,0" />
+      <Setter Property="Height" Value="NaN" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    </Style>
+    <Style Selector="Button.dlrow:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{actipro:ThemeResource Container2BackgroundBrush}" />
     </Style>
   </UserControl.Styles>
 
@@ -45,30 +57,84 @@
     <!-- ==================== Dictionary list ==================== -->
     <!-- Locked while a new dictionary is open: save it or discard it to get back to the list. -->
     <Grid Grid.Column="0" Classes="listpane panestack dictionary-list" RowDefinitions="Auto,*"
-          SizeChanged="OnListPaneSizeChanged"
-          IsEnabled="{Binding !IsNew}">
-      <!-- Measure the title first; give actions the remaining finite width so they collapse by priority. -->
-      <Grid x:Name="LibraryHeader" Grid.Row="0" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="8">
-        <StackPanel Grid.Column="0" Spacing="2">
-          <TextBlock Text="{x:Static loc:Strings.Common_KeyDictionaries}" Classes="h1" TextWrapping="Wrap" />
-          <TextBlock Classes="caption" Text="{Binding CountText}" TextWrapping="Wrap" />
+          SizeChanged="OnListPaneSizeChanged">
+      <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
+        <!-- Up from a folder to the one that holds it (or Dictionaries), also when the navigation pane is
+             hidden (narrow, or closed). -->
+        <Button Grid.Column="0" Classes="icon" Margin="-8,0,6,0" VerticalAlignment="Center"
+                IsVisible="{Binding FolderTree.IsInFolder}" Command="{Binding FolderTree.ShowParentCommand}"
+                ToolTip.Tip="{Binding FolderTree.BackTip}" b:DialogKeys.IsBack="True">
+          <PathIcon Data="{StaticResource Icon.back}" />
+        </Button>
+        <!-- Short of room, the buttons drop their labels (New dictionary last); then the title trims. -->
+        <c:TitleRow Grid.Column="1">
+        <StackPanel Spacing="2">
+          <!-- Dictionaries, or a folder's title, renamed in place by a click on it. -->
+          <!-- Renaming: the title stays, unseen, so the header keeps its size; the field lies over it. -->
+          <Panel Classes.renaming="{Binding FolderTree.IsRenamingFolder}">
+            <TextBlock Text="{x:Static loc:Strings.Common_KeyDictionaries}" Classes="h1" TextTrimming="CharacterEllipsis"
+                       IsVisible="{Binding !FolderTree.IsInFolder}" />
+            <TextBlock Text="{Binding FolderTree.Title}" Classes="h1" TextTrimming="CharacterEllipsis"
+                       Classes.renamable="{Binding FolderTree.IsInFolder}" Tapped="OnFolderTitleTapped"
+                       ToolTip.Tip="{Binding FolderTree.Current}" IsVisible="{Binding FolderTree.IsInFolder}" />
+            <TextBox Classes="titlebox foldertitle" Text="{Binding FolderTree.FolderRenameText}" MaxLength="64"
+                     IsVisible="{Binding FolderTree.IsRenamingFolder}" b:FocusOnShow.IsEnabled="True"
+                     KeyDown="OnFolderTitleKeyDown" LostFocus="OnFolderTitleLostFocus" />
+          </Panel>
+          <TextBlock Classes="caption" Text="{Binding CountText}" TextWrapping="NoWrap" />
         </StackPanel>
-        <c:ActionRow Grid.Column="1" Classes="library-actions" HorizontalAlignment="Right" VerticalAlignment="Center">
-        <Button Command="{Binding ImportCommand}" IsEnabled="{Binding CanUseFiles}"
-                VerticalAlignment="Center" ToolTip.Tip="{x:Static loc:Strings.Dictionaries_ImportADicKeysTxtJson}">
+        <c:ActionRow Classes="library-actions">
+        <Button ToolTip.Tip="{x:Static loc:Strings.Common_MoveFolder}" IsVisible="{Binding FolderTree.IsInFolder}">
           <StackPanel Orientation="Horizontal" Spacing="6">
-            <PathIcon Data="{StaticResource Icon.import}" />
-            <TextBlock Text="{x:Static loc:Strings.Common_Import}" VerticalAlignment="Center" />
+            <PathIcon Data="{StaticResource Icon.folder}" />
+            <TextBlock Text="{x:Static loc:Strings.Common_Move}" VerticalAlignment="Center" />
+          </StackPanel>
+          <Button.Flyout>
+            <Flyout Placement="BottomEdgeAlignedLeft">
+              <!-- Dictionaries (the top) or any folder outside the open one; folders in others are indented. -->
+              <ScrollViewer Width="260" MaxHeight="360" HorizontalScrollBarVisibility="Disabled">
+                <ListBox ItemsSource="{Binding FolderTree.MoveOptions}" SelectedItem="{Binding FolderTree.MoveTarget}"
+                         Background="Transparent" BorderThickness="0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled" Tapped="OnFlyoutPickTapped">
+                  <ListBox.ItemTemplate>
+                      <DataTemplate x:DataType="vm:FolderOption">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" Margin="{Binding Indent}">
+                          <PathIcon Grid.Column="0" Width="16" Height="16" Opacity="0.75" VerticalAlignment="Center"
+                                    Data="{StaticResource Icon.key}" IsVisible="{Binding IsRoot}" />
+                          <PathIcon Grid.Column="0" Width="16" Height="16" Opacity="0.75" VerticalAlignment="Center"
+                                    Data="{StaticResource Icon.folder}" IsVisible="{Binding !IsRoot}" />
+                          <TextBlock Grid.Column="1" Text="{Binding Label}" VerticalAlignment="Center"
+                                     TextWrapping="Wrap" MaxLines="2" LineSpacing="-2" TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                      </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </ScrollViewer>
+            </Flyout>
+          </Button.Flyout>
+        </Button>
+        <Button Classes="danger" ToolTip.Tip="{x:Static loc:Strings.Common_DeleteFolder}"
+                IsVisible="{Binding FolderTree.IsInFolder}" Command="{Binding FolderTree.DeleteCurrentCommand}">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <PathIcon Data="{StaticResource Icon.delete}" />
+            <TextBlock Text="{x:Static loc:Strings.Common_Delete}" VerticalAlignment="Center" />
           </StackPanel>
         </Button>
-        <Button Classes="accent" Command="{Binding NewCommand}" VerticalAlignment="Center" c:ActionRow.Priority="1"
-                ToolTip.Tip="{x:Static loc:Strings.Dictionaries_StartANewDictionary}">
+        <Button Command="{Binding FolderTree.OpenNewFolderCommand}" ToolTip.Tip="{x:Static loc:Strings.Common_NewFolder}">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <PathIcon Data="{StaticResource Icon.folderAdd}" />
+            <TextBlock Text="{x:Static loc:Strings.Common_NewFolder}" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+        <Button Classes="accent" Command="{Binding AddCommand}" VerticalAlignment="Center" c:ActionRow.Priority="1"
+                ToolTip.Tip="{x:Static loc:Strings.Dictionaries_AddTip}">
           <StackPanel Orientation="Horizontal" Spacing="6">
             <PathIcon Data="{StaticResource Icon.add}" />
-            <TextBlock Text="{x:Static loc:Strings.Dictionaries_NewDictionary}" VerticalAlignment="Center" />
+            <TextBlock Text="{x:Static loc:Strings.Dictionaries_AddDictionary}" VerticalAlignment="Center" />
           </StackPanel>
         </Button>
         </c:ActionRow>
+        </c:TitleRow>
       </Grid>
 
       <!-- Under the title everything scrolls together once the window is too short for the list's
@@ -142,12 +208,16 @@
             </StackPanel>
           </Border>
 
-          <TextBlock Classes="caption" Text="{x:Static loc:Strings.Dictionaries_NoDictionariesMatchTheSearch}"
-                     IsVisible="{Binding NoMatches}" VerticalAlignment="Top" />
-
-          <!-- In manual order the dictionaries can be dragged into place (ListReorder). Reaches past the
-               column by as much as the list is padded, so a dragged row's shadow is not clipped. -->
+          <!-- In manual order the dictionaries can be dragged into place, and in any order onto a folder
+               (ListReorder). Reaches past the column by as much as the list is padded, so a dragged row's
+               shadow is not clipped. -->
           <ScrollViewer Name="ListScroll" IsVisible="{Binding !IsEmpty}" Margin="-12,0,-12,-16">
+            <StackPanel>
+            <!-- In the flow above the list, so they never overlap the folder tiles below it. -->
+            <TextBlock Classes="caption" Margin="12,0,12,8" Text="{x:Static loc:Strings.Dictionaries_NoDictionariesMatchTheSearch}"
+                       IsVisible="{Binding NoMatches}" />
+            <TextBlock Classes="caption" Margin="12,0,12,8" TextWrapping="Wrap" IsVisible="{Binding IsFolderEmpty}"
+                       Text="{x:Static loc:Strings.Dictionaries_NoDictionariesInThisFolderYet}" />
             <ListBox Name="DictList" Classes="cards" ItemsSource="{Binding Dictionaries}" Padding="8,0,8,12"
                      SelectedItem="{Binding Selected}">
               <ListBox.ItemTemplate>
@@ -169,6 +239,41 @@
                 </DataTemplate>
               </ListBox.ItemTemplate>
             </ListBox>
+
+            <!-- The folders in the one shown (or in Dictionaries), after its own dictionaries. A tile opens its
+                 folder, and dictionaries are dragged onto it like onto a folder in the navigation pane. -->
+            <StackPanel Spacing="4" Margin="8,4,8,12" IsVisible="{Binding FolderTree.ShowsTiles}">
+              <TextBlock Text="{x:Static loc:Strings.Cards_FoldersHeader}" Classes="overline" Margin="4,0" />
+              <ItemsControl ItemsSource="{Binding FolderTree.Subfolders}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <c:TileGrid MinItemWidth="280" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:FolderViewModel">
+                    <Button Classes="foldertile" Classes.empty="{Binding IsEmpty}"
+                            Command="{Binding OpenCommand}" b:ListReorder.IsDropTarget="True"
+                            ToolTip.Tip="{Binding Name}">
+                      <Border Classes="cardrow">
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" Margin="14,8,14,8" MinHeight="36">
+                          <PathIcon Grid.Column="0" Classes="foldericon" Width="20" Height="20"
+                                    Data="{StaticResource Icon.folder}" />
+                          <TextBlock Grid.Column="1" Classes="foldername" Text="{Binding Name}" FontWeight="SemiBold"
+                                     FontSize="15" VerticalAlignment="Center" TextWrapping="Wrap" MaxLines="2"
+                                     LineSpacing="-2" TextTrimming="CharacterEllipsis" />
+                          <!-- Just the number, in a frame; the open folder's header words it (“3 cards”). -->
+                          <Border Grid.Column="2" Classes="foldercount" ToolTip.Tip="{Binding CountText}">
+                            <TextBlock Classes="caption" Text="{Binding Count}" />
+                          </Border>
+                        </Grid>
+                      </Border>
+                    </Button>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+            </StackPanel>
           </ScrollViewer>
           </Panel>
         </c:FillStack>
@@ -182,8 +287,9 @@
               IsEnabled="{Binding !IsAsking}">
         <StackPanel Spacing="14">
           <Grid ColumnDefinitions="Auto,Auto,*">
-            <Button Grid.Column="0" Classes="icon backonly" Margin="-8,0,6,0"
-                    Command="{Binding CloseCommand}" ToolTip.Tip="{x:Static loc:Strings.Common_BackToTheList}"
+            <!-- A new dictionary always offers Back: it returns to where it came from, not to the list. -->
+            <Button Grid.Column="0" Classes="icon backonly" Classes.keepback="{Binding IsNew}" Margin="-8,0,6,0"
+                    VerticalAlignment="Top" Command="{Binding CloseCommand}" ToolTip.Tip="{Binding EditorBackTip}"
                     b:DialogKeys.IsBack="True">
               <PathIcon Data="{StaticResource Icon.back}" />
             </Button>
@@ -193,7 +299,7 @@
                 <Flyout Placement="BottomEdgeAlignedLeft">
                   <ListBox Classes="swatches" ItemsSource="{x:Static vm:DictionariesViewModel.Palette}"
                            SelectedItem="{Binding Form?.Color}" Background="Transparent" BorderThickness="0"
-                           Tapped="OnSwatchTapped">
+                           Tapped="OnFlyoutPickTapped">
                     <ListBox.ItemsPanel>
                       <ItemsPanelTemplate><UniformGrid Columns="8" ColumnSpacing="2" RowSpacing="2" /></ItemsPanelTemplate>
                     </ListBox.ItemsPanel>
@@ -208,8 +314,14 @@
             </Button>
             <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="0">
               <TextBox Classes="titlebox" Text="{Binding Form?.Name}" MaxLength="64" PlaceholderText="{x:Static loc:Strings.Dictionaries_DictionaryName}" />
-              <TextBlock Text="{Binding FormSource}" Classes="caption" TextWrapping="Wrap"
-                         IsVisible="{Binding IsNew}" />
+              <TextBlock Text="{Binding FormSource}" Classes="caption" TextWrapping="Wrap">
+                <TextBlock.IsVisible>
+                  <MultiBinding Converter="{x:Static BoolConverters.And}">
+                    <Binding Path="IsNew" />
+                    <Binding Path="FormSource" Converter="{x:Static ObjectConverters.IsNotNull}" />
+                  </MultiBinding>
+                </TextBlock.IsVisible>
+              </TextBlock>
               <TextBlock Text="{Binding Form?.KeyCountText}" Classes="caption" TextWrapping="Wrap" />
             </StackPanel>
           </Grid>
@@ -228,6 +340,56 @@
                 <PathIcon Data="{StaticResource Icon.export}" />
                 <TextBlock Text="{x:Static loc:Strings.Common_Export}" VerticalAlignment="Center" />
               </StackPanel>
+            </Button>
+            <Button IsVisible="{Binding IsOpen}" ToolTip.Tip="{x:Static loc:Strings.Dictionaries_MoveThisDictionaryToAFolder}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource Icon.folder}" />
+                <TextBlock Text="{Binding DictionaryFolderLabel}" VerticalAlignment="Center"
+                           MaxWidth="140" TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+              <Button.Flyout>
+                <Flyout Placement="BottomEdgeAlignedLeft">
+                  <!-- Fixed width: long names wrap onto a second line, tightly spaced, then trim; folders in
+                       others are indented. No folder stands apart above the folders; one choice across both lists. -->
+                  <StackPanel Width="260">
+                    <ListBox ItemsSource="{Binding FolderTree.RootOptions}" SelectedItem="{Binding SelectedDictionaryFolder}"
+                             Background="Transparent" BorderThickness="0" Tapped="OnFlyoutPickTapped">
+                      <ListBox.ItemTemplate>
+                      <DataTemplate x:DataType="vm:FolderOption">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" Margin="{Binding Indent}">
+                          <PathIcon Grid.Column="0" Width="16" Height="16" Opacity="0.75" VerticalAlignment="Center"
+                                    Data="{StaticResource Icon.key}" IsVisible="{Binding IsRoot}" />
+                          <PathIcon Grid.Column="0" Width="16" Height="16" Opacity="0.75" VerticalAlignment="Center"
+                                    Data="{StaticResource Icon.folder}" IsVisible="{Binding !IsRoot}" />
+                          <TextBlock Grid.Column="1" Text="{Binding Label}" VerticalAlignment="Center"
+                                     TextWrapping="Wrap" MaxLines="2" LineSpacing="-2" TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                      </DataTemplate>
+                      </ListBox.ItemTemplate>
+                    </ListBox>
+                    <Separator Margin="0,4" IsVisible="{Binding FolderTree.HasFolders}" />
+                    <ScrollViewer MaxHeight="320" HorizontalScrollBarVisibility="Disabled">
+                      <ListBox ItemsSource="{Binding FolderTree.Options}" SelectedItem="{Binding SelectedDictionaryFolder}"
+                               Background="Transparent" BorderThickness="0"
+                               ScrollViewer.HorizontalScrollBarVisibility="Disabled" Tapped="OnFlyoutPickTapped">
+                        <ListBox.ItemTemplate>
+                          <DataTemplate x:DataType="vm:FolderOption">
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" Margin="{Binding Indent}">
+                              <PathIcon Grid.Column="0" Width="16" Height="16" Opacity="0.75" VerticalAlignment="Center"
+                                        Data="{StaticResource Icon.folder}" />
+                              <TextBlock Grid.Column="1" Text="{Binding Label}" VerticalAlignment="Center"
+                                         TextWrapping="Wrap" MaxLines="2" LineSpacing="-2"
+                                         TextTrimming="CharacterEllipsis" />
+                              <TextBlock Grid.Column="2" Text="{Binding Count}" Classes="caption"
+                                         VerticalAlignment="Center" />
+                            </Grid>
+                          </DataTemplate>
+                        </ListBox.ItemTemplate>
+                      </ListBox>
+                    </ScrollViewer>
+                  </StackPanel>
+                </Flyout>
+              </Button.Flyout>
             </Button>
             <Button Classes="danger" Command="{Binding DeleteCommand}" IsVisible="{Binding IsOpen}"
                     ToolTip.Tip="{x:Static loc:Strings.Dictionaries_DeleteThisDictionary}">
@@ -352,6 +514,116 @@
         </Grid>
       </Border>
 
+      <!-- ===================== Add a dictionary ===================== -->
+      <!-- Where a new dictionary comes from; it then opens in the editor to be reviewed and saved. -->
+      <Border Grid.Row="0" Grid.RowSpan="2" Classes="card" VerticalAlignment="Top" IsVisible="{Binding IsPickingSource}">
+        <StackPanel Spacing="14">
+          <Grid ColumnDefinitions="Auto,*">
+            <Button Grid.Column="0" Classes="icon" Margin="-8,0,6,0" VerticalAlignment="Top"
+                    Command="{Binding CloseCommand}" ToolTip.Tip="{x:Static loc:Strings.Common_BackToTheList}"
+                    b:DialogKeys.IsBack="True">
+              <PathIcon Data="{StaticResource Icon.back}" />
+            </Button>
+            <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+              <TextBlock Text="{x:Static loc:Strings.Dictionaries_AddADictionary}" Classes="h2" />
+              <TextBlock Classes="caption hint" TextWrapping="Wrap" Text="{x:Static loc:Strings.Dictionaries_AddHint}" />
+            </StackPanel>
+          </Grid>
+          <c:FitGrid Columns="2" ColumnSpacing="8" RowSpacing="8">
+                <Button Classes="tile source" Command="{Binding ImportCommand}" IsEnabled="{Binding CanUseFiles}"
+                        ToolTip.Tip="{x:Static loc:Strings.Dictionaries_ImportADicKeysTxtJson}">
+                  <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                    <Border Classes="iconwell green" VerticalAlignment="Center">
+                      <PathIcon Data="{StaticResource Icon.import}" />
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                      <TextBlock Text="{x:Static loc:Strings.Cards_ImportFile}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Text=".dic, .keys, .txt, .json" Classes="caption" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </Grid>
+                </Button>
+                <Button Classes="tile source" Command="{Binding NewCommand}"
+                        ToolTip.Tip="{x:Static loc:Strings.Dictionaries_StartANewDictionary}">
+                  <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                    <Border Classes="iconwell" VerticalAlignment="Center">
+                      <PathIcon Data="{StaticResource Icon.edit}" />
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                      <TextBlock Text="{x:Static loc:Strings.Cards_EnterManually}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Text="{x:Static loc:Strings.Dictionaries_TypeKeysByHand}" Classes="caption" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </Grid>
+                </Button>
+                <Button Classes="tile source" Command="{Binding ShowDownloadsCommand}"
+                        ToolTip.Tip="{x:Static loc:Strings.Dictionaries_DownloadTip}">
+                  <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                    <Border Classes="iconwell blue" VerticalAlignment="Center">
+                      <PathIcon Data="{StaticResource Icon.download}" />
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                      <TextBlock Text="{x:Static loc:Strings.Dictionaries_Download}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Text="Proxmark3, Flipper Zero, Unleashed" Classes="caption" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </Grid>
+                </Button>
+          </c:FitGrid>
+        </StackPanel>
+      </Border>
+
+      <!-- ===================== Download a known dictionary ===================== -->
+      <Border Grid.Row="0" Grid.RowSpan="2" Classes="card" IsVisible="{Binding IsPickingDownload}">
+        <Grid RowDefinitions="Auto,Auto,*" RowSpacing="10">
+          <Grid ColumnDefinitions="Auto,*">
+            <Button Grid.Column="0" Classes="icon" Margin="-8,0,6,0" VerticalAlignment="Top"
+                    Command="{Binding BackToAddCommand}" ToolTip.Tip="{Binding DownloadBackTip}"
+                    b:DialogKeys.IsBack="True">
+              <PathIcon Data="{StaticResource Icon.back}" />
+            </Button>
+            <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+              <TextBlock Text="{x:Static loc:Strings.Dictionaries_DownloadTitle}" Classes="h2" />
+              <TextBlock Classes="caption hint" TextWrapping="Wrap" Text="{x:Static loc:Strings.Dictionaries_DownloadHint}" />
+            </StackPanel>
+          </Grid>
+          <!-- Sets the header apart from the list scrolling under it. -->
+          <Separator Grid.Row="1" Margin="0" />
+          <!-- A section per project: its name, then a plain row per list (the cards, the file). -->
+          <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl ItemsSource="{Binding DownloadSections}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate><StackPanel Spacing="12" /></ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:KnownDictionarySection">
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="{Binding Title}" Classes="overline" Margin="0,0,0,2" />
+                    <ItemsControl ItemsSource="{Binding Items}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:KnownDictionaryItemViewModel">
+                          <Button Classes="dlrow" Command="{Binding DownloadCommand}"
+                                  IsEnabled="{Binding !$parent[UserControl].((vm:DictionariesViewModel)DataContext).IsBusy}"
+                                  ToolTip.Tip="{Binding Source.Url}">
+                            <Grid ColumnDefinitions="Auto,*" RowDefinitions="*,Auto" ColumnSpacing="10">
+                              <PathIcon Data="{StaticResource Icon.download}" Width="16" Height="16"
+                                        Foreground="{DynamicResource BrandBlueBrush}" VerticalAlignment="Center" />
+                              <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Card}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{Binding FileName}" Classes="caption" TextTrimming="CharacterEllipsis" />
+                              </StackPanel>
+                              <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" IsIndeterminate="True" Height="3" MinHeight="3"
+                                           Margin="0,4,0,0" IsVisible="{Binding IsDownloading}" />
+                            </Grid>
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </Grid>
+      </Border>
+
       <!-- Nothing open (desktop only) -->
       <Border Grid.Row="1" Classes="card" VerticalAlignment="Top" IsVisible="{Binding !HasPane}">
         <StackPanel Spacing="8" HorizontalAlignment="Center" Margin="0,20">
@@ -414,7 +686,14 @@
             <TextBlock Text="{Binding SaveError}" />
           </DockPanel>
           <c:ActionBar>
-            <Button Content="{x:Static loc:Strings.Common_Discard}" Command="{Binding CancelNewCommand}" />
+            <!-- No message here, but ActionBar takes its first child as one; keep the slot empty. -->
+            <TextBlock IsVisible="False" />
+            <Button Classes="danger" Command="{Binding CancelNewCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource Icon.delete}" />
+                <TextBlock Text="{x:Static loc:Strings.Common_Discard}" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
             <Button Classes="accent" Command="{Binding SaveCommand}">
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <PathIcon Data="{StaticResource Icon.save}" />
@@ -439,8 +718,14 @@
             <TextBlock Text="{Binding SaveError}" />
           </DockPanel>
           <c:ActionBar>
-            <TextBlock Text="{x:Static loc:Strings.Common_UnsavedChanges}" VerticalAlignment="Center" FontWeight="SemiBold" IsVisible="{Binding IsDirty}" />
-            <Button Content="{x:Static loc:Strings.Common_Discard}" Command="{Binding DiscardCommand}" />
+            <!-- No message, but ActionBar takes its first child as one; keep the slot empty. -->
+            <TextBlock IsVisible="False" />
+            <Button Classes="danger" Command="{Binding DiscardCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource Icon.delete}" />
+                <TextBlock Text="{x:Static loc:Strings.Common_Discard}" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
             <Button Classes="accent" Command="{Binding SaveCommand}" IsEnabled="{Binding IsDirty}">
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <PathIcon Data="{StaticResource Icon.save}" />
@@ -464,7 +749,7 @@
                 <TextBlock Text="{x:Static loc:Strings.Common_Cancel}" VerticalAlignment="Center" />
               </StackPanel>
             </Button>
-            <Button Command="{Binding DiscardAndLeaveCommand}" c:ActionRow.Priority="1"
+            <Button Classes="danger" Command="{Binding DiscardAndLeaveCommand}" c:ActionRow.Priority="1"
                     ToolTip.Tip="{x:Static loc:Strings.Common_Discard}">
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <PathIcon Data="{StaticResource Icon.delete}" />

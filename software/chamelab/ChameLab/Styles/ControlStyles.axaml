@@ -1,4 +1,5 @@
 <Styles xmlns="https://github.com/avaloniaui"
+        xmlns:b="using:ChameLab.Behaviors"
         xmlns:c="using:ChameLab.Controls"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
  xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui">
@@ -222,9 +223,16 @@
   <!-- The theme fills disabled buttons with its disabled brush, near black in the dark theme and
        darker than the surrounding surface. Keep each button's own fill and border instead; the
        disabled text color is enough to show the state. -->
-  <Style Selector=":is(Button):disabled /template/ ContentPresenter">
+  <Style Selector=":is(Button):not(DropDownButton):disabled /template/ ContentPresenter">
     <Setter Property="Background" Value="{Binding $parent[Button].Background}" />
     <Setter Property="BorderBrush" Value="{Binding $parent[Button].BorderBrush}" />
+  </Style>
+  <!-- Drop-down buttons draw their fill on a root Border#border instead, with the content presenters
+       inside it: filling those would paint square corners over the rounded border, so the fix goes
+       on the Border. -->
+  <Style Selector="DropDownButton:disabled /template/ Border#border">
+    <Setter Property="Background" Value="{Binding $parent[DropDownButton].Background}" />
+    <Setter Property="BorderBrush" Value="{Binding $parent[DropDownButton].BorderBrush}" />
   </Style>
   <Style Selector="Button > StackPanel > PathIcon">
     <Setter Property="Width" Value="16" />
@@ -641,6 +649,19 @@
   <Style Selector="ListBox.nav Border.navrow.droptarget">
     <Setter Property="Background" Value="{actipro:ThemeResource Container3BackgroundBrush}" />
   </Style>
+  <!-- A folder's arrow points down while the folders in it are listed under it. -->
+  <Style Selector="Button.folderexpander PathIcon">
+    <Setter Property="Opacity" Value="0.7" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" />
+      </Transitions>
+    </Setter>
+    <Setter Property="RenderTransform" Value="rotate(0deg)" />
+  </Style>
+  <Style Selector="Button.folderexpander.expanded PathIcon">
+    <Setter Property="RenderTransform" Value="rotate(90deg)" />
+  </Style>
   <!-- Folders without cards are dimmed (the name, icon and count; not the rename / delete buttons). -->
   <Style Selector="Grid.folderrow PathIcon.foldericon">
     <Setter Property="Opacity" Value="0.75" />
@@ -782,8 +803,21 @@
   <Style Selector="Button.foldertile.empty PathIcon.foldericon">
     <Setter Property="Opacity" Value="0.35" />
   </Style>
-  <Style Selector="Button.foldertile.empty TextBlock.foldername, Button.foldertile.empty TextBlock.foldercount">
+  <Style Selector="Button.foldertile.empty TextBlock.foldername, Button.foldertile.empty Border.foldercount">
     <Setter Property="Opacity" Value="0.45" />
+  </Style>
+  <!-- A folder tile's count: the number alone, framed. -->
+  <Style Selector="Button.foldertile Border.foldercount">
+    <Setter Property="BorderBrush" Value="{actipro:ThemeResource Container3BorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="6,1" />
+    <Setter Property="MinWidth" Value="24" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.foldertile Border.foldercount > TextBlock">
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="TextAlignment" Value="Center" />
   </Style>
   <Style Selector="Button.cardtile > Border.cardclip">
     <Setter Property="CornerRadius" Value="10.5" />
@@ -919,6 +953,9 @@
   <Style Selector="Grid.cardsplit.single Button.backonly">
     <Setter Property="IsVisible" Value="True" />
   </Style>
+  <Style Selector="Button.backonly.keepback">
+    <Setter Property="IsVisible" Value="True" />
+  </Style>
 
   <!-- Color palette (a ListBox of swatches, usually in a flyout). -->
   <Style Selector="Border.swatch">
@@ -966,6 +1003,24 @@
     <Setter Property="Margin" Value="-7,0,0,0" />
     <Setter Property="MinHeight" Value="0" />
   </Style>
+  <!-- The open folder's title (Cards, Dictionaries) being renamed: as big as the title it replaces. -->
+  <Style Selector="TextBox.titlebox.foldertitle">
+    <Setter Property="FontSize" Value="24" />
+    <!-- Frame and padding outside the text (border 1 + padding), so the letters stay where the title's were. -->
+    <Setter Property="Padding" Value="6,2" />
+    <Setter Property="Margin" Value="-7,-3" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <!-- The open folder's title is renamed by a click on it. -->
+  <Style Selector="TextBlock.h1.renamable">
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="TextBlock.h1.renamable:pointerover">
+    <Setter Property="TextDecorations" Value="Underline" />
+  </Style>
+  <Style Selector="Panel.renaming > TextBlock.h1">
+    <Setter Property="Opacity" Value="0" />
+  </Style>
   <Style Selector="TextBox.titlebox:pointerover">
     <Setter Property="BorderBrush" Value="{actipro:ThemeResource Container1BorderBrush}" />
   </Style>
@@ -993,6 +1048,10 @@
     <Setter Property="CornerRadius" Value="12" />
     <Setter Property="Padding" Value="14,10" />
     <Setter Property="Margin" Value="0,12,0,0" />
+  </Style>
+  <!-- Appearing under the page shortens it: keep the field being edited in view. -->
+  <Style Selector="Border.savebar:not(.dialog)">
+    <Setter Property="b:KeepFocusInView.IsEnabled" Value="True" />
   </Style>
   <!-- A question floating over the dimmed details instead of sitting in the bar. -->
   <Style Selector="Border.savebar.dialog">
@@ -1109,7 +1168,7 @@
   <!-- ==================== Compact (phone-width) overrides ==================== -->
   <!-- MainView adds the "compact" class to itself below its width threshold. -->
 
-  <Style Selector="c|AppBarGrid.hide-summary :is(Control).header-summary, c|AppBarGrid.hide-logo :is(Control).header-logo, c|AppBarGrid.hide-connection-label :is(Control).header-connection-label, c|AppBarGrid.hide-disconnect-label :is(Control).header-disconnect-label">
+  <Style Selector="c|AppBarGrid.hide-logo :is(Control).header-logo, c|AppBarGrid.hide-connection-label :is(Control).header-connection-label, c|AppBarGrid.hide-disconnect-label :is(Control).header-disconnect-label">
     <Setter Property="IsVisible" Value="False" />
   </Style>
   <Style Selector="c|AppBarGrid.hide-disconnect-label Button.header-disconnect">

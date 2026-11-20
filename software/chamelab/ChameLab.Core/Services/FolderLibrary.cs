@@ -26,12 +26,33 @@ public sealed class FolderLibrary
         }
         catch (Exception ex) { _folders.Clear(); LoadError = ex.Message; }
     }
-    public void Replace(IEnumerable<SavedFolder> folders)
+    public void Replace(IEnumerable<SavedFolder> folders) => Commit(folders, new Dictionary<string, string>());
+
+    // The folder tree and its object references are one logical write. Keep the old serialized
+    // values until every store write succeeds; publish the in-memory tree only afterwards.
+    internal void Commit(IEnumerable<SavedFolder> folders, IReadOnlyDictionary<string, string> values)
     {
         if (LoadError is { } error) throw new InvalidOperationException(error);
-        var replacement = folders.ToList(); _ = SavedFolder.Paths(replacement);
-        _store.Write(_key, new JsonArray(replacement.Select(f => (JsonNode)f.ToJson()).ToArray()).ToJsonString());
+        var replacement = folders.ToList();
+        _ = SavedFolder.Paths(replacement);
+        var writes = new Dictionary<string, string>(values)
+        {
+            [_key] = new JsonArray(replacement.Select(f => (JsonNode)f.ToJson()).ToArray()).ToJsonString(),
+        };
+        var old = writes.Keys.ToDictionary(k => k, k => _store.Read(k));
+        var attempted = new List<string>();
+        try
+        {
+            foreach (var (key, value) in writes) { attempted.Add(key); _store.Write(key, value); }
+        }
+        catch
+        {
+            foreach (var key in attempted.AsEnumerable().Reverse()) _store.Write(key, old[key] ?? "[]");
+            throw;
+        }
         _folders = replacement;
     }
+    internal void Accept(FolderLibrary source) => _folders = source.Items.ToList();
+
     public JsonArray ToJson() => new(_folders.Select(f => (JsonNode)f.ToJson()).ToArray());
 }

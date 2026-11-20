@@ -139,6 +139,9 @@ public class ActionRow : Panel
             order[i].Measure(Size.Infinity);
             height = Math.Max(height, order[i].DesiredSize.Height);
         }
+        // The buttons' sizes may have changed while the row keeps its place, and Avalonia only
+        // arranges a control again when its place changes or its arrange is invalid.
+        InvalidateArrange();
         return new Size(Math.Min(width, limit), Wrap ? LayoutRows(limit, arrange: false) : height);
     }
 

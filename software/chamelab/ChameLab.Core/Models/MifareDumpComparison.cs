@@ -12,17 +12,17 @@ public sealed record MifareDumpComparison(bool IdentityMatches, int EqualBytes, 
     int UnknownBytes, IReadOnlyList<MifareBlockDifference> Blocks)
 {
     public static bool CanCompare(CardSave left, CardSave right) =>
-        left.Tag.IsMifareClassic() && left.Tag == right.Tag;
+        DumpComparison.CanCompare(left, right);
 
     public static MifareDumpComparison Compare(CardSave left, CardSave right)
     {
         if (!CanCompare(left, right)) throw new ArgumentException("Matching MIFARE Classic capacities are required.");
         var equal = 0; var different = 0; var unknown = 0;
         var differences = new List<MifareBlockDifference>();
-        for (var block = 0; block < left.Tag.MifareClassicBlocks(); block++)
+        for (var block = 0; block < Math.Max(left.Tag.IsMifareClassic() ? left.Tag.MifareClassicBlocks() : left.Data.Count, right.Tag.IsMifareClassic() ? right.Tag.MifareClassicBlocks() : right.Data.Count); block++)
         {
             var blockDifferent = 0; var blockUnknown = 0;
-            for (var column = 0; column < 16; column++)
+            for (var column = 0; column < (left.Tag.IsMifareClassic() ? 16 : 4); column++)
             {
                 if (!Known(left, block, column) || !Known(right, block, column)) blockUnknown++;
                 else if (left.Data[block][column] != right.Data[block][column]) blockDifferent++;
@@ -36,10 +36,10 @@ public sealed record MifareDumpComparison(bool IdentityMatches, int EqualBytes, 
             equal, different, unknown, differences);
     }
 
-    private static bool Known(CardSave card, int block, int column)
+    public static bool Known(CardSave card, int block, int column)
     {
-        if (block >= card.Data.Count || card.Data[block].Length != 16) return false;
-        if (!MifareClassic.IsTrailer(block)) return true;
+        if (block >= card.Data.Count || card.Data[block].Length != (card.Tag.IsMifareClassic() ? 16 : 4)) return false;
+        if (!card.Tag.IsMifareClassic() || !MifareClassic.IsTrailer(block)) return true;
         var sector = MifareClassic.SectorOfBlock(block);
         return column switch
         {

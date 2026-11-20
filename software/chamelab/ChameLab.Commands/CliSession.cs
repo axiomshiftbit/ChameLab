@@ -61,6 +61,19 @@ public sealed partial class CliSession : IAsyncDisposable
 
     public async Task<int> ExecuteAsync(string command, CancellationToken ct = default)
     {
+        var connection = _connection;
+        if (!_ownsConnection && connection is { IsClosed: false })
+        {
+            var result = 0;
+            try { await connection.RunExclusiveAsync(async () => result = await ExecuteCoreAsync(command, ct), ct); }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested) { return 130; }
+            return result;
+        }
+        return await ExecuteCoreAsync(command, ct);
+    }
+
+    private async Task<int> ExecuteCoreAsync(string command, CancellationToken ct)
+    {
         try
         {
             if (string.IsNullOrWhiteSpace(command)) return 0;

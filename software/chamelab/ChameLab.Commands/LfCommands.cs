@@ -17,7 +17,7 @@ public sealed partial class CliSession
         ("viking", TagSpecificType.Viking, 3004, 3005),
         ("jablotron", TagSpecificType.Jablotron, 3019, 3020),
         ("idteck", TagSpecificType.Idteck, 0, 3018),
-        ("pyramid", TagSpecificType.FarpointePyramid, 3021, 0)
+        ("pyramid", TagSpecificType.FarpointePyramid, 3021, (int)Command.LfT55xxWrite)
     ];
 
     private partial void RegisterLf()
@@ -55,6 +55,11 @@ public sealed partial class CliSession
                 PrintLf(family.Type, await Client.GetLfEmulatorIdAsync(family.Type, ct));
             });
         }
+        Add("lf search", async (_, ct) =>
+        {
+            var tag = await Client.LfAutoScanAsync(ct);
+            PrintLf(tag.Type, tag.Id);
+        });
         Add("lf em 4x05 read", async (a, ct) =>
         {
             var data = await Wire(3030, a.Has("pwd") ? a.Hex("pwd", 4) : U32(0), ct, 5000);
@@ -125,6 +130,12 @@ public sealed partial class CliSession
 
     private async Task WriteLf(TagSpecificType type, int command, byte[] id, CancellationToken ct)
     {
+        if (type == TagSpecificType.FarpointePyramid)
+        {
+            await Client.WriteLfToT55xxAsync(type, id, ct: ct);
+            Print("Pyramid frame written to T55xx and verified.");
+            return;
+        }
         var expected = type.LfIdLength();
         if (id.Length != expected) throw new ArgumentException($"{type} requires {expected} ID bytes.");
         await Wire(command, [.. id, .. ChameleonClient.DefaultT55xxKey, .. ChameleonClient.DefaultT55xxOldKeys.SelectMany(k => k)], ct, 5000);
@@ -153,6 +164,7 @@ public sealed partial class CliSession
                 return Encoding.ASCII.GetBytes(card);
             case TagSpecificType.FarpointePyramid:
                 if (a.Has("raw")) return a.Hex("raw", 16);
+                if (a.Has("id")) return a.Hex("id", 16);
                 if (!a.Has("fc") || !a.Has("cn")) throw new ArgumentException("Provide both --fc and --cn, or --raw.");
                 return PyramidFrame.Encode26(B(a.Int("fc")), checked((ushort)a.Int("cn")));
             case TagSpecificType.Idteck:

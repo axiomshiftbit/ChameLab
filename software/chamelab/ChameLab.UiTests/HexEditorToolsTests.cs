@@ -47,6 +47,30 @@ public class HexEditorToolsTests
     }
 
     [AvaloniaFact]
+    public void TextInputAndEnterKeepFixedMemoryBoundsAndReadonlyBytes()
+    {
+        var buffer = new HexBuffer([new byte[4], new byte[4]], 4);
+        var editor = new HexEditor { Buffer = buffer };
+        var window = Show(editor);
+        try
+        {
+            editor.GoTo(0);
+            editor.RaiseEvent(new TextInputEventArgs { RoutedEvent = InputElement.TextInputEvent, Text = "A5" });
+            Assert.Equal(0xA5, buffer[0L]);
+            editor.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.Enter });
+            editor.RaiseEvent(new TextInputEventArgs { RoutedEvent = InputElement.TextInputEvent, Text = "B6" });
+            Assert.Equal(0xB6, buffer[4L]);
+            Assert.Equal(8, buffer.Length);
+            buffer = new HexBuffer([new byte[4], new byte[4]], 4) { IsReadOnly = true };
+            editor.Buffer = buffer;
+            editor.GoTo(5);
+            editor.RaiseEvent(new TextInputEventArgs { RoutedEvent = InputElement.TextInputEvent, Text = "FF" });
+            Assert.Equal(0, buffer[5L]);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
     public async Task ExactSelectionAtomicPasteAndUndoWorkWithoutKeyboard()
     {
         var buffer = new HexBuffer([new byte[] { 1, 2, 3, 4 }], 4);

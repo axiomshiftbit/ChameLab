@@ -29,18 +29,37 @@ public sealed class DictionaryLibrary
 
     public string? LoadError { get; private set; }
 
-    public void ReplaceFolders(IEnumerable<SavedFolder> folders)
+    public void ReplaceFolders(IEnumerable<SavedFolder> folders, IReadOnlyDictionary<string, string?>? assignments = null)
     {
         if (LoadError is { } error) throw new InvalidOperationException(error);
-        FolderTree.Replace(folders);
-        var paths = FolderTree.Paths;
-        foreach (var dictionary in _dicts.Where(d => d.FolderId is not null))
+        var replacement = folders.ToList();
+        var paths = SavedFolder.Paths(replacement);
+        var values = _dicts.Select(item =>
         {
-            dictionary.Folder = paths.GetValueOrDefault(dictionary.FolderId!) ?? "";
-            if (!paths.ContainsKey(dictionary.FolderId!)) dictionary.FolderId = null;
-        }
-        Save();
+            var id = assignments is not null && assignments.TryGetValue(item.Id, out var chosen) ? chosen : item.FolderId;
+            var path = id is not null ? paths.GetValueOrDefault(id) ?? "" : assignments is not null && assignments.ContainsKey(item.Id) ? "" : item.Folder;
+            if (id is not null && !paths.ContainsKey(id)) id = null;
+            return (Item: item, Id: id, Path: path);
+        }).ToList();
+        var json = new JsonArray(values.Select(v =>
+        {
+            var node = v.Item.ToJson(); node["folderId"] = v.Id; node["folder"] = v.Path;
+            return (JsonNode)node;
+        }).ToArray());
+        var writes = new Dictionary<string, string> { [StoreKey] = json.ToJsonString() };
+        FolderTree.Commit(replacement, writes);
+        foreach (var value in values) { value.Item.FolderId = value.Id; value.Item.Folder = value.Path; }
+        Changed?.Invoke();
     }
+
+    internal IKeyValueStore Store => _store;
+    internal void Accept(DictionaryLibrary source)
+    {
+        _dicts.Clear(); _dicts.AddRange(source.Dictionaries);
+        FolderTree.Accept(source.FolderTree);
+        KnownKeys.Accept(source.KnownKeys);
+    }
+    internal void NotifyImport() => Changed?.Invoke();
 
     public event Action? Changed;
 
@@ -113,6 +132,14 @@ public sealed class DictionaryLibrary
             changed = true;
         }
         if (changed) Save();
+    }
+
+    public void MoveToFolder(KeyDictionary dictionary, string folder)
+    {
+        var browser = new FolderBrowserLibrary(this);
+        if (folder.Length > 0 && browser.FindFolder(folder) is null) browser.AddFolder(folder);
+        var id = FolderTree.Paths.FirstOrDefault(p => FolderPath.Same(p.Value, FolderPath.Normalize(folder))).Key;
+        ReplaceFolders(FolderTree.Items, new Dictionary<string, string?> { [dictionary.Id] = id });
     }
 
     public void Remove(KeyDictionary dict)

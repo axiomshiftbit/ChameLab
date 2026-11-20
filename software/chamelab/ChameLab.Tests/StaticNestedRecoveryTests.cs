@@ -28,14 +28,14 @@ public class StaticNestedRecoveryTests
 
     [Theory]
     [InlineData(0x01200145u, MfKeyType.A, 160)]
-    [InlineData(0x01200145u, MfKeyType.A, 161)]
     [InlineData(0x01200145u, MfKeyType.B, 160)]
+    [InlineData(0x01200145u, MfKeyType.A, 161)]
     [InlineData(0x01200145u, MfKeyType.B, 161)]
     [InlineData(0x009080A2u, MfKeyType.A, 160)]
     [InlineData(0x009080A2u, MfKeyType.A, 161)]
     [InlineData(0x009080A2u, MfKeyType.B, 160)]
     [InlineData(0x009080A2u, MfKeyType.B, 161)]
-    public void SupportedNonceOffsets_RecoversKnownKey(uint nonce, MfKeyType type, int distance)
+    public void SupportedNonceOffsets_RecoversKnownKeyRegardlessOfSeedType(uint nonce, MfKeyType type, int distance)
     {
         const uint uid = 0x12345678;
         const ulong key = 0xA0A1A2A3A4A5;

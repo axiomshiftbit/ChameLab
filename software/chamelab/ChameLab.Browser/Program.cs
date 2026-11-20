@@ -19,7 +19,8 @@ internal sealed partial class Program
         var scanners = new List<ITransportScanner> { new WebSerialScanner() };
         if (bluetooth) scanners.Add(new WebBluetoothScanner());
         AppServices.Register(scanners, new LocalStorageStore(), feedback: new WebFeedbackPlayer(),
-            hardnested: new WebHardnestedEngine(), keyRecovery: new WebKeyRecoveryEngine(), wakeLock: new WakeLockService(WebWakeLock.AcquireAsync));
+            hardnested: new WebHardnestedEngine(), keyRecovery: new WebKeyRecoveryEngine(), wakeLock: new WakeLockService(WebWakeLock.AcquireAsync), qrCamera: WebQrCamera.IsAvailable() ? new WebQrCamera() : null);
+        if (args.Length > 0 && ChameLab.Models.CardQr.TryParse(args[0], out _)) AppLinks.Pending = args[0];
 
         return BuildAvaloniaApp()
             .WithInterFont()
@@ -32,6 +33,7 @@ internal sealed partial class Program
                 _ = WebSerialInterop.EnsureModuleAsync();
                 if (bluetooth) _ = WebBluetoothInterop.EnsureModuleAsync();
                 _ = WebFeedbackInterop.EnsureModuleAsync();
+                _ = WebHistoryGuard.InstallAsync();
             })
             // NOTE: Avalonia DevTools is not WebAssembly-safe (uses System.Diagnostics.Process),
             // so it is intentionally not attached for the browser head.

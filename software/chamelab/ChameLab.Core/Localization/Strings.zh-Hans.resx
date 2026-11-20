@@ -724,7 +724,7 @@
     <value>保存此卡片的副本</value>
   </data>
   <data name="Cards_SaveAsJSONCompatibleWithThe" xml:space="preserve">
-    <value>另存为 JSON（与 Flutter 应用兼容）</value>
+    <value>另存为 JSON（与 ChameleonUltraGUI兼容）</value>
   </data>
   <data name="Cards_SaveNewBeforeLeaving" xml:space="preserve">
     <value>离开前保存新卡片？</value>
@@ -2023,7 +2023,7 @@
     <value>已连接设备</value>
   </data>
   <data name="Main_DeviceSummary" xml:space="preserve">
-    <value>{0} · 固件 {1}</value>
+    <value>{0} {1}</value>
   </data>
   <data name="Main_Disconnect" xml:space="preserve">
     <value>断开连接</value>
@@ -2059,7 +2059,7 @@
     <value>未连接</value>
   </data>
   <data name="Main_Offline" xml:space="preserve">
-    <value>离线</value>
+    <value>无设备</value>
   </data>
   <data name="Main_Online" xml:space="preserve">
     <value>在线</value>
@@ -2254,7 +2254,7 @@
     <value>{0} 张卡片</value>
   </data>
   <data name="Plural_DeletedFolderCards" xml:space="preserve">
-    <value>已删除文件夹 {1}；其中的 {0} 张卡片仍在“卡片”中。</value>
+    <value>已删除文件夹 {1}；其中的 {0} 张卡片已移到 {2}。</value>
   </data>
   <data name="Plural_Dictionaries" xml:space="preserve">
     <value>{0} 个字典</value>
@@ -2530,7 +2530,7 @@
     <value>开始 mfkey32 前，请先扫描目标卡。</value>
   </data>
   <data name="Recovery_SectorKeyDetail" xml:space="preserve">
-    <value>扇区 {0} · 密钥 {1} · {2}</value>
+    <value>扇区 {0}{1} · {2}</value>
   </data>
   <data name="Recovery_SectorKeyProgress" xml:space="preserve">
     <value>扇区 {0} · 密钥 {1} · {2}/{3}</value>
@@ -2665,7 +2665,7 @@
     <value>默认</value>
   </data>
   <data name="Slots_DragCardsToChangeTheOrder" xml:space="preserve">
-    <value>拖动卡片以更改顺序。每当读卡器的场出现时，设备会依次发送下一张卡。</value>
+    <value>拖动卡片以更改顺序。</value>
   </data>
   <data name="Slots_EmptySlot" xml:space="preserve">
     <value>空卡槽</value>
@@ -4020,5 +4020,545 @@
   </data>
   <data name="Dictionaries_KnownPassword" xml:space="preserve">
     <value>密码</value>
+  </data>
+  <data name="Cards_GenerateRandomUid" xml:space="preserve">
+    <value>生成随机 UID</value>
+  </data>
+  <data name="Cards_CardFileCompatibleWithChameleonUltraGui" xml:space="preserve">
+    <value>卡片文件，与 ChameleonUltraGUI兼容</value>
+  </data>
+  <data name="Device_NoLfTag" xml:space="preserve">
+    <value>没有 LF 标签：{0}</value>
+  </data>
+  <data name="Main_SupportUs" xml:space="preserve">
+    <value>在 {0} 上支持我们</value>
+  </data>
+  <data name="Slots_SwitchCards" xml:space="preserve">
+    <value>切换卡片</value>
+  </data>
+  <data name="Slots_CyclePerField" xml:space="preserve">
+    <value>每次触碰</value>
+  </data>
+  <data name="Slots_CycleWhilePresent" xml:space="preserve">
+    <value>在场内</value>
+  </data>
+  <data name="Slots_CyclePerFieldHint" xml:space="preserve">
+    <value>每次读卡器的场出现时，设备依次发送下一张卡。要切换，请将设备移开读卡器后再靠近。</value>
+  </data>
+  <data name="Slots_CycleWhilePresentHint" xml:space="preserve">
+    <value>读卡器的场存在时，设备依次发送各张卡。它会记住最后发送的卡，下次从这张卡开始。</value>
+  </data>
+  <data name="Slots_TimePerCardBursts" xml:space="preserve">
+    <value>每张卡时长（突发）</value>
+  </data>
+  <data name="Slots_TimePerCardTip" xml:space="preserve">
+    <value>每张卡 1–10 次突发；一次突发为卡的十帧：EM410x 约 0.33 秒，其他类型为 0.16（Viking、IDTECK）至 0.66（Electra、Jablotron）秒</value>
+  </data>
+  <data name="Slots_OneBurstByCardType" xml:space="preserve">
+    <value>一次突发 ≈ 0.16–0.66 秒（视类型而定）。</value>
+  </data>
+  <data name="Slots_SilenceBetweenCardsS" xml:space="preserve">
+    <value>卡片间静默，秒</value>
+  </data>
+  <data name="Slots_CollectNonces" xml:space="preserve">
+    <value>收集 nonce</value>
+  </data>
+  <data name="Dictionaries_Type" xml:space="preserve">
+    <value>字典类型</value>
+  </data>
+  <data name="Tools_T55xxPassword" xml:space="preserve">
+    <value>更改 T55XX 密码</value>
+  </data>
+  <data name="Tools_T55xxDictionaryHint" xml:space="preserve">
+    <value>尝试字典中的密码</value>
+  </data>
+  <data name="Tools_Console" xml:space="preserve">
+    <value>控制台</value>
+  </data>
+  <data name="Tools_ConsoleHint" xml:space="preserve">
+    <value>命令行客户端的命令</value>
+  </data>
+  <data name="Tools_ConsoleIntro" xml:space="preserve">
+    <value>在已连接的 Chameleon 上运行命令行客户端的命令。输入 help 查看列表，或在命令后加 --help 查看其选项。</value>
+  </data>
+  <data name="Tools_ConsoleFolder" xml:space="preserve">
+    <value>未写完整路径的文件保存在 {0}</value>
+  </data>
+  <data name="Tools_ConsolePlaceholder" xml:space="preserve">
+    <value>输入命令，按 Tab 补全</value>
+  </data>
+  <data name="Tools_ConsolePlaceholderTouch" xml:space="preserve">
+    <value>输入命令；点按提示即可添加</value>
+  </data>
+  <data name="Tools_ConsoleFilesInApp" xml:space="preserve">
+    <value>命令保存的文件保留在此设备上的 ChameLab 内。</value>
+  </data>
+  <data name="Tools_ConsoleFilesBrowser" xml:space="preserve">
+    <value>命令保存的文件保留在此页面中，重新加载页面后会丢失。</value>
+  </data>
+  <data name="Tools_ConsoleRun" xml:space="preserve">
+    <value>运行</value>
+  </data>
+  <data name="Tools_ConsoleWrap" xml:space="preserve">
+    <value>换行</value>
+  </data>
+  <data name="Tools_ConsoleAutoscroll" xml:space="preserve">
+    <value>滚动</value>
+  </data>
+  <data name="Tools_ConsoleChooseFolder" xml:space="preserve">
+    <value>选择命令文件所用的文件夹</value>
+  </data>
+  <data name="Tools_ConsoleDefaultFolder" xml:space="preserve">
+    <value>使用默认文件夹</value>
+  </data>
+  <data name="Tools_FromTheConsole" xml:space="preserve">
+    <value>来自控制台</value>
+  </data>
+  <data name="Tools_T55xxDescription" xml:space="preserve">
+    <value>将 T55XX 标签放在读卡器上。通过写入并读取不同的 ID 来验证密钥。找到有效密钥后，恢复原始 ID 并设置新密码。</value>
+  </data>
+  <data name="Tools_T55xxNewKey" xml:space="preserve">
+    <value>新密钥（4 字节，十六进制）</value>
+  </data>
+  <data name="Tools_T55xxDefaultKeyHint" xml:space="preserve">
+    <value>留空则使用 20206666。</value>
+  </data>
+  <data name="Tools_T55xxUnsupported" xml:space="preserve">
+    <value>此固件不支持写入 T55XX 密码。请更新固件；需要 Chameleon Ultra。</value>
+  </data>
+  <data name="Tools_T55xxProgress" xml:space="preserve">
+    <value>已检查密钥：{0} / {1}</value>
+  </data>
+  <data name="Tools_T55xxComplete" xml:space="preserve">
+    <value>已恢复并验证原始 ID。</value>
+  </data>
+  <data name="Tools_T55xxCancelled" xml:space="preserve">
+    <value>已取消。</value>
+  </data>
+  <data name="Tools_T55xxFoundKey" xml:space="preserve">
+    <value>匹配的密钥：{0}</value>
+  </data>
+  <data name="Tools_T55xxUnprotected" xml:space="preserve">
+    <value>标签未受密码保护。</value>
+  </data>
+  <data name="Tools_T55xxNotFound" xml:space="preserve">
+    <value>未找到</value>
+  </data>
+  <data name="Tools_T55xxNotSet" xml:space="preserve">
+    <value>未设置</value>
+  </data>
+  <data name="Tools_T55xxNoMatch" xml:space="preserve">
+    <value>所选字典中没有匹配的密钥。</value>
+  </data>
+  <data name="Tools_T55xxReadOriginalFailed" xml:space="preserve">
+    <value>无法读取支持的 LF ID。请将标签留在读卡器上。</value>
+  </data>
+  <data name="Tools_T55xxProbeFailed" xml:space="preserve">
+    <value>无法验证测试 ID。搜索已停止，并已尝试恢复原始 ID。</value>
+  </data>
+  <data name="Tools_T55xxRestoreFailed" xml:space="preserve">
+    <value>无法恢复 {0} ID {1}。候选密钥：{2}；新密钥：{3}。请保存此 ID 和两个密钥以便恢复。{4}</value>
+  </data>
+  <data name="Tools_T55xxOriginalId" xml:space="preserve">
+    <value>原始 {0} ID：{1}</value>
+  </data>
+  <data name="Dictionaries_KeyLength" xml:space="preserve">
+    <value>密钥长度（字节）</value>
+  </data>
+  <data name="Dictionaries_AllKeyLengths" xml:space="preserve">
+    <value>所有密钥长度</value>
+  </data>
+  <data name="Dictionaries_InvalidKeyLength" xml:space="preserve">
+    <value>密钥长度必须为4到16字节。</value>
+  </data>
+  <data name="Dictionaries_BadKeyLine" xml:space="preserve">
+    <value>第{0}行：需要{1}字节的十六进制密钥。</value>
+  </data>
+  <data name="Plural_Bytes" xml:space="preserve">
+    <value>{0} 字节</value>
+  </data>
+  <data name="Hex_InsertByte" xml:space="preserve">
+    <value>插入字节</value>
+  </data>
+  <data name="Hex_DeleteBytes" xml:space="preserve">
+    <value>删除字节</value>
+  </data>
+  <data name="Hex_TypeToAddByte" xml:space="preserve">
+    <value>输入以添加字节</value>
+  </data>
+  <data name="Dictionaries_KeyTooShort" xml:space="preserve">
+    <value>密钥 {0} 短于 {1} 字节</value>
+  </data>
+  <data name="Tools_T55xxKeepKey" xml:space="preserve">
+    <value>保留</value>
+  </data>
+  <data name="Tools_T55xxKeepKeyHint" xml:space="preserve">
+    <value>保留当前密码和保护模式。</value>
+  </data>
+  <data name="Tools_T55xxSetNewKey" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="Tools_T55xxCurrentKey" xml:space="preserve">
+    <value>当前密钥</value>
+  </data>
+  <data name="Tools_T55xxKnowKey" xml:space="preserve">
+    <value>已知</value>
+  </data>
+  <data name="Tools_T55xxDictionaryAttack" xml:space="preserve">
+    <value>字典攻击</value>
+  </data>
+  <data name="Tools_T55xxKnownKey" xml:space="preserve">
+    <value>已知密码</value>
+  </data>
+  <data name="Tools_T55xxNewKeyTitle" xml:space="preserve">
+    <value>新密钥</value>
+  </data>
+  <data name="Tools_T55xxDefaultKeyWillBeSet" xml:space="preserve">
+    <value>将设置默认密钥 {0}。</value>
+  </data>
+  <data name="Tools_T55xxUid" xml:space="preserve">
+    <value>UID</value>
+  </data>
+  <data name="Tools_T55xxFound" xml:space="preserve">
+    <value>找到</value>
+  </data>
+  <data name="Tools_T55xxNew" xml:space="preserve">
+    <value>新密钥</value>
+  </data>
+  <data name="Cards_SaveKeys" xml:space="preserve">
+    <value>保存密钥</value>
+  </data>
+  <data name="Cards_SaveTheCardsKeys" xml:space="preserve">
+    <value>将卡片的密钥保存到剪贴板、字典或文件</value>
+  </data>
+  <data name="Cards_KeysToClipboard" xml:space="preserve">
+    <value>复制到剪贴板</value>
+  </data>
+  <data name="Cards_KeysToDictionary" xml:space="preserve">
+    <value>添加到字典</value>
+  </data>
+  <data name="Cards_ExportKeysTitle" xml:space="preserve">
+    <value>保存密钥（.dic）</value>
+  </data>
+  <data name="Cards_KeysCopied" xml:space="preserve">
+    <value>已复制 {0}。</value>
+  </data>
+  <data name="Cards_KeysAddedTo" xml:space="preserve">
+    <value>已将 {0} 添加到“{1}”。</value>
+  </data>
+  <data name="Cards_KeysAlreadyInDictionary" xml:space="preserve">
+    <value>“{0}”已包含所有这些密钥。</value>
+  </data>
+  <data name="Cards_KeysSavedToNewDictionary" xml:space="preserve">
+    <value>已创建字典“{1}”：{0}。</value>
+  </data>
+  <data name="Plural_T55xxPasswords" xml:space="preserve">
+    <value> · {0} 个 T55XX 密码</value>
+  </data>
+  <data name="Relay_DisplayName" xml:space="preserve">
+    <value>共享设备 {0}</value>
+  </data>
+  <data name="Relay_Network" xml:space="preserve">
+    <value>共享设备（互联网）</value>
+  </data>
+  <data name="Relay_InvalidCode" xml:space="preserve">
+    <value>没有设备使用此代码共享。请检查代码或索取新代码。</value>
+  </data>
+  <data name="Relay_Busy" xml:space="preserve">
+    <value>已有其他人连接到此共享设备。</value>
+  </data>
+  <data name="Relay_HostLeft" xml:space="preserve">
+    <value>共享设备已不可用：对方已停止共享。</value>
+  </data>
+  <data name="Relay_Closed" xml:space="preserve">
+    <value>与中继服务器的连接已断开。</value>
+  </data>
+  <data name="Relay_Unreachable" xml:space="preserve">
+    <value>无法连接到中继服务器 {0}。</value>
+  </data>
+  <data name="Relay_UnexpectedReply" xml:space="preserve">
+    <value>中继服务器返回了意外的响应。</value>
+  </data>
+  <data name="Relay_InvalidCodeFormat" xml:space="preserve">
+    <value>代码格式为 TR1-ABCD-1234：服务器名，后跟 8 个字母和数字。</value>
+  </data>
+  <data name="Share_AlreadySharing" xml:space="preserve">
+    <value>已在共享一台设备。</value>
+  </data>
+  <data name="Share_NotLocal" xml:space="preserve">
+    <value>只能共享连接到这台电脑的设备。</value>
+  </data>
+  <data name="Share_DeviceLost" xml:space="preserve">
+    <value>共享的设备已从这台电脑断开。</value>
+  </data>
+  <data name="Connect_SharedDevice" xml:space="preserve">
+    <value>连接到共享设备</value>
+  </data>
+  <data name="Connect_SharedDeviceHint" xml:space="preserve">
+    <value>输入共享 Chameleon 的人在 ChameLab 中看到的代码。</value>
+  </data>
+  <data name="Share_Title" xml:space="preserve">
+    <value>共享此设备</value>
+  </data>
+  <data name="Share_Hint" xml:space="preserve">
+    <value>让他人通过互联网从另一台电脑使用所选的 Chameleon。对方使用此处显示的代码进行连接。</value>
+  </data>
+  <data name="Share_Warning" xml:space="preserve">
+    <value>拥有代码的人在你停止共享之前可以完全控制设备。</value>
+  </data>
+  <data name="Share_Start" xml:space="preserve">
+    <value>共享</value>
+  </data>
+  <data name="Share_Stop" xml:space="preserve">
+    <value>停止共享</value>
+  </data>
+  <data name="Share_Starting" xml:space="preserve">
+    <value>正在启动…</value>
+  </data>
+  <data name="Share_Waiting" xml:space="preserve">
+    <value>正在等待连接…</value>
+  </data>
+  <data name="Share_PeerConnected" xml:space="preserve">
+    <value>有人已连接并正在使用设备。</value>
+  </data>
+  <data name="Share_CodeLabel" xml:space="preserve">
+    <value>共享代码</value>
+  </data>
+  <data name="Relay_UnknownRegion" xml:space="preserve">
+    <value>代码以 {0} 开头，但没有该名称的中继服务器。</value>
+  </data>
+  <data name="Relay_NoServers" xml:space="preserve">
+    <value>无法连接任何中继服务器。请检查网络连接。</value>
+  </data>
+  <data name="Tools_FrameTime" xml:space="preserve">
+    <value>+{0:F3} ms</value>
+  </data>
+  <data name="Tools_FrameGap" xml:space="preserve">
+    <value>Δ {0:F1} µs</value>
+  </data>
+  <data name="Tools_FrameTimingHint" xml:space="preserve">
+    <value>从捕获开始计算的时间；Δ 为上一帧结束后的间隔。</value>
+  </data>
+  <data name="Share_TrafficToDevice" xml:space="preserve">
+    <value>发送到设备</value>
+  </data>
+  <data name="Share_TrafficFromDevice" xml:space="preserve">
+    <value>从设备接收</value>
+  </data>
+  <data name="Share_PeerConnectedName" xml:space="preserve">
+    <value>{0} 已连接并正在使用设备。</value>
+  </data>
+  <data name="Main_SelectBootloader" xml:space="preserve">
+    <value>选择引导程序</value>
+  </data>
+  <data name="Firmware_PickBootloaderUsb" xml:space="preserve">
+    <value>正在等待引导程序… 首次需要浏览器获得你的许可：点击“选择引导程序”，然后在列表中选择 Chameleon 的 DFU 端口。</value>
+  </data>
+  <data name="Firmware_PickBootloaderBle" xml:space="preserve">
+    <value>正在等待引导程序… 首次需要浏览器获得你的许可：点击“选择引导程序”，然后在列表中选择名为 CU-…（Lite 为 CL-…）的设备。</value>
+  </data>
+  <data name="Firmware_BootloaderNotPicked" xml:space="preserve">
+    <value>未能及时选择引导程序。如果 LED 4 和 5 在闪烁，设备正在引导程序中等待：点击“重试”并选择它。</value>
+  </data>
+  <data name="Recovery_SkipSector" xml:space="preserve">
+    <value>跳过扇区</value>
+  </data>
+  <data name="Recovery_SkipSectorTip" xml:space="preserve">
+    <value>跳过扇区 {0} 并继续下一个。已找到的密钥将保留。</value>
+  </data>
+  <data name="Recovery_KeyProgress" xml:space="preserve">
+    <value>密钥 {0}/{1}</value>
+  </data>
+  <data name="Qr_Damaged" xml:space="preserve">
+    <value>这些二维码无法组成卡片。请重新扫描。</value>
+  </data>
+  <data name="Qr_PartOf" xml:space="preserve">
+    <value>第 {0} 个，共 {1} 个</value>
+  </data>
+  <data name="Qr_Pause" xml:space="preserve">
+    <value>暂停</value>
+  </data>
+  <data name="Qr_Play" xml:space="preserve">
+    <value>播放</value>
+  </data>
+  <data name="Qr_Previous" xml:space="preserve">
+    <value>上一个二维码</value>
+  </data>
+  <data name="Qr_Next" xml:space="preserve">
+    <value>下一个二维码</value>
+  </data>
+  <data name="Qr_SingleHint" xml:space="preserve">
+    <value>二维码包含卡片数据和已保存的密钥。请仅与可信的人分享。在 ChameLab 中选择“添加卡片 → 二维码”扫描。</value>
+  </data>
+  <data name="Qr_SeriesHint" xml:space="preserve">
+    <value>此卡片使用多个二维码。请在 ChameLab 中扫描全部部分。卡片数据和已保存的密钥未经加密。</value>
+  </data>
+  <data name="Qr_PointAtCode" xml:space="preserve">
+    <value>将相机对准 ChameLab 卡片二维码</value>
+  </data>
+  <data name="Qr_OpenImageTitle" xml:space="preserve">
+    <value>打开二维码图片</value>
+  </data>
+  <data name="Qr_NoCodeInImage" xml:space="preserve">
+    <value>在 {0} 中未找到二维码。</value>
+  </data>
+  <data name="Qr_NotACardCode" xml:space="preserve">
+    <value>此二维码不是 ChameLab 卡片。</value>
+  </data>
+  <data name="Qr_FromQrCode" xml:space="preserve">
+    <value>来自二维码</value>
+  </data>
+  <data name="Qr_CardReceived" xml:space="preserve">
+    <value>已收到卡片</value>
+  </data>
+  <data name="Qr_PartsRead" xml:space="preserve">
+    <value>已读取 {0}/{1} 个二维码。缺少：{2}。</value>
+  </data>
+  <data name="Qr_Share" xml:space="preserve">
+    <value>二维码</value>
+  </data>
+  <data name="Qr_ShareTip" xml:space="preserve">
+    <value>将卡片显示为二维码，供其他手机或电脑扫描</value>
+  </data>
+  <data name="Qr_ShareHeader" xml:space="preserve">
+    <value>以二维码分享</value>
+  </data>
+  <data name="Qr_ScanTile" xml:space="preserve">
+    <value>二维码</value>
+  </data>
+  <data name="Qr_ScanCamera" xml:space="preserve">
+    <value>相机</value>
+  </data>
+  <data name="Qr_ScanImage" xml:space="preserve">
+    <value>从图片</value>
+  </data>
+  <data name="Qr_ScanTip" xml:space="preserve">
+    <value>添加从 ChameLab 以二维码分享的卡片</value>
+  </data>
+  <data name="Qr_ScanImageTip" xml:space="preserve">
+    <value>从截图或照片中读取二维码</value>
+  </data>
+  <data name="Qr_CameraDenied" xml:space="preserve">
+    <value>相机访问被拒绝。请在系统设置中允许，或打开二维码的截图或照片。</value>
+  </data>
+  <data name="Qr_NoCamera" xml:space="preserve">
+    <value>没有可用的相机。请改为打开二维码的截图或照片。</value>
+  </data>
+  <data name="Qr_ScannerUnavailable" xml:space="preserve">
+    <value>此设备上无法使用二维码扫描器（需要 Google Play 服务）。请改为打开二维码的截图或照片。</value>
+  </data>
+  <data name="Compare_Button" xml:space="preserve">
+    <value>比较</value>
+  </data>
+  <data name="Compare_Tip" xml:space="preserve">
+    <value>将这张卡片的内存与另一张已保存的卡片或转储文件进行比较</value>
+  </data>
+  <data name="Compare_Header" xml:space="preserve">
+    <value>比较转储</value>
+  </data>
+  <data name="Compare_Hint" xml:space="preserve">
+    <value>选择一张已保存的卡片或打开转储文件。不同的字节会高亮显示；对这张卡片的修改会立即体现。</value>
+  </data>
+  <data name="Compare_PickCard" xml:space="preserve">
+    <value>要比较的已保存卡片</value>
+  </data>
+  <data name="Compare_OpenFile" xml:space="preserve">
+    <value>文件</value>
+  </data>
+  <data name="Compare_OpenFileTip" xml:space="preserve">
+    <value>与转储文件比较：JSON、Flipper .nfc、MCT、.bin、.eml 及其他导入格式</value>
+  </data>
+  <data name="Compare_OpenFileTitle" xml:space="preserve">
+    <value>打开要比较的转储</value>
+  </data>
+  <data name="Compare_NoCards" xml:space="preserve">
+    <value>没有其他已保存的卡片具有这种内存。请改为打开转储文件。</value>
+  </data>
+  <data name="Compare_Identical" xml:space="preserve">
+    <value>两张卡片完全相同。</value>
+  </data>
+  <data name="Compare_BlocksDiffer" xml:space="preserve">
+    <value>不同的块：{0} / {1}；字节：{2}</value>
+  </data>
+  <data name="Compare_PagesDiffer" xml:space="preserve">
+    <value>不同的页：{0} / {1}；字节：{2}</value>
+  </data>
+  <data name="Compare_OnlyDifferences" xml:space="preserve">
+    <value>仅显示差异</value>
+  </data>
+  <data name="Compare_NotRead" xml:space="preserve">
+    <value>未读取</value>
+  </data>
+  <data name="Compare_FileHasNoMatch" xml:space="preserve">
+    <value>{0} 中没有具有这种内存的卡片。</value>
+  </data>
+  <data name="Common_BackTo" xml:space="preserve">
+    <value>返回 {0}</value>
+  </data>
+  <data name="Common_Move" xml:space="preserve">
+    <value>移动</value>
+  </data>
+  <data name="Common_MoveFolder" xml:space="preserve">
+    <value>将此文件夹移到另一个文件夹</value>
+  </data>
+  <data name="Common_MovedFolder" xml:space="preserve">
+    <value>已将文件夹 {0} 移到 {1}。</value>
+  </data>
+  <data name="Common_NewFolderInside" xml:space="preserve">
+    <value>在其中新建文件夹</value>
+  </data>
+  <data name="Common_ShowOrHideFoldersInside" xml:space="preserve">
+    <value>显示或隐藏其中的文件夹</value>
+  </data>
+  <data name="Common_FolderContentsMoveUp" xml:space="preserve">
+    <value>其中的内容会上移一级</value>
+  </data>
+  <data name="Common_FolderContentsMoveTo" xml:space="preserve">
+    <value>其中的内容不会被删除，全部移到 {0}。</value>
+  </data>
+  <data name="Plural_DeletedFolderDictionaries" xml:space="preserve">
+    <value>已删除文件夹 {1}；其中的 {0} 个字典已移到 {2}。</value>
+  </data>
+  <data name="Dictionaries_MoveThisDictionaryToAFolder" xml:space="preserve">
+    <value>将此字典移到文件夹</value>
+  </data>
+  <data name="Dictionaries_NoDictionariesInThisFolderYet" xml:space="preserve">
+    <value>此文件夹中还没有字典。在导航栏中将字典拖到文件夹上，或在此添加。</value>
+  </data>
+  <data name="Dictionaries_AddDictionary" xml:space="preserve">
+    <value>添加字典</value>
+  </data>
+  <data name="Dictionaries_AddADictionary" xml:space="preserve">
+    <value>添加字典</value>
+  </data>
+  <data name="Dictionaries_AddHint" xml:space="preserve">
+    <value>导入密钥文件、手动输入密钥，或下载已知字典。</value>
+  </data>
+  <data name="Dictionaries_AddTip" xml:space="preserve">
+    <value>导入、输入或下载密钥字典</value>
+  </data>
+  <data name="Dictionaries_TypeKeysByHand" xml:space="preserve">
+    <value>手动输入密钥</value>
+  </data>
+  <data name="Dictionaries_DownloadTip" xml:space="preserve">
+    <value>从 Proxmark3、Flipper Zero 或 Unleashed 项目下载已知字典</value>
+  </data>
+  <data name="Dictionaries_DownloadTitle" xml:space="preserve">
+    <value>下载字典</value>
+  </data>
+  <data name="Dictionaries_DownloadHint" xml:space="preserve">
+    <value>Proxmark3、Flipper Zero 和 Unleashed 项目在 GitHub 上发布的密钥列表。所选字典会先打开供检查，然后再保存。</value>
+  </data>
+  <data name="Dictionaries_DlFailed" xml:space="preserve">
+    <value>无法下载 {0}：{1}</value>
+  </data>
+  <data name="Slots_NonceCount" xml:space="preserve">
+    <value>已收集 nonce</value>
+  </data>
+  <data name="Device_IncompleteResponse" xml:space="preserve">
+    <value>设备返回的收集数据不完整。</value>
+  </data>
+  <data name="Slots_PasswordCount" xml:space="preserve">
+    <value>已收集密码</value>
   </data>
 </root>

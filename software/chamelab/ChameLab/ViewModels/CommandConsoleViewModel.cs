@@ -25,11 +25,41 @@ public sealed class CommandConsoleViewModel : PageViewModelBase
     private Task? _running;
     private TaskCompletionSource<string?>? _input;
     private readonly string _directory;
+    private readonly CommandHistory _history;
+    private int _historyIndex;
+    private string _draftCommand = "";
+    public IReadOnlyList<string> Suggestions => CommandCatalog.Complete(CommandText).Take(12).ToArray();
+    public bool WrapOutput { get; set => this.RaiseAndSetIfChanged(ref field, value); } = true;
+    public Avalonia.Media.TextWrapping OutputWrapping => WrapOutput ? Avalonia.Media.TextWrapping.Wrap : Avalonia.Media.TextWrapping.NoWrap;
+    public bool AutoScroll { get; set => this.RaiseAndSetIfChanged(ref field, value); } = true;
+    public bool Stopping { get; private set => this.RaiseAndSetIfChanged(ref field, value); }
+    public string StopLabel => Stopping ? Strings.Common_Stopping : Strings.Console_Stop;
+    public IReadOnlyList<string> History => _history.Lines;
+    public void HistoryStep(int direction)
+    {
+        if (Working) return;
+        if (_historyIndex == _history.Lines.Count) _draftCommand = CommandText;
+        _historyIndex = Math.Clamp(_historyIndex + direction, 0, _history.Lines.Count);
+        CommandText = _historyIndex == _history.Lines.Count ? _draftCommand : _history.Lines[_historyIndex];
+    }
+    public void CompleteCommand()
+    {
+        if (Suggestions.FirstOrDefault() is { } match) CommandText = match + " ";
+    }
+    private void Stop()
+    {
+        if (_cts is null || Stopping) return;
+        Stopping = true;
+        this.RaisePropertyChanged(nameof(StopLabel));
+        _cts.Cancel();
+    }
 
     public CommandConsoleViewModel(DeviceService device) : base(() => Strings.Console_Title, "tools")
     {
         _device = device;
         _directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ChameLab", "command-workspace");
+        _history = new CommandHistory(Path.Combine(_directory, "history.txt"));
+        _historyIndex = _history.Lines.Count;
         _session = new CliSession(_writer, _writer)
         {
             WorkingDirectory = _directory,
@@ -37,12 +67,13 @@ public sealed class CommandConsoleViewModel : PageViewModelBase
             ReadLineAsync = ReadLineAsync,
         };
         RunCommand = ReactiveCommand.CreateFromTask(ExecuteAsync);
-        StopCommand = ReactiveCommand.Create(() => _cts?.Cancel());
+        StopCommand = ReactiveCommand.Create(Stop);
         SendInputCommand = ReactiveCommand.Create(() => _input?.TrySetResult(Response));
         ImportCommand = ReactiveCommand.CreateFromTask(ImportAsync);
         ExportCommand = ReactiveCommand.CreateFromTask(ExportAsync);
         ClearCommand = ReactiveCommand.Create(() => { _writer.Clear(); Output = ""; });
         _timer = new DispatcherTimer(TimeSpan.FromMilliseconds(150), DispatcherPriority.Background, (_, _) => Flush());
+        this.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(WrapOutput)) this.RaisePropertyChanged(nameof(OutputWrapping)); };
         SelectedCommand = Commands.First(c => c.Name == "hw version");
     }
 
@@ -61,7 +92,11 @@ public sealed class CommandConsoleViewModel : PageViewModelBase
             Help = text.ToString();
         }
     }
-    public string CommandText { get; set => this.RaiseAndSetIfChanged(ref field, value); } = "hw version";
+    public string CommandText
+    {
+        get;
+        set { this.RaiseAndSetIfChanged(ref field, value); this.RaisePropertyChanged(nameof(Suggestions)); }
+    } = "hw version";
     public string Help { get; private set => this.RaiseAndSetIfChanged(ref field, value); } = "";
     public string Output { get; private set => this.RaiseAndSetIfChanged(ref field, value); } = "";
     public bool Working { get; private set => this.RaiseAndSetIfChanged(ref field, value); }
@@ -85,6 +120,9 @@ public sealed class CommandConsoleViewModel : PageViewModelBase
         _session.BorrowConnection(_device.Client?.Connection);
         _timer.Start();
         var command = CommandText;
+        _history.Add(command);
+        _historyIndex = _history.Lines.Count;
+        this.RaisePropertyChanged(nameof(History));
         try
         {
             _running = Task.Run(async () =>
@@ -99,6 +137,8 @@ public sealed class CommandConsoleViewModel : PageViewModelBase
             _timer.Stop();
             Flush();
             Working = false;
+            Stopping = false;
+            this.RaisePropertyChanged(nameof(StopLabel));
             WaitingForInput = false;
             _cts.Dispose();
             _cts = null;
