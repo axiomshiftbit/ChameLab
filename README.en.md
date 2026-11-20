@@ -17,13 +17,14 @@ command-line client.
 [Development builds](https://github.com/axiomshiftbit/ChameLab/actions/workflows/ui-quality.yml) ·
 [Changelog](CHANGELOG.md) · [Authors and licenses](AUTHORS.md)
 
-## Version 1.5.3
+## Version 1.6.0
 
-App **1.5.3** ships with firmware **2.3.19-cl**. This release restores firmware updates:
-on Linux the app and the CLI find a connected Chameleon and its DFU bootloader again, and
-on Windows an update finds the bootloader of the composite USB device, fixing the timeout
-seen in 1.5.1 and 1.5.2. Firmware guards the software timer pool against exhaustion. See
-the [changelog](CHANGELOG.md) for details.
+App **1.6.0** ships with firmware **2.3.21-cl**. This release adds nested folders,
+offline card QR sharing, Classic/NTAG comparison, active-slot captures,
+sector skipping during key recovery and an expanded dictionary catalog. It improves
+LF and coordinates console access with background operations. QR contains card data
+and saved keys without encryption; review the card before sharing it.
+See the [change log](CHANGELOG.md) for details.
 
 ## Choose a download
 
@@ -55,6 +56,12 @@ These APKs use optimized Release builds with AOT and the `.dev` package. The old
 evaluation. `ChameLab-ui-tests.apk` automatically
 runs interface tests and is not intended for regular use. Extract the downloaded
 Actions artifact archive first.
+
+On Linux, if USB access is denied, install `resource/driver/70-chameleon-usb-device.rules`
+in `/etc/udev/rules.d/`, run `sudo udevadm control --reload-rules` and reconnect
+the device. The rule grants the active local user and the `dialout` group access to
+both the app and DFU ports. Remove the old `79-chameleon-usb-device-blacklist-dialout.rules`
+copy if previously installed. Keep the `70-` prefix for `uaccess`.
 
 ## Quick start
 

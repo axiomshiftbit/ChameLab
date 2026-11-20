@@ -35,4 +35,3 @@ public interface IFolderLibrary
 
     event Action? Changed;
 }
-

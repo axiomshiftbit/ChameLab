@@ -9,6 +9,23 @@ Each release (v1.4.35 on) opens with `### Summary`, up to three of its most impo
 
 ## [unreleased][unreleased]
 
+## [v1.6.0][2026-11-20] · firmware v2.3.21-cl
+### Summary
+- Nested card and dictionary folders retain IDs, colors and empty folders; expanded dictionary catalog.
+- Offline card QR sharing, byte comparison for Classic/NTAG and active-slot capture inspection.
+- LF improvements, sector skipping during key recovery and coordinated console access to the device.
+
+### Details
+- Selected upstream changes through v1.7.53 integrated while preserving Actipro, Tools styling, custom DFU and StaticNested behavior.
+- Folder rename and move include descendants. Backup import validates both libraries before writing and restores previous data on save failure.
+- The catalog offers 11 compatible dictionary sources. Existing 4/6/16-byte key support is retained; mixed and unsupported lengths are explicitly rejected.
+- QR carries card data and saved keys without encryption. Image import works offline; camera scanning is available on supported platforms. Size limits and damaged-series validation are enforced; import opens a preview.
+- Saved-card and file comparison supports Classic and Ultralight/NTAG of different capacities, distinguishing unknown bytes from equal and different bytes.
+- Active-slot captures are read without silently switching slots; stale results after a session change are discarded.
+- Sector skipping, corrected batch search budgets and CLI autopwn partial-result retention; console completion, line wrapping and history without argument values.
+- Firmware 2.3.21-cl: LF/FSK phase fixes, automatic LF recognition and cycle playback modes; verified Pyramid writing in the client. EM4305 moves to command 3038 with compatible handling of legacy command 3037.
+- Improved HEX input, Android picker return, browser navigation and firmware version display. Updated third-party notices.
+
 ## [v1.5.4][2026-11-14] · firmware v2.3.20-cl
 ### Summary
 - MIFARE Classic: automatic recovery, batched dictionary checks and retention of recovered keys when stopped.
